@@ -26,7 +26,7 @@ BEGIN {
                             $gnome_enums
                           );
     $PACKAGE =          __PACKAGE__;
-    $VERSION            = q(0.42);
+    $VERSION            = q(0.43);
     # These cannot be looked up in the include files
     $gnome_enums =      {
         'GNOME_ANIMATOR_LOOP_NONE'      => 'none',

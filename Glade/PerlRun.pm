@@ -37,9 +37,9 @@ BEGIN {
     # Tell interpreter who we are inheriting from
     @ISA          = qw( Exporter );
     $PACKAGE      = __PACKAGE__;
-    $VERSION      = q(0.42);
+    $VERSION      = q(0.43);
     $AUTHOR       = q(Dermot Musgrove <dermot.musgrove\@virgin.net>);
-    $DATE         = q(Wed Nov 10 00:59:38 GMT 1999);
+    $DATE         = q(Wed Nov 10 20:33:55 GMT 1999);
     $widgets      = {};
     $all_forms    = {};
     # These vars are imported by all Glade-Perl modules for consistency

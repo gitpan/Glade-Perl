@@ -39,7 +39,7 @@ BEGIN {
         $missing_widgets
         );
     $PACKAGE =          __PACKAGE__;
-    $VERSION        = q(0.42);
+    $VERSION        = q(0.43);
 
     $ignored_widgets = 0;
     $missing_widgets = 0;
@@ -120,6 +120,7 @@ $perl_gtk_depends       = {
     # Those below work in the CVS version after 19991001
     'gnome_iconlist_new_undef'  => '19991001',
     'gnome_stock_pixmap_widget' => '19991001',
+    'gnome_stock_button' => '19991001',
     'gtk_colorselectiondialog_ok_button->child' => '19991001',
      # Those below work in the CVS version after 19990922
     'gnome_app_enable_layout_config'   => '19990922',

@@ -1,5 +1,11 @@
 Revision history for Perl module Glade::PerlGenerate development branch.
-
+Wed Nov 10 20:33:55 GMT 1999 - Dermot Musgrove <dermot.musgrove@virgin.net>
+  - Version 0.43
+  - PerlUIGtk->newGtkButton() bug fixed to work around changes since vanilla
+    Gtk-Perl (0.6123). It now creates a normal button with the stock button
+    text (eg 'Button_Ok') if your Gtk-Perl can't do Gnome::Stock->button
+    instead of just dying as it used to.
+  
 Wed Nov 10 00:59:38 GMT 1999 - Dermot Musgrove <dermot.musgrove@virgin.net>
   - Version 0.42
   - Fixed to 'use Gnome;' now. This is vital for Gtk-Perl CVS after 19991029

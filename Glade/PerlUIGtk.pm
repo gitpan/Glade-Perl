@@ -31,7 +31,7 @@ BEGIN {
                             $Notebook_tab
                           );
     $PACKAGE =          __PACKAGE__;
-    $VERSION        = q(0.42);
+    $VERSION        = q(0.43);
     @VARS           = qw( 
                             $VERSION
                             $AUTHOR
@@ -203,25 +203,18 @@ sub new_GtkButton {
     my ($class, $parent, $proto, $depth) = @ARG;
     my $me = "$class->new_GtkButton";
     my $name = $proto->{'name'};
-#    my $stock_pixmap = $class->use_par($proto, 'stock_pixmap',  $DEFAULT, '' );
 # FIXME - toolbar buttons with a removed label don't have a child_name
 #   but can have a sub-widget. allow this
     unless ($class->new_from_child_name($parent, $name, $proto, $depth )) {
-#    unless ($proto->{'child_name'} ) {
         my $label = $class->use_par($proto, 'label', $DEFAULT,  '' );
         my $stock_button = $class->use_par($proto, 'stock_button',  $LOOKUP, '');
         if ($label) {
 # FIXME This should probably be split into GnomeStock(Button) and GtkButton
-            if ($class->my_perl_gtk_can_do('Gnome::Stock')) {
+            if ($class->my_perl_gtk_can_do('GnomeStock')) {
                 if ($stock_button) {
                     $class->diag_print(2, $proto);
                     $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
                     "new Gnome::Stock->button('$stock_button' );" );
-#                } elsif ($stock_pixmap) {
-#                    $class->diag_print(2, $proto);
-#                    $class->add_to_UI( -$depth, "\$widgets->{'$name'} = ".
-#                        "Gnome::Stock->gnome_pixmap_button('$stock_pixmap' );" );
-##                        "Gnome::Stock->button('$stock_pixmap' );" );
                 } else {
                     $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
                         "new Gtk::Button('$label' );" );
@@ -231,23 +224,22 @@ sub new_GtkButton {
                     "new Gtk::Button('$label' );");
             }
         } else {
-            if ($class->my_perl_gtk_can_do('Gnome::Stock')) {
+            if ($class->my_perl_gtk_can_do('GnomeStock')) {
                 if ($stock_button) {
                     $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
                         "Gnome::Stock->button('$stock_button' );" );
-#                } elsif ($stock_pixmap) {
-#                    $class->diag_print(2, $proto);
-#                    $stock_pixmap = $Glade::PerlUIExtra::gnome_enums->{$stock_pixmap};
-#                    $class->add_to_UI( -$depth, "\$widgets->{'$name'} = ".
-#                        "Gnome::Stock->gnome_pixmap_button('$stock_pixmap' );" );
-##                        "Gnome::Stock->button('$stock_pixmap' );" );
                 } elsif (! $proto->{'stock_pixmap'}) {
                     $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
                         "new Gtk::Button;" );
                 }
             } else {
-                $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
-                    "new Gtk::Button;");
+                if ($stock_button) {
+                    $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
+                       "new Gtk::Button('$stock_button' );" );
+                } else {
+                    $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
+                        "new Gtk::Button;");
+                }
             }
         }
         $class->pack_widget($parent, $name, $proto, $depth );

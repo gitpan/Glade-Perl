@@ -123,6 +123,7 @@ XML::Parser Larry Wall <larry@wall.org> wrote version 1.0.
             some standard package features.
 
 Information, advice and patches - Damon Chaplin, Robert Schwebel 
+Bug reports and testing - Tim Conrow
 
 AUTHOR
 ------

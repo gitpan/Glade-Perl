@@ -1,15 +1,24 @@
 This is the Frequently Asked Question list for Glade-Perl source generator
 --------------------------------------------------------------------------
-Q   Glade-Perl fails with this message:
-    FAILED with Eval error 'Can't locate object method "button" via
-        package "Gnome::Stock" at (eval 373) line 1.
+Q   Glade-Perl doesn't build your stock button correctly
+    If you run Glade-Perl with 'verbose' => 2 and STDOUT visible (on an xterm) 
+    you will see a message like:
+    warn  Gtk-Perl version 0.6123 cannot do 'GnomeStock' (properly) 
+        we need CVS module 'gnome-perl' after 19990914
 
-A   The error means that Gnome wasn't available. There is a bug in version 
-    <= 0.42 so that the <allow_gnome> project option was not saved. 
-    Either add/amend the line in file projectname.glade2perl.xml to read:
-        <allow_gnome>1</allow_gnome>
-        
-    or, better, upgrade to 0.42. 
+A   Gtk-Perl 0.6123 doesn't do Gnome::Stock->button. Either remove the
+    Stock Button property and use a label or upgrade to Gtk-Perl CVS after
+    19990914.
+    
+--------------------------------------------------------------------------
+Q   How do I see diagnostic messages when using glade2perl or from Glade
+
+A   Copy glade2perl and edit the 'verbose' line to read
+        'verbose' => 2,     # for some diagnostics
+        'verbose' => 4,     # for more diagnostics
+        'verbose' => 6,     # for lots of diagnostics (more than you want ?)
+        'verbose' => 10,    # for every diagnostic message available
+    Then either run Glade from a terminal or call the edited glade2perl
     
 --------------------------------------------------------------------------
 Q   How do I write signal handlers in a separate module?

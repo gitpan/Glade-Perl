@@ -26,7 +26,7 @@ BEGIN {
                             $PACKAGE 
                           );
     $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.42);
+    $VERSION        = q(0.43);
     # Tell interpreter who we are inheriting from
     @ISA            = qw(
                             Glade::PerlProject
