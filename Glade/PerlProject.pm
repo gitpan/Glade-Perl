@@ -125,8 +125,9 @@ BEGIN {
         'write'         => 'True',
         'directory'     => '',
         'Makefile_PL'   => 'Makefile.PL',
-        'MANIFEST'      => 'MANIFEST',
+        'MANIFEST_SKIP' => 'MANIFEST.SKIP',
         'test_pl'       => 'test.pl',
+        'spec'          => undef,
         'type'          => undef,   # Type of distribution
         'compress'      => undef,   # How to compress the distribution
         'scripts'       => undef,   # Scripts that should be installed

@@ -31,10 +31,6 @@ BEGIN {
                             $Notebook_tab
                             $enums
                           );
-#                            $PACKAGE
-#                            $VERSION
-#    $PACKAGE =          __PACKAGE__;
-#    $VERSION        = q(0.58);
     @VARS           = qw( 
                             $VERSION
                             $AUTHOR
@@ -62,6 +58,10 @@ $CList_column    = 0;
 $CTree_column    = 0;
 $Notebook_pane   = 0;
 $Notebook_tab    = 0;
+
+sub DESTROY {
+    # This sub will be called on object destruction
+} # End of sub DESTROY
 
 #===============================================================================
 #=========== Gtk utilities                                          ============

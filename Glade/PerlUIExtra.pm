@@ -23,15 +23,15 @@ BEGIN {
     use vars              qw( 
                             $enums
                           );
-#                            $PACKAGE
-#                            $VERSION
-#    $PACKAGE =          __PACKAGE__;
-#    $VERSION            = q(0.58);
     # These cannot be looked up in the include files
     $enums =      {
         'GNOME_MENU_SAVE_AS_STRING'     => 'Save _As...',
     };
 }
+
+sub DESTROY {
+    # This sub will be called on object destruction
+} # End of sub DESTROY
 
 #===============================================================================
 #=========== Gnome utilities                                        ============

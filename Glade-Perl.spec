@@ -1,4 +1,4 @@
-%define ver     0.58
+%define ver     0.59
 %define rel     1
 %define name    Glade-Perl
 %define rlname  %{name}
@@ -41,28 +41,17 @@ Libglade apps.
 %setup -n %{rlname}-%{ver}
 
 %build
-if [ -f configure ];then
-  inst_method="autoconf"
-  CFLAGS=$RPM_OPT_FLAGS ./configure --prefix=%{prefix} --sysconfdir=%{confdir}
-elif [ -f autogen.sh ];then
-  inst_method="autoconf"
-  CFLAGS=$RPM_OPT_FLAGS ./autogen.sh --prefix=%{prefix} --sysconfdir=%{confdir}
-elif [ -f Makefile.PL ];then
-  if [ $(perl -e 'print index($INC[0],"%{prefix}/lib/perl");') -eq 0 ];then
+if [ $(perl -e 'print index($INC[0],"%{prefix}/lib/perl");') -eq 0 ];then
     # package is to be installed in perl root
     inst_method="makemaker-root"
     CFLAGS=$RPM_OPT_FLAGS perl Makefile.PL PREFIX=%{prefix}
-  else
+else
     # package must go somewhere else (eg. /opt), so leave off the perl
     # versioning to ease integration with automatic profile generation scripts
     # if this is really a perl-version dependant package you should not omiss
     # the version info...
     inst_method="makemaker-site"
     CFLAGS=$RPM_OPT_FLAGS perl Makefile.PL PREFIX=%{prefix} LIB=%{prefix}/lib/perl5
-  fi
-else
-  echo No configure, autogen.sh or Makefile.PL, giving up...
-  exit 1
 fi
 
 echo $inst_method > inst_method
@@ -78,9 +67,7 @@ make "MAKE=make -j$numprocs"
 %install
 rm -rf $RPM_BUILD_ROOT
 
-if [ "$(cat inst_method)" = "autoconf" ];then
-   make DESTDIR=$RPM_BUILD_ROOT install
-elif [ "$(cat inst_method)" = "makemaker-root" ];then
+if [ "$(cat inst_method)" = "makemaker-root" ];then
    make UNINST=1 PREFIX=$RPM_BUILD_ROOT%{prefix} install
 elif [ "$(cat inst_method)" = "makemaker-site" ];then
    make UNINST=1 PREFIX=$RPM_BUILD_ROOT%{prefix} LIB=$RPM_BUILD_ROOT%{prefix}/lib/perl5 install
@@ -97,5 +84,8 @@ find $RPM_BUILD_ROOT -type f -print|sed -e "s@^$RPM_BUILD_ROOT@@g" > %{filelst}
 rm -rf $RPM_BUILD_ROOT
 
 %changelog
+* Fri Jun 22 2001 Dermot Musgrove <dermot@glade.perl.connectfree.co.uk>
+  Simplified for pure Perl use
+
 * Tue Apr 09 2001 Dermot Musgrove <dermot@glade.perl.connectfree.co.uk>
   Edited from George.spec by Frank de Lange <frank@unternet.org>

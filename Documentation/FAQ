@@ -2,7 +2,14 @@ This is the Frequently Asked Question list for Glade-Perl source generator
 --------------------------------------------------------------------------
 Q   How do I see diagnostic messages when using glade2perl or from Glade?
 
-A   Copy glade2perl and edit the 'verbose' line to read
+A   The simplest way (from version 0.58) is to call glade2perl from the
+    command line and specify a verbosity of 2 so:
+        glade2perl project.glade 2
+    
+    will give you a log file called project.glade2perl.log wherever the
+    project.glade file is.
+    
+    Otherwise copy glade2perl and edit the 'verbose' line to read
         'verbose' => 2,     # for some diagnostics
         'verbose' => 4,     # for more diagnostics
         'verbose' => 6,     # for lots of diagnostics (more than you want ?)
@@ -14,7 +21,13 @@ A   Copy glade2perl and edit the 'verbose' line to read
         'log_file' => $log_file, # Save diagnostics to Project.glade2perl.log
         This last option might be best, then all glade2perl runs will save the
         diagnostics to a file.
-            
+    4)  Edit the project.glade2perl.xml file to specify a line like
+        <diag>
+            <verbose>2</verbose>
+        </diag>
+        This will generate diagnostics every time that you generate this
+        project (but no others)
+        
 --------------------------------------------------------------------------
 Q   How do I get the value of a GtkOptionMenu using Glade-Perl?
 

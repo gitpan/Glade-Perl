@@ -11,13 +11,6 @@ use strict;
 
 my @programs_to_install = qw(glade2perl);
 
-# Versions to check for held somewhere obvious
-my $need_versions = {
-    'Perl'          => '5.000',     # Done above
-    'gtk+'          => '1.2.3',     # Possibly trust Gtk-Perl to have done it
-    'glade'         => '0.5.3',     # Not absolutely necessary yet
-};
-
 my @need_perl_modules = (
     {'name'     => 'XML::Parser',
     'test'      => 'XML::Parser',
@@ -28,7 +21,7 @@ my @need_perl_modules = (
     #   this avoids dumping MakeMaker
     {'name'     => 'Gtk',
     'test'      => 'Gtk::Types',
-    'version'   => '0.6123',
+    'version'   => '0.7000',
     'reason'    => "implements the perl bindings to Gtk+.\n".
                     "The module is called Gtk-Perl on CPAN or ".
                     "module gnome-perl in the Gnome CVS"},
@@ -37,7 +30,7 @@ my @need_perl_modules = (
     #   this avoids dumping MakeMaker
     {'name'     => 'Gnome',
     'test'      => 'Gnome::Types',
-    'version'   => '0.6123',
+    'version'   => '0.7000',
     'reason'    => "implements the perl bindings to Gnome.\n".
                    "It is a submodule of the Gtk-Perl package and needs to be built separately.\n".
                    "Read the Gtk-Perl INSTALL file for details of how to do this.\n".

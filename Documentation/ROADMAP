@@ -1,9 +1,6 @@
 ROADMAP Where is Glade::PerlGenerate going?
 
-0.60  Implement any new Glade widgets (eg GnomeDb)
-
-0.62  Glade::PerlDist files and methods to build Makefile.PL etc and 
-        skeleton doc files (NEWS, README etc)
+0.62  Implement any new Glade widgets (eg GnomeDb)
 
 0.64  Glade::Helper GUI options editor and generation control
 

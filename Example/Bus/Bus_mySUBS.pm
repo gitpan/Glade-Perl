@@ -36,6 +36,10 @@ BEGIN {
                     );
 }
 
+sub DESTROY {
+    # This sub will be called on object destruction
+} # End of sub DESTROY
+
 #===============================================================================
 #==== Below are all the signal handlers supplied by the programmer          ====
 #===============================================================================

@@ -1,7 +1,12 @@
 #!/usr/bin/perl
+
+eval 'exec /usr/bin/perl  -S $0 ${1+"$@"}'
+    if 0; # not running under some shell
 require 5.000; use strict 'vars', 'refs', 'subs';
 
 my $VERSION = "0.58";
+
+use lib "/home/dermot/Devel/Glade-Perl";
 use Glade::PerlGenerate;
 
 my $glade_filename = shift;
@@ -49,8 +54,8 @@ if you are calling the script directly.
 
 =cut
 
-$verbosity ||= 0;
-#$verbosity ||= 02;
+#$verbosity ||= 0;
+$verbosity ||= 02;
 
 my $base;
 my $log_file;

@@ -13,7 +13,7 @@ To install
         
 TO BUILD RPMS
 -------------
-Build the RPMs by calling
+Build the RPMs by calling eg.
     rpm -ta Glade-Perl-0.58.tar.gz
 
 TO INSTALL RPMS
@@ -40,7 +40,7 @@ TO RUN MANUALLY
 You need Perl, Glib/Gtk+, Gtk-Perl and XML::Parser packages and of course
 Glade if you want to edit the interface files.
 
-    glade2perl Project1.glade
+    glade2perl Project1.glade 2
     
 Then to run the app:
     perl -e 'use src::Project1; window1->app_run'

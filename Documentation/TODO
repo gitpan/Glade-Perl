@@ -29,8 +29,6 @@ TODO
     6) Hierarchical widget structure
     7) I18N example of gettext app
         
-*   Document, internally, Glade::PerlRun for app developers
-
 *   Generate extract and display subs to give examples of how to set and get
     widget data. Perhaps not necessary.
 
@@ -38,8 +36,6 @@ TODO
 
     Possibly move PerlUI subs to PerlGenerate
     
-*   Make dist files eg Makefile.PL, MANIFEST, Changelog etc etc
-
 *   Fix the signal handling for AccelLabels and pixmaps. Which widget should
     the signal be connected to?
 
@@ -91,6 +87,13 @@ TODO
 
 DONE
 ----
+*   Make dist files eg Makefile.PL, MANIFEST, Changelog etc etc
+
+*   Make a widget accessor in ProjectUI.pm so that you can:
+    $widget = $window->lookup_widget('OGFDList');
+    
+*   Document, internally, Glade::PerlRun for app developers
+
 *   Improve options handling
 
 *   Perhaps require at least Gtk-Perl-0.7000 (CVS version after 20000102)

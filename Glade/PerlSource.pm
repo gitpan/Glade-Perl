@@ -26,6 +26,7 @@ BEGIN {
                                             # but not &_ since we do that ourselves.
     use File::Basename qw( basename );      # in check_gettext_strings
     use Text::Wrap     qw( wrap $columns ); # in write_gettext_strings
+    use File::Path     qw( mkpath );        # in use_Glade_Project
     use subs        qw(
                         _
                         start_checking_gettext_strings
@@ -217,45 +218,450 @@ sub add_to_UI {
 #===============================================================================
 #=========== Documentation files
 #===============================================================================
+sub write_documentation {
+    my ($class) = @_;
+    return unless $class->doc->write;
+    my $me = __PACKAGE__."::write_documentation";
+    my ($string, $file);
+    $class->doc->directory($class->full_Path(
+        $class->doc->directory, $class->glade->directory));
+    
+    if ($class->doc->directory ne $class->glade->directory) {
+        unless (-d $class->doc->directory) { 
+            # Source directory does not exist yet so create it
+            $Glade_Perl->diag_print (2, "%s- Creating documentation directory '%s' in %s", 
+                $indent, $class->doc->directory, $me);
+            mkpath($class->doc->directory );
+        }
+    }
+    
+    for $file (sort keys %{$class->doc}) {
+        unless ("*$permitted_fields*directory*write*" =~ /\*$file\*/) {
+            $class->doc->{$file} = $class->full_Path(
+                $class->doc->{$file}, 
+                $class->doc->directory);
+            unless (-f $class->doc->{$file}) {
+                $class->diag_print(2, "%s- Generating documentation file '%s'",
+                    $class->source->indent, $class->doc->{$file});
+                eval "\$string = \$class->doc_$file";
+                $class->save_file_from_string($class->doc->{$file}, $string);
+                if ($class->verbosity >= 4) {
+                    print "-----------------------------\n".
+                        "$string\n-----------------------------\n";
+                }
+            }
+        }
+    }
+}
+
 sub doc_COPYING {
+    my ($class) = @_;
+    return $Glade_Perl->app->copying;
 }
 
 sub doc_Changelog {
+    my ($class) = @_;
+    return "Revision history for Glade-Perl application '".$Glade_Perl->app->name."'
+--------------------------------------------------------------------
+
+".$class->glade2perl->start_time." - ".$class->app->author."
+".$class->source->indent."- version ".$class->app->version.
+" - This file was created by ".__PACKAGE__."\n";
 }
 
 sub doc_FAQ {
+    my ($class) = @_;
+    return "Frequently Asked Questions about Glade-Perl application '".$Glade_Perl->app->name."'
+--------------------------------------------------------------------
+
+
+".$class->glade2perl->start_time." - ".$class->app->author."
+".$class->source->indent."- version ".$class->app->version.
+" - This file was created by ".__PACKAGE__."\n";
 }
 
 sub doc_INSTALL {
+    my ($class) = @_;
+    return "How to install Glade-Perl application '".$Glade_Perl->app->name."'
+--------------------------------------------------------------------
+
+TO INSTALL
+----------
+There is a standard Makefile.PL to handle some checks and install the package
+
+To install
+    perl Makefile.PL
+    make
+    make test
+    su
+    make install (if test was OK)
+        
+TO BUILD RPMS
+-------------
+Build the RPMs by calling eg.
+    rpm -ta ".$class->app->name."-".$class->app->version.".tar.gz
+
+
+".$class->glade2perl->start_time." - ".$class->app->author."
+".$class->source->indent."- version ".$class->app->version.
+" - This file was created by ".__PACKAGE__."
+";
 }
 
 sub doc_NEWS {
+    my ($class) = @_;
+    return "NEWS about Glade-Perl application '".$Glade_Perl->app->name."'
+--------------------------------------------------------------------
+
+
+".$class->glade2perl->start_time." - ".$class->app->author."
+".$class->source->indent."- version ".$class->app->version.
+" - This file was created by ".__PACKAGE__."\n";
 }
 
 sub doc_README {
+    my ($class) = @_;
+    return "Introduction to Glade-Perl application '".$Glade_Perl->app->name."'
+--------------------------------------------------------------------
+
+".$class->app->description."
+
+
+".$class->glade2perl->start_time." - ".$class->app->author."
+".$class->source->indent."- version ".$class->app->version.
+" - This file was created by ".__PACKAGE__."
+";
 }
 
 sub doc_ROADMAP {
+    my ($class) = @_;
+    return "ROADMAP for Glade-Perl application '".$Glade_Perl->app->name."'
+--------------------------------------------------------------------
+
+
+".$class->glade2perl->start_time." - ".$class->app->author."
+".$class->source->indent."- version ".$class->app->version.
+" - This file was created by ".__PACKAGE__."\n";
 }
 
 sub doc_TODO {
+    my ($class) = @_;
+    return "Things to do for Glade-Perl application '".$Glade_Perl->app->name."'
+--------------------------------------------------------------------
+
+
+".$class->glade2perl->start_time." - ".$class->app->author."
+".$class->source->indent."- version ".$class->app->version.
+" - This file was created by ".__PACKAGE__."\n";
 }
 
 #===============================================================================
 #=========== Distribution files
 #===============================================================================
-sub dist_MANIFEST {
+sub write_distribution {
+    my ($class) = @_;
+    return unless $class->dist->write;
+    my $me = __PACKAGE__."::write_distribution";
+    my ($string, $file);
+    my $exec_mode = 0755;
+    $class->dist->directory($class->full_Path(
+        $class->dist->directory, $class->glade->directory));
+    
+    if ($class->dist->directory ne $class->glade->directory) {
+        unless (-d $class->dist->directory) { 
+            # Source directory does not exist yet so create it
+            $Glade_Perl->diag_print (2, "%s- Creating distribution '%s' in %s", 
+                $indent, $class->dist->directory, $me);
+            mkpath($class->dist->directory );
+        }
+    }
+    $class->dist->spec($class->app->name.".spec");
+    for $file (sort keys %{$class->dist}) {
+        unless ("*$permitted_fields*directory*write*type*compress*scripts*docs*" =~ /\*$file\*/) {
+            $class->dist->{$file} = $class->full_Path(
+                $class->dist->{$file}, 
+                $class->dist->directory);
+            unless (-f $class->dist->{$file}) {
+                $class->diag_print(2, "%s- Generating distribution file '%s'",
+                    $class->source->indent, "$file - ".$class->dist->{$file});
+                eval "\$string = \$class->dist_$file";
+                $class->save_file_from_string($class->dist->{$file}, $string);
+                if ($class->verbosity >= 4) {
+                    print "-----------------------------\n".
+                        "$string\n-----------------------------\n";
+                }
+                if ('*test_pl*' =~ /\*$file\*/) {
+                    chmod $exec_mode, $class->dist->{$file};
+                }
+            }
+        }
+    }
+}
+
+sub dist_MANIFEST_SKIP {
+    my ($class) = @_;
+    my $string;
+$string = "\\bRCS\\b
+^MANIFEST\\.
+^Makefile\$
+\~\$
+\.html\$
+\.old\$
+^blib/
+^MakeMaker-\d
+pod2html
+.bak\$
+^".(basename $class->glade->file)."
+";
+    if ($class->glade->proto->{project}{output_translatable_strings}) {
+        $string .= "^".$class->glade->proto->{project}{translatable_strings_file};
+    };
+    return $string;
 }
 
 sub dist_Makefile_PL {
+    my ($class) = @_;
+
+    my $name = $class->module->directory;
+    $name =~ s|^$class->{dist}{directory}||;
+    $name =~ s|^/||;
+
+    my $ui_file = $class->module->ui->file;
+    $ui_file =~ s|^$class->{dist}{directory}||;
+    $ui_file =~ s|^/||;
+
+return "#
+#   Makefile.PL for ".$class->app->name."
+#".$class->source->indent."- version ".$class->app->version.
+" - This file was created by ".__PACKAGE__."
+#
+require 5.000;
+use ExtUtils::MakeMaker;
+use strict;
+
+#--- Configuration section ---
+
+my \@programs_to_install = qw(".$class->dist->scripts.");
+
+my \@need_perl_modules = (
+    # Check for Gtk::Types rather than the Gtk supermodule
+    #   this avoids dumping MakeMaker
+    {'name'     => 'Gtk',
+    'test'      => 'Gtk::Types',
+    'version'   => '0.7000',
+    'reason'    => \"implements the perl bindings to Gtk+.\\n\".
+                    \"The module is called Gtk-Perl on CPAN or \".
+                    \"module gnome-perl in the Gnome CVS\"},
+
+    # Check for Gnome::Types rather than the Gnome supermodule
+    #   this avoids dumping MakeMaker
+    {'name'     => 'Gnome',
+    'test'      => 'Gnome::Types',
+    'version'   => '0.7000',
+    'reason'    => \"implements the perl bindings to Gnome.\\n\".
+                   \"It is a submodule of the Gtk-Perl package and needs to be built separately.\\n\".
+                   \"Read the Gtk-Perl INSTALL file for details of how to do this.\\n\".
+                   \"Glade-Perl will still work but you will not be able to \\n\".
+                   \"use any Gnome widgets in your Glade projects\"},
+    );
+#--- End Configuration - You should not have to change anything below this line
+
+# Allow us to suppress all program installation with the -n (library only)
+# option.  This is for those that don't want to mess with the configuration
+# section of this file.
+use Getopt::Std;
+use vars qw(\$opt_n);
+unless (getopts(\"n\")) {
+    die \"Usage: \$0 [-n]\\n\";
+}
+\@programs_to_install = () if \$opt_n;
+
+# Check for non-standard modules that are used by this library.
+\$| = 1; # autoflush on
+my \$missing_modules = 0;
+
+foreach my \$mod (\@need_perl_modules) {
+    print \"Checking for \$mod->{'name'}..\";
+    eval \"require \$mod->{'test'}\";
+    if (\$@) {
+        \$missing_modules++;
+        print \" failed\\n\";
+        print   \"-------------------------------------------------------\".
+                \"\\n\$\@\\n\",
+                \"\$mod->{'name'} is needed, it \$mod->{'reason'}\\n\",
+                \"We need at least version \$mod->{'version'}\\n\".
+                \"-------------------------------------------------------\\n\";
+        sleep(2);  # Don't hurry too much
+    } else {
+        print \" ok\\n\";
+    }
+}
+
+#--------------------------------------
+print \"-------------------------------------------------------
+The missing modules can be obtained from CPAN. Visit
+<URL:http://www.perl.com/CPAN/> to find a CPAN site near you.
+-------------------------------------------------------\\n\\n\"
+     if \$missing_modules;
+
+#--------------------------------------
+# Last of all generate the Makefile
+WriteMakefile(
+    'DISTNAME'     => '".$class->app->name."',
+    'NAME'         => '$name',
+    'VERSION_FROM' => '$ui_file',
+    'EXE_FILES'    => [ \@programs_to_install ],
+    'clean'        => { FILES => '\$(EXE_FILES)' },
+    'dist'         => { COMPRESS => 'gzip', SUFFIX => 'gz' }
+);
+
+package MY;
+
+# Pass Glade-Perl version number to pod2man
+sub manifypods
+{
+    my \$self = shift;
+    my \$ver = \$self->{'VERSION'} || \"\";
+    local(\$_) = \$self->SUPER::manifypods(\@_);
+    s/pod2man\s*\$/pod2man --release ".$class->app->name."-\$ver/m;
+    \$_;
+}
+
+exit(0);
+
+# End of Makefile.PL
+";
 }
 
 sub dist_spec {
+    my ($class) = @_;
+    my $docs;
+    if ($class->dist->docs) {
+        $docs = $class->dist->docs;
+    } else {
+        $docs = $class->doc->directory;
+        $docs =~ s/^$class->{glade}{directory}//;
+        $docs =~ s/^\///;
+        $docs .= "/*";
+    }
+    my $rpm_date = `date "+%a %b %d %Y"`;
+    chomp $rpm_date;
+return "\%define ver     ".$class->app->version."
+\%define rel     1
+\%define name    ".$class->app->name."
+\%define rlname  \%{name}
+\%define source0 http://\%{name}-\%{ver}.tar.gz
+\%define url     http://
+\%define group   Application
+\%define copy    GPL or Artistic
+\%define filelst \%{name}-\%{ver}-files
+\%define confdir /etc
+\%define prefix  /usr
+\%define arch    noarch
+
+Summary: ".$class->app->description."
+
+Name: \%name
+Version: \%ver
+Release: \%rel
+Copyright: \%{copy}
+Packager: ".$class->app->author."
+Source: \%{source0}
+URL: %{url}
+Group: \%{group}
+BuildArch: \%{arch}
+BuildRoot: /var/tmp/\%{name}-\%{ver}
+
+\%description
+".$class->app->description."
+
+\%prep
+\%setup -n \%{rlname}-\%{ver}
+
+\%build
+if [ \$(perl -e 'print index(\$INC[0],\"\%{prefix}/lib/perl\");') -eq 0 ];then
+    # package is to be installed in perl root
+    inst_method=\"makemaker-root\"
+    CFLAGS=\$RPM_OPT_FLAGS perl Makefile.PL PREFIX=\%{prefix}
+else
+    # package must go somewhere else (eg. /opt), so leave off the perl
+    # versioning to ease integration with automatic profile generation scripts
+    # if this is really a perl-version dependant package you should not omiss
+    # the version info...
+    inst_method=\"makemaker-site\"
+    CFLAGS=\$RPM_OPT_FLAGS perl Makefile.PL PREFIX=\%{prefix} LIB=\%{prefix}/lib/perl5
+fi
+
+echo \$inst_method > inst_method
+
+# get number of processors for parallel builds on SMP systems
+numprocs=`cat /proc/cpuinfo | grep processor | wc | cut -c7`
+if [ \"x\$numprocs\" = \"x\" -o \"x\$numprocs\" = \"x0\" ]; then
+  numprocs=1
+fi
+
+make \"MAKE=make -j\$numprocs\"
+
+\%install
+rm -rf \$RPM_BUILD_ROOT
+
+if [ \"\$(cat inst_method)\" = \"makemaker-root\" ];then
+   make UNINST=1 PREFIX=\$RPM_BUILD_ROOT\%{prefix} install
+elif [ \"\$(cat inst_method)\" = \"makemaker-site\" ];then
+   make UNINST=1 PREFIX=\$RPM_BUILD_ROOT\%{prefix} LIB=\$RPM_BUILD_ROOT\%{prefix}/lib/perl5 install
+fi
+
+\%__os_install_post
+find \$RPM_BUILD_ROOT -type f -print|sed -e \"s\@^\$RPM_BUILD_ROOT\@\@g\" > \%{filelst}
+
+\%files -f \%{filelst}
+\%defattr(-, root, root)
+\%doc $docs
+
+\%clean
+rm -rf \$RPM_BUILD_ROOT
+
+\%changelog
+* $rpm_date - ".$class->app->author."
+".$class->source->indent."This file was created by ".__PACKAGE__."\n";
 }
 
 sub dist_test_pl {
+    my ($class) = @_;
+return "#!/usr/bin/perl
+#==============================================================================
+#=== This is a toplevel script
+#==============================================================================
+require 5.000; use strict 'vars', 'refs', 'subs';
+
+package ".$class->test->first_form.";
+
+BEGIN {
+    use lib \"./\";
+    use ".$class->test->use_module.";
+    use vars qw(\@ISA);
+#    use Carp qw(cluck);
+#        \$SIG{__DIE__}  = \&Carp::confess;
+#        \$SIG{__WARN__} = \&Carp::cluck;
 }
 
+\$Glade::PerlRun::pixmaps_directory = \"".$class->glade->pixmaps_directory."\";
+
+select STDOUT; \$| = 1;
+
+my \%params = (
+);
+
+__PACKAGE__->app_run(\%params) && exit 0;
+
+exit 1;
+
+1;
+
+__END__
+}
+";
+}
 #===============================================================================
 #=========== Source code 
 #===============================================================================

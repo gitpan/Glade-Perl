@@ -36,8 +36,8 @@ Also the example projects in Example/ directory
 
 Glade::PerlGenerate is a module that will read a Glade-Interface XML 
 file, build the UI and/or write the perl source to create the UI later and
-handle signals. It also now creates an 'App' and an 'App subclass' that
-you can edit.
+handle signals. It also creates an 'App' and an 'App subclass' that
+you can edit and documentation and distribution files.
 
 It is made up of two main packages. Glade::PerlGenerate does the clever 
 stuff and Glade::PerlRun has some run-time utilities that are needed 
@@ -106,7 +106,7 @@ XML::Parser Larry Wall <larry at wall.org> wrote version 1.0.
             some standard package features.
 
 Information, advice and patches - Damon Chaplin, Robert Schwebel, Stas Bekman
-Bug reports and testing - Tim Conrow, Frank de Lange
+Bug reports and testing - Tim Conrow, Frank de Lange, Jim Edwards
 RPM spec file 'borrowed' from Frank de Lange's George app.
 
 AUTHOR

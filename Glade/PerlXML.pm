@@ -32,7 +32,11 @@ BEGIN {
     # Tell interpreter who we are inheriting from
     @ISA            = qw( Glade::PerlRun );
 }
-#$seq = 1;
+
+sub DESTROY {
+    # This sub will be called on object destruction
+} # End of sub DESTROY
+
 #===============================================================================
 #=========== Utilities to read XML and build the Proto                ==========
 #===============================================================================

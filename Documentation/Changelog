@@ -1,6 +1,35 @@
 Revision history for Perl module Glade::PerlGenerate development branch.
 
-Fri Apr 13 01:01:22 BST 2001 - Dermot Musgrove <dermot.musgrove at virgin.net>
+Wed Jun 20 14:48:25 BST 2001 Dermot Musgrove <dermot.musgrove at virgin.net>
+  - Version 0.59
+  - All modules now have empty DESTROY() sub as perl 5.6 demands.
+    PerlRun->AUTOLOAD() also caters for (ignores) AUTOLOADED DESTROY() call.
+    PerlRun perldoc corrected to lose warnings in pod2man.
+    Thanks to Jim Edwards for the super-fast reports and patches.
+  - PerlRun->lookup_widget() is a new method that accesses a window or a
+    form's widget by name. It prints an error if the widget does not exist.
+    e.g. my $widget = $window->lookup_widget('clist1');
+      OR my $form = $window->FORM; # or use $form in signal handlers
+         my $widget = $form->lookup_widget('clist1');
+  - Glade-Perl will now create skeleton documentation files if they
+    do not already exist. These default to files in directory 'Documentation'
+    called COPYING, Changelog, FAQ, INSTALL, NEWS, README, ROADMAP and TODO
+    If you don't want to generate the doc files add a line to site or project 
+    options file:
+      <doc><write>0</write></doc>
+  - Glade-Perl will now create skeleton distribution files if they
+    do not already exist. These default to files - Makefile.PL, MANIFEST.SKIP, 
+    Project.spec and test.pl - so you should be able to call:
+    'perl Makefile.PL; make manifest; make dist;' and then either
+    'rpm -ta Project-0.01.tar.gz' to build a RPM or the normal perl methods
+    of 'make test' and 'make install'. This is all at a very early stage and 
+    will probably fail in many cases but you should, at least, have some 
+    files to edit :)
+    If you don't want to generate the dist files add a line to site or project
+    options file:
+      <dist><write>0</write></dist>
+    
+Fri Apr 13 01:01:22 BST 2001 Dermot Musgrove <dermot.musgrove at virgin.net>
   - Version 0.58
   - Mimimum requirements increased to Gtk-Perl-0.7000 and gnome-libs-1.2.0
     These have been around for a year or more now and fix many problems.
@@ -57,7 +86,7 @@ Fri Apr 13 01:01:22 BST 2001 - Dermot Musgrove <dermot.musgrove at virgin.net>
     PerlProject->use_Glade_Project() now escapes double quotes in author.
     Thanks for bug reports for the above reports to Joe "Markus" Clark.
     
-Fri Oct 20 01:19:45 BST 2000 - Dermot Musgrove <dermot.musgrove at virgin.net>
+Fri Oct 20 01:19:45 BST 2000 Dermot Musgrove <dermot.musgrove at virgin.net>
   - Version 0.57
   - PerlUIGtk->new_GtkPixmap() fixed to use project logo as default rather
     than crash in flames if no pixmap is specified.
@@ -93,11 +122,11 @@ Fri Oct 20 01:19:45 BST 2000 - Dermot Musgrove <dermot.musgrove at virgin.net>
     test example to see how this works.
   - test.pl extended to test both the split base classes and the subclass.
   
-Wed Apr 19 02:28:58 BST 2000 - Dermot Musgrove <dermot.musgrove at virgin.net>
+Wed Apr 19 02:28:58 BST 2000 Dermot Musgrove <dermot.musgrove at virgin.net>
   - Version 0.56 - embarassment release
   - Makefile.PL unchanged so that it will install all the modules correctly.
   
-Wed Apr 19 02:28:58 BST 2000 - Dermot Musgrove <dermot.musgrove at virgin.net>
+Wed Apr 19 02:28:58 BST 2000 Dermot Musgrove <dermot.musgrove at virgin.net>
   - Version 0.55
   - New FAQ about building Unicode::String for perl 5.6
   - PerlXML->Proto_from_XML_Parser_Tree() changed to cancel the use of 
@@ -107,7 +136,7 @@ Wed Apr 19 02:28:58 BST 2000 - Dermot Musgrove <dermot.musgrove at virgin.net>
     tutorial http://personal.riverusers.com/~swilhelm/perlgtk/tutorial/
     now pushed as the best starting point for learning Gtk-Perl.
   
-Sun Apr 16 00:07:26 BST 2000 - Dermot Musgrove <dermot.musgrove at virgin.net>
+Sun Apr 16 00:07:26 BST 2000 Dermot Musgrove <dermot.musgrove at virgin.net>
   - Version 0.54
   - PerlUI->new_from_child_name() fixed to use gnome_app_docked_item() and
     not construct our own widgets and containers (Damon's ideas)
@@ -126,7 +155,7 @@ Sun Apr 16 00:07:26 BST 2000 - Dermot Musgrove <dermot.musgrove at virgin.net>
   - Documentation - all email addresses in online documentation are now 
     mangled to reduce spam for those kind enough to send bug reports/patches.
     
-Tue Apr 11 15:45:29 BST 2000 - Dermot Musgrove <dermot.musgrove at virgin.net>
+Tue Apr 11 15:45:29 BST 2000 Dermot Musgrove <dermot.musgrove at virgin.net>
   - Version 0.53
   - New FAQ about character encodings.
   - PerlProject two new user options to handle character encodings.
@@ -155,7 +184,7 @@ Tue Apr 11 15:45:29 BST 2000 - Dermot Musgrove <dermot.musgrove at virgin.net>
   - PerlGenerate documentation - perldoc (and manpage) corrected and 
     improved to include all user options.
   
-Fri Mar 31 16:44:38 BST 2000 - Dermot Musgrove <dermot.musgrove at virgin.net>
+Fri Mar 31 16:44:38 BST 2000 Dermot Musgrove <dermot.musgrove at virgin.net>
   - Version 0.52
   - PerlSource->check_gettext_strings() and write_gettext_strings() are
     two new subs to help you spot missing translations and write a .pot file
@@ -185,7 +214,7 @@ Fri Mar 31 16:44:38 BST 2000 - Dermot Musgrove <dermot.musgrove at virgin.net>
     specific widget properties are encountered (they are currently ignored).
     Thanks to Robert Schwebel <robert at schwebel.de> for the report.
     
-Thu Mar  2 04:30:08 GMT 2000 - Dermot Musgrove <dermot.musgrove at virgin.net>
+Thu Mar  2 04:30:08 GMT 2000 Dermot Musgrove <dermot.musgrove at virgin.net>
   - Version 0.51
   - PerlUI testing source comments removed from generated code
   - PerlRun->create_image() pixmaps made relative to usual global.
@@ -213,7 +242,7 @@ Thu Mar  2 04:30:08 GMT 2000 - Dermot Musgrove <dermot.musgrove at virgin.net>
     All defaults are $ENV{'LANG'} but diagnostics and source languages can 
     be overridden in the site, user or Project.glade2perl.xml options files
     
-Thu Feb 24 22:57:47 GMT 2000 - Dermot Musgrove <dermot.musgrove at virgin.net>
+Thu Feb 24 22:57:47 GMT 2000 Dermot Musgrove <dermot.musgrove at virgin.net>
   - Version 0.50 embarassment release
   - PerlUiExtra->new_GtkPixMeneuItem() fixes to string quoting
   

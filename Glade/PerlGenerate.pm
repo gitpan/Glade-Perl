@@ -40,6 +40,10 @@ BEGIN {
                         );
 }
 
+sub DESTROY {
+    # This sub will be called on object destruction
+} # End of sub DESTROY
+
 #===============================================================================
 #==== Documentation ============================================================
 #===============================================================================
@@ -427,8 +431,8 @@ sub Form_from_Proto {
                     $module.$proto->module->subapp->class.
                     "; Sub".$Glade_Perl->test->first_form."->app_run'");
         }
-#        $class->write_Documentation($proto, $proto->glade->proto);
-#        $class->write_dist($proto, $proto->glade->proto);
+        $Glade_Perl->write_documentation;
+        $Glade_Perl->write_distribution;
     }
     # Look through $proto and report any unused attributes (still defined)
     if ($Glade_Perl->diagnostics(2)) {

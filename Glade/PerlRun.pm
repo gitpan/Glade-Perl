@@ -56,9 +56,9 @@ BEGIN {
                         );
 
     $PACKAGE      = __PACKAGE__;
-    $VERSION      = q(0.58);
+    $VERSION      = q(0.59);
     $AUTHOR       = q(Dermot Musgrove <dermot.musgrove\@virgin.net>);
-    $DATE         = q(Tue Jun 12 12:39:37 BST 2001);
+    $DATE         = q(Wed Jun 20 14:48:25 BST 2001);
     $widgets      = {};
     $all_forms    = {};
     $convert      = {};
@@ -185,6 +185,10 @@ join(" ",
     'test'
 )." ";
 
+sub DESTROY {
+    # This sub will be called on object destruction
+} # End of sub DESTROY
+
 =pod
 
 =head1 NAME
@@ -287,11 +291,53 @@ e.g. my $glade_filename = $Object->glade->file;
       __PACKAGE__, 
       'pixmaps/Logo.xpm');
     
-  } else {
+  } elsif ($name ne 'DESTROY'){
     die "Can't access method `$name' in class $class\n",
         "We were called from ",join(", ", caller),"\n\n";
 
   }
+}
+
+sub lookup_widget {
+
+=item lookup_widget()
+
+Accesses a window or a form's widget by name
+
+e.g. my $widget = $window->lookup_widget('clist1');
+
+  OR my $form = $window->FORM; # or use $form in signal handlers
+     my $widget = $form->lookup_widget('clist1');
+
+=cut
+
+    my $self = shift;
+    my $name = shift;
+    my $hash = {};
+    
+    my $class = ref($self)
+        or die "$self is not an object so we cannot lookup_widget '$name'\n",
+            "We were called from ".join(", ", caller),"\n\n";
+    
+    if (exists $self->{$permitted_fields}->{FORM}) {
+        $hash = $self->FORM;
+
+    } elsif (exists $self->{TOPLEVEL}) {
+        $hash = $self;
+        
+    } else {
+        print "$self is not a window or form object so we cannot lookup_widget '$name'\n",
+            "We were called from ".join(", ", caller),"\n\n";
+    }
+
+    if (exists $hash->{$name} ) {
+        return $hash->{$name};
+
+    } else {
+        print "There is no widget `$name' in class $class\n",
+            "We were called from ",join(", ", caller),"\n\n";
+        return undef;
+    }
 }
 
 #===============================================================================
@@ -1625,6 +1671,7 @@ e.g. my $pixmap = Glade::PerlRun->create_pixmap(
     $form, 'new.xpm', ['dir1', 'dir2']);
 
 =cut
+
     my ($work, $gdk_pixmap, $gdk_mask, $testfile, $found_filename, $dir);
     # First look in specified $pixmap_dirs
     if (-f $filename) {
@@ -1686,6 +1733,7 @@ e.g. my $image = Glade::PerlRun->create_image(
     'new.xpm', ['dir1', 'dir2']);
 
 =cut
+
     my ($work, $testfile, $found_filename, $dir);
     if (-f $filename) {
         $found_filename = $testfile;
