@@ -26,7 +26,7 @@ BEGIN {
                             $PACKAGE 
                           );
     $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.48);
+    $VERSION        = q(0.49);
     # Tell interpreter who we are inheriting from
     @ISA            = qw(
                             Glade::PerlProject
@@ -76,7 +76,7 @@ sub Form_from_Glade_File {
     $glade2perl->{'name'} = $glade_proto->{'project'}{'name'};
 #    $glade2perl->glade_proto($glade_proto->{'project'});
     $current_form && eval "$current_form = {};";
-    my $window = $class->Form_from_Pad_Proto(
+    my $window = $class->Form_from_Proto(
         $glade2perl, \%params );
 #    $class->diag_print(2, $glade2perl);
     return $window;
@@ -138,7 +138,7 @@ sub Form_from_XML_Stream {
     return $window;
 }
 
-sub Form_from_Pad_Proto {
+sub Form_from_Proto {
     my ($class, $proto, $params) = @_;
     my $me = "$class->Form_from_Pad_Proto";
     my $depth = 0;
@@ -177,14 +177,11 @@ sub Form_from_Pad_Proto {
     }
 
     # Recursively generate the UI
+    my $app = "\$forms->{'test'}{'__HIERARCHY'}";
     my $window = $class->Widget_from_Proto( $glade_proto->{'name'}, 
-        $glade_proto, $depth, 'Top Level Application' );
-
-    # And show it if necessary
-    unless ($class->Writing_Source_only) { 
-        $forms->{$first_form}{$first_form}->show;
-    }
-
+        $glade_proto, $depth, $app );
+#    eval "\$window->{'__HIERARCHY'} = $app";
+#$class->diag_print($window);
     # Now write the disk files
     if ($class->Writing_to_File) {
         $module = $glade_proto->{'project'}{'source_directory'};
@@ -194,6 +191,7 @@ sub Form_from_Pad_Proto {
             # Write source that will use libglade to show the UI
             $class->diag_print (2, "$indent  Generating libglade type code");
             $class->write_LIBGLADE($proto, $glade_proto);
+            $options->dont_show_UI(1);
             $class->diag_print (2, 
                 "$indent- One way to run the generated source from dir '$glade2perl->{'directory'}/':\n".
                 "${indent}${indent}${indent}perl -e 'use $module".
@@ -212,7 +210,7 @@ sub Form_from_Pad_Proto {
                 "${indent}- Some of the ways to run the generated source:");
             $class->diag_print (2, 
                 "${indent}  ${indent}Change directory to ".
-                "'$glade2perl->{'directory'} and then enter one of :");
+                "'$glade2perl->{'directory'}/' and then enter one of :");
 #            $class->diag_print (2, 
 #                "${indent}- ${indent}perl -e 'use $module".
 #                    "$proto->{'UI_class'}; ".
@@ -221,10 +219,6 @@ sub Form_from_Pad_Proto {
 #                "${indent}- ${indent}perl -e 'use $module".
 #                    "$proto->{'SIGS_class'}; ".
 #                    "${first_form}->run'");
-#            $class->diag_print (2, 
-#                "${indent}- ${indent}perl -e 'use $module".
-#                    "$proto->{'SUBCLASS_class'}; ".
-#                    "Sub${first_form}->run'");
             $class->diag_print (2, 
                 "${indent}  ${indent}perl -e 'use $module".
                     "$proto->{'APP_class'}; ".
@@ -258,7 +252,11 @@ sub Form_from_Pad_Proto {
         "-----------------------------------------------------------------------------");
     $class->diag_print (2, 
         "-----------------------------------------------------------------------------");
-    unless ($class->Writing_Source_only) { Gtk->main; }
+    # And show it if necessary
+    unless ($class->Writing_Source_only) { 
+        $forms->{$first_form}{$first_form}->show;
+        Gtk->main; 
+    }
 #use Data::Dumper; print Dumper($Gnome::PerlUIExtra::enums);
     return $proto;
 }

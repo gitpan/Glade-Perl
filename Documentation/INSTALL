@@ -27,48 +27,16 @@ TO RUN MANUALLY
 ---------------
 You need Perl, Glib/Gtk+, Gtk-Perl and XML::Parser packages and of course
 Glade if you want to edit the interface files.
-------------------------------------------------------------------------
 
-A) To Build the supplied example, call (from the same directory as 
-this README file) This should do the same as make test did
+    glade2perl Project1.glade
+    
+    perl -e 'use src::Project1; window1->run'
+OR  perl -e 'use src::SubProject1; Subwindow1->run'
 
-    perl -w test.pl  
-	
-and when the form shows, try clicking some menu items. They will 
-all show a simple message_box and to exit you can click the 
-'Quit Program' button or click 'File/Quit'. Perl sometimes core-dumps when I 
-close the window from the windowmanager but that must be my problem/mistake. 
+(Obviously change the project name and window name to whatever you defined
+in your Glade project)
 
-'File/Open' or Ctrl-O will show a file selection dialog which does nothing
-but prove that the class can be used.
-
-All the Help menu buttons have Existing_SUBS and will show an information 
-message_box but the other buttons will show the AUTOLOAD()ed message_box 
-since the signal-handlers will not exist. 
-The 'Help/About' button will show details of Glade::PerlGenerate.
-
--------------------------------------------------------------------------
-
-B) To run the code that you have generated, call (again from the 
-same directory as this README file)
-
-    perl -e 'use Generated::BusForm; BusFrame->run'
-
-Now, _all_ signals will cause an information message_box since you
-have generated stubs for any signal handlers that were missing at Build time.
-The 'Help/About' button will now show details of the generated App.
-
-Obviously, change the use() command above to whatever the details were in
-your project file ie. 
-
-'use <project><source_directory>::<project><name>; form_name->run'
-
-If you want just to view the interface, without writing the source files
-edit file test.pl and comment out the 'write_source' option. This 
-will block the source code generation.
--------------------------------------------------------------------------
-
-C) To build a UI from an XML string. Look at the file test.pl for an
-example of doing this. Use a call to Glade::PerlGenerate->Form_from_XML to 
+To build a UI from an XML string. Look at the file $DIST_DIR/test.pl for an
+example of doing this using a call to Glade::PerlGenerate->Form_from_XML to 
 show a Glade UI.
 

@@ -17,9 +17,9 @@ require 5.000; use strict 'vars', 'refs', 'subs';
 # author, who can be contacted at dermot.musgrove@virgin.net
 
 BEGIN {
-    use Carp qw(cluck);
-    $SIG{__DIE__}  = \&Carp::confess;
-    $SIG{__WARN__} = \&Carp::cluck;
+#    use Carp qw(cluck);
+#    $SIG{__DIE__}  = \&Carp::confess;
+#    $SIG{__WARN__} = \&Carp::cluck;
     use File::Path     qw( mkpath );        # in use_Glade_Project
     use File::Basename qw( dirname );       # in use_Glade_Project
     use Cwd            qw( chdir cwd );     # in use_Glade_Project
@@ -34,7 +34,7 @@ BEGIN {
                             $VERSION
                        );
     $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.48);
+    $VERSION        = q(0.49);
     # Tell interpreter who we are inheriting from
     @ISA            = qw( 
                             Glade::PerlXML 
@@ -48,6 +48,7 @@ my %fields = (
     # eg $class->UI($new_value);        sets the value of UI
     #    $current_value = $class->UI;   gets the current value of UI
 # Project
+#--------
     'author'            => undef,   # Name to appear in generated source
     'version'           => '0.01',  # Version to appear in generated source
     'date'              => undef,   # Date to appear in generated source
@@ -60,7 +61,9 @@ my %fields = (
     'project_options'   => undef,   # Don't read or save options in disk file
 #    'options_filename'  => undef,   # Don't read or save options in disk file
     'options_set'       => 'DEFAULT', # Who set the options
+
 # UI
+#---
     'glade_proto'       => undef,
     'pixmaps_directory' => undef,
     'logo'              => 'Logo.xpm', # Use specified logo
@@ -68,16 +71,24 @@ my %fields = (
 #    'logo'              => undef,   # No defined project logo
 
 # Source code
+#------------
     'indent'            => '    ',  # Source code indent per Gtk 'nesting'
     'tabwidth'          => 8,       # Replace each 8 spaces with a tab in sources
     'write_source'      => undef,   # Don't write source code
     'dont_show_UI'      => undef,   # Show UI and wait
-    'style'             => undef,   # Generate code using OO AUTOLOAD code
+    'hierarchy'         => '',      # Don't generate any hierarchy
+                                    # 'widget...' 
+                                    #   eg $hier->{'vbox2'}{'table1'}...
+                                    # 'class...' startswith 'class'
+                                    #   eg $hier->{'{'GtkVBox'}{'vbox2'}{'GtkTable'}{'table1'}...
+                                    # 'both...'  widget and class
+    'style'             => 'AUTOLOAD', # Generate code using OO AUTOLOAD code
                                     # 'Libglade' generate libglade code
                                     # 'closures' generate code using closures
-                                    # 'AUTOLOAD' generate OO AUTOLOAD code
                                     # 'Export'   generate non-OO code
+
 # Diagnostics
+#------------
     'verbose'           => 2,       # Show errors and main diagnostics
     'diag_wrap'         => 0,       # Max diagnostic line length (approx)
     'diag_file'         => undef,   # Diagnostics log file name
@@ -86,13 +97,16 @@ my %fields = (
     'log_file'          => undef,   # Write diagnostics to STDOUT 
                                     # or Filename to write diagnostics to
 #    'debug'             => 'True',  # For my testing and debugging.
+
 # Distribution
+#--------------
     'dist_type'         => undef,   # Type of distribution
     'dist_compress'     => undef,   # How to compress the distribution
     'dist_scripts'      => undef,   # Scripts that should be installed
     'dist_docs'         => undef,   # Documentation that should be included
 
 # Helpers
+#--------
     'editors'           => undef,   # Editor calls that are available
     'active_editor'     => undef,   # Index of editor that we are using
     'my_perl_gtk'       => undef,   # Get the version number from Gtk-Perl
@@ -435,7 +449,12 @@ sub use_Glade_Project {
     # Glade assumes that all directories are named relative to the Glade 
     # project (.glade) file (not <directory>) !
     my $glade_file_dirname = dirname($glade2perl->{'glade_filename'});
-#print "Using glade_file_dirname of '$glade_file_dirname'\n";
+    # Replace any spaces with underlines
+    my $replaced = $glade_proto ->{'project'}{'name'} =~ s/[ -\.]//g;
+    if ($replaced) {
+        $class->diag_print(2, "$indent- $replaced Space(s), minus(es) or dot(s) ".
+            "removed from project name - it is now '$glade_proto->{'project'}{'name'}'");
+    }
     $form->{'name'}  = $glade_proto->{'project'}{'name'};
     $form->{'directory'} = $class->full_Path(
         $glade_proto->{'project'}{'directory'}, 
@@ -538,7 +557,7 @@ sub use_Glade_Project {
     }
     # If allow_gnome is not specified, use glade project <gnome_support> property
     unless (defined $options->{'allow_gnome'}) {
-# FIXME This might have to be changed for Glade-0.5.6 to default to True
+# FIXME This might have to be changed for Glade >= 0.5.8 to default to True
         $options->{'allow_gnome'} = 
             ('*true*y*yes*on*1*' =~ m/\*$gnome_support\*/i) ? '1' : '0';
         if ($options->project_options) {

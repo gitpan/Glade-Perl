@@ -26,7 +26,7 @@ BEGIN {
                             $enums
                           );
     $PACKAGE =          __PACKAGE__;
-    $VERSION            = q(0.48);
+    $VERSION            = q(0.49);
     # These cannot be looked up in the include files
     $enums =      {
         'GNOME_ANIMATOR_LOOP_NONE'      => 'none',
@@ -119,7 +119,7 @@ sub lookup {
 sub new_GnomeAbout {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeAbout";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
     my $title     = $class->use_par($proto, 'title',     $DEFAULT, $glade2perl->{'name'} );
     my $version   = $class->use_par($proto, 'version',   $DEFAULT, $glade2perl->{'version'} );
     my $logo      = $class->use_par($proto, 'logo',      $DEFAULT, $glade2perl->{'logo'} );
@@ -130,6 +130,7 @@ sub new_GnomeAbout {
             $logo, 
             $glade2perl->{'pixmaps_directory'}, 
             '' );
+#    $class->escape_text($title);
     $class->add_to_UI( $depth, "\$widgets->{'$name'} = new Gnome::About(".
         "'$title', '$version', '$copyright', '$authors', '$comments', '$logo');" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_title(".
@@ -142,7 +143,7 @@ sub new_GnomeAbout {
 sub new_GnomeAnimator {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeAnimator";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
     my $playback_direction = 
         $class->use_par($proto, 'playback_direction', $BOOL, 0 ) ? '-1' : '1';
     my $playback_speed = $class->use_par($proto, 'playback_speed', $DEFAULT, 1 );
@@ -164,11 +165,13 @@ sub new_GnomeAnimator {
 sub new_GnomeApp {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeApp";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
     my $appname   = $class->use_par($proto, 'title',  $DEFAULT,  $glade2perl->{'name'}  );
     my $title     = $class->use_par($proto, 'title',  $DEFAULT,  $glade2perl->{'name'}  );
     my $enable_layout_config = $class->use_par($proto, 'enable_layout_config',  $BOOL, 'True'  );
 
+#    $class->escape_text($appname);
+#    $class->escape_text($title);
     $class->add_to_UI( $depth, "\$widgets->{'$name'} = new Gnome::App(".
         "'$appname', '$title');" );
     if ($class->my_perl_gtk_can_do('gnome_app_enable_layout_config')) {
@@ -183,7 +186,7 @@ sub new_GnomeApp {
 sub new_GnomeAppBar {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeAppBar";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
     my $has_progress  = $class->use_par($proto, 'has_progress',  $BOOL, 'True'  );
     my $has_status    = $class->use_par($proto, 'has_status',    $BOOL, 'True'  );
     my $interactivity = $class->use_par($proto, 'interactivity', $LOOKUP, 'user'  );
@@ -198,16 +201,16 @@ sub new_GnomeAppBar {
 sub new_GnomeCalculator {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeCalculator";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
 
     $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
-        "${current_form}\{'$parent'}->new_child('Gnome::Calculator');" );
+        "${current_form}\{$parent}->new_child('Gnome::Calculator');" );
 
 # FIXME move this to internal_pack_widget or somewhere more central 
 #   perhaps gnome_pack_widget
     $class->add_to_UI($depth, "\$widgets->{'$name'}->show;" );
     $class->add_to_UI( $depth, 
-        "${current_form}\{'$name'} = \$widgets->{'$name'};" );
+        "${current_form}\{$name} = \$widgets->{'$name'};" );
     # Delete the $widget to show that it has been packed
     delete $widgets->{$name};
 #    $class->pack_widget($parent, $name, $proto, $depth );
@@ -217,7 +220,7 @@ sub new_GnomeCalculator {
 sub new_GnomeCanvas {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeCanvas";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
     my $pixels_per_unit = $class->use_par($proto, 'pixels_per_unit', $DEFAULT, 1 );
     my $scroll_x1 = $class->use_par($proto, 'scroll_x1',$DEFAULT, 0 );
     my $scroll_y1 = $class->use_par($proto, 'scroll_y1',$DEFAULT, 0 );
@@ -244,11 +247,12 @@ sub new_GnomeCanvas {
 sub new_GnomeColorPicker {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeColorPicker";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
     my $dither    = $class->use_par($proto, 'dither',   $BOOL, 'True' );
     my $use_alpha = $class->use_par($proto, 'use_alpha',$BOOL, 'False' );
     my $title     = $class->use_par($proto, 'title'     );
 
+#    $class->escape_text($title);
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = ".
         "new Gnome::ColorPicker;" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_dither(".
@@ -265,7 +269,7 @@ sub new_GnomeColorPicker {
 sub new_GnomeDateEdit {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeDateEdit";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
     my $show_time     = $class->use_par($proto, 'show_time', $BOOL, 'True' );
     my $use_24_format = $class->use_par($proto, 'use_24_format', $BOOL, 'True' );
     my $week_start_monday = $class->use_par($proto, 'week_start_monday', $BOOL, 'False' );
@@ -284,11 +288,12 @@ sub new_GnomeDateEdit {
 sub new_GnomeDialog {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeDialog";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
     my $title         = $class->use_par($proto, 'title' );
     my $auto_close    = $class->use_par($proto, 'auto_close',    $BOOL, 'True' );
     my $hide_on_close = $class->use_par($proto, 'hide_on_close', $BOOL, 'True' );
 
+#    $class->escape_text($title);
     $class->add_to_UI( $depth, "\$widgets->{'$name'} = new Gnome::Dialog(".
         "'$title');" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->close_hides(".
@@ -303,7 +308,7 @@ sub new_GnomeDialog {
 sub new_GnomeDock {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeDock";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
     my $allow_floating = $class->use_par($proto, 'allow_floating', $BOOL, 'True' );
     my $child_name = $class->use_par($proto, 'child_name', $DEFAULT, 'True' );
 
@@ -323,7 +328,7 @@ sub new_GnomeDock {
 sub new_GnomeDockItem {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeDockItem";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
     my $shadow_type      = $class->use_par($proto, 'shadow_type',      $LOOKUP, 'out'  );
 
     my @options;
@@ -359,7 +364,7 @@ sub new_GnomeDockItem {
 sub new_GnomeDruid {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeDruid";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gnome::Druid;" );
 
@@ -371,19 +376,21 @@ sub new_GnomeDruidPageStart {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeDruidPageStart";
     my ($type, $value, $command, $color_string, $red, $blue, $green);
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
     my $title = $class->use_par($proto, 'title', $DEFAULT, '' );
     my $text  = $class->use_par($proto, 'text',  $DEFAULT, '' );
     my $logo_image = $class->use_par($proto, 'logo_image',  $DEFAULT, '' );
     my $watermark_image = $class->use_par($proto, 'watermark_image',  $DEFAULT, '' );
 
+#    $class->escape_text($text);
+#    $class->escape_text($title);
     $class->add_to_UI( $depth, "\$widgets->{'$name'} = new Gnome::DruidPageStart;" );
     foreach $type ('background', 'textbox', 'logo_background', 'title', 'text') {
         $value = $class->use_par($proto, "$type\_color",  $DEFAULT, '' );
         if ($value) {
            ($red, $green, $blue) = split(',', $value);
             $red   *= 257; $green *= 257; $blue  *= 257;
-            $color_string = "${current_form}\{'$parent'}->get_toplevel->".
+            $color_string = "${current_form}\{$parent}->get_toplevel->".
                 "get_colormap->color_alloc({red => $red, green => $green, blue => $blue})";
             $command = $type;
             $command =~ s/background/bg/;
@@ -408,11 +415,12 @@ sub new_GnomeDruidPageStandard {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeDruidPageStandard";
     my ($type, $value, $command, $color_string, $red, $blue, $green);
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
     my $title = $class->use_par($proto, 'title', $DEFAULT, '' );
     my $logo_image = $class->use_par($proto, 'logo_image',  $DEFAULT, '' );
     my $watermark_image = $class->use_par($proto, 'watermark_image',  $DEFAULT, '' );
 
+#    $class->escape_text($title);
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gnome::DruidPageStandard;" );
     foreach $type ('background', 'textbox', 'logo_background', 'title', 'text') {
         $value = $class->use_par($proto, "$type\_color",  $DEFAULT, '' );
@@ -421,7 +429,7 @@ sub new_GnomeDruidPageStandard {
             $red   *= 257; $green *= 257; $blue  *= 257;
             $command = $type;
             $command =~ s/background/bg/;
-            $color_string = "${current_form}\{'$parent'}->get_toplevel->".
+            $color_string = "${current_form}\{$parent}->get_toplevel->".
                 "get_colormap->color_alloc({red => $red, green => $green, blue => $blue})";
             $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_$command\_color(".
                 "$color_string);");
@@ -443,19 +451,21 @@ sub new_GnomeDruidPageFinish {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeDruidPageFinish";
     my ($type, $value, $command, $color_string, $red, $blue, $green);
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
     my $title = $class->use_par($proto, 'title', $DEFAULT, '' );
     my $text  = $class->use_par($proto, 'text',  $DEFAULT, '' );
     my $logo_image = $class->use_par($proto, 'logo_image',  $DEFAULT, '' );
     my $watermark_image = $class->use_par($proto, 'watermark_image',  $DEFAULT, '' );
 
+#    $class->escape_text($text);
+#    $class->escape_text($title);
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gnome::DruidPageFinish;" );
     foreach $type ('background', 'textbox', 'logo_background', 'title', 'text') {
         $value = $class->use_par($proto, "$type\_color",  $DEFAULT, '' );
         if ($value) {
            ($red, $green, $blue) = split(',', $value);
             $red   *= 257; $green *= 257; $blue  *= 257;
-            $color_string = "${current_form}\{'$parent'}->get_toplevel->".
+            $color_string = "${current_form}\{$parent}->get_toplevel->".
                 "get_colormap->color_alloc({red => $red, green => $green, blue => $blue})";
             $command = $type;
             $command =~ s/background/bg/;
@@ -479,7 +489,7 @@ sub new_GnomeDruidPageFinish {
 sub new_GnomeEntry {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeEntry";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
     my $max_saved = $class->use_par($proto, 'max_saved', $DEFAULT, 10 );
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gnome::Entry(".
@@ -492,13 +502,14 @@ sub new_GnomeEntry {
 sub new_GnomeFileEntry {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeFileEntry";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
     my $history_id = $class->use_par($proto, 'history_id',  $DEFAULT, '' );
     my $title      = $class->use_par($proto, 'title',       $DEFAULT, '' );
     my $max_saved  = $class->use_par($proto, 'max_saved',   $DEFAULT, 10 );
     my $directory  = $class->use_par($proto, 'directory',   $BOOL, 'False' );
     my $modal      = $class->use_par($proto, 'modal',       $BOOL, 'False' );
 
+#    $class->escape_text($title);
     if ($proto->{'child_name'}) {
         my $type =  $class->use_par($proto, 'child_name' ,$DEFAULT, '');
         if ($type eq 'GnomePixmapEntry:file-entry') {
@@ -526,7 +537,7 @@ sub new_GnomeFileEntry {
 sub new_GnomeFontPicker {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeFontPicker";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
     my $the_time  = localtime;
     my $title     = $class->use_par($proto, 'title'     );
     my $preview_text = $class->use_par($proto, 'preview_text',   $DEFAULT, 'The quick brown fox jumped over the lazy dog' );
@@ -535,6 +546,8 @@ sub new_GnomeFontPicker {
     my $use_font  = $class->use_par($proto, 'use_font',     $BOOL, 'False' );
     my $use_font_size  = $class->use_par($proto, 'use_font_size', $DEFAULT, 14);
 
+#    $class->escape_text($preview_text);
+#    $class->escape_text($title);
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = ".
         "new Gnome::FontPicker;" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_title(".
@@ -555,10 +568,11 @@ sub new_GnomeFontPicker {
 sub new_GnomeHRef {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeHRef";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
     my $url = $class->use_par($proto, 'url', $DEFAULT, '' );
     my $label = $class->use_par($proto, 'label', $DEFAULT, '' );
 
+#    $class->escape_text($label);
     $class->add_to_UI( $depth, "\$widgets->{'$name'} = new Gnome::HRef(".
         "'$url', '$label');" );
 
@@ -569,11 +583,12 @@ sub new_GnomeHRef {
 sub new_GnomeIconEntry {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeIconEntry";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
     my $history_id = $class->use_par($proto, 'history_id',  $DEFAULT, '' );
     my $title      = $class->use_par($proto, 'title',       $DEFAULT, '' );
     my $max_saved  = $class->use_par($proto, 'max_saved',   $DEFAULT, 10 );
 
+#    $class->escape_text($title);
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gnome::IconEntry(".
         "'$history_id', '$title');" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->gnome_entry->set_max_saved(".
@@ -586,7 +601,7 @@ sub new_GnomeIconEntry {
 sub new_GnomeIconList {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeIconList";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
     my $text_editable  = $class->use_par($proto, 'text_editable', $BOOL, 'False' );
     my $icon_width     = $class->use_par($proto, 'icon_width', $DEFAULT, 78);
     my $selection_mode = $class->use_par($proto, 'selection_mode', $LOOKUP, 'single' );
@@ -621,7 +636,7 @@ sub new_GnomeIconList {
 sub new_GnomeIconSelection {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeIconSelection";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
 
     $class->add_to_UI( $depth, "\$widgets->{'$name'} = new Gnome::IconSelection();" );
 
@@ -633,7 +648,7 @@ sub new_GnomeIconSelection {
 sub new_GnomeLess {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeLess";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
 
     $class->add_to_UI( $depth, "\$widgets->{'$name'} = new Gnome::Less;" );
 
@@ -644,7 +659,7 @@ sub new_GnomeLess {
 sub new_GnomeMessageBox {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeMessageBox";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
     my $type    = $class->use_par($proto, 'type',    $LOOKUP );
     my $message = $class->use_par($proto, 'message' );
     my $message_box_type = $class->use_par($proto, 'message_box_type', $LOOKUP );
@@ -665,11 +680,12 @@ sub new_GnomeMessageBox {
 sub new_GnomeNumberEntry {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeNumberEntry";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
     my $history_id = $class->use_par($proto, 'history_id',  $DEFAULT, '' );
     my $title      = $class->use_par($proto, 'title',       $DEFAULT, '' );
     my $max_saved  = $class->use_par($proto, 'max_saved',   $DEFAULT, 10 );
 
+#    $class->escape_text($title);
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gnome::NumberEntry(".
         "'$history_id', '$title');" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->gnome_entry->set_max_saved(".
@@ -682,7 +698,7 @@ sub new_GnomeNumberEntry {
 sub new_GnomePixmap {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomePixmap";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
     my $filename = $class->use_par($proto, 'filename',  $DEFAULT, '' );
     unless ($filename) {
         $class->diag_print(2, "warn  No pixmap file specified for GtkPixmap ".
@@ -712,12 +728,13 @@ sub new_GnomePixmap {
 sub new_GnomePixmapEntry {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomePixmapEntry";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
     my $history_id = $class->use_par($proto, 'history_id',  $DEFAULT, '' );
     my $title      = $class->use_par($proto, 'title',       $DEFAULT, '' );
     my $preview    = $class->use_par($proto, 'preview',     $BOOL,    'True' );
     my $max_saved  = $class->use_par($proto, 'max_saved',   $DEFAULT, 10 );
 
+#    $class->escape_text($title);
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gnome::PixmapEntry(".
         "'$history_id', '$title', $preview);" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->gnome_entry->set_max_saved(".
@@ -730,7 +747,7 @@ sub new_GnomePixmapEntry {
 sub new_GnomePaperSelector {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomePaperSelector";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gnome::PaperSelector;");
 
@@ -741,7 +758,7 @@ sub new_GnomePaperSelector {
 sub new_GnomePropertyBox {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomePropertyBox";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
 
     $class->add_to_UI( $depth, "\$widgets->{'$name'} = new Gnome::PropertyBox(".
         ");");
@@ -759,7 +776,7 @@ sub new_GnomePropertyBox {
 sub new_GnomeSpell {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeSpell";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gnome::Spell;");
 
@@ -770,7 +787,7 @@ sub new_GnomeSpell {
 sub new_GtkClock {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkClock";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
     my $type     = $class->use_par($proto, 'type',     $LOOKUP,  'realtime' );
     my $format   = $class->use_par($proto, 'format',   $DEFAULT, '%H:%M' );
     my $seconds  = $class->use_par($proto, 'seconds',  $DEFAULT, 0 );
@@ -793,7 +810,7 @@ sub new_GtkClock {
 sub new_GtkDial {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkDial";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
     my $view_only    = $class->use_par($proto, 'view_only',    $BOOL, 'False' );
     my $update_policy= $class->use_par($proto, 'update_policy',$LOOKUP, 'continuous' );
     my $value        = $class->use_par($proto, 'value',        $DEFAULT, 0 );
@@ -818,7 +835,7 @@ sub new_GtkDial {
 sub new_GtkPixmapMenuItem {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkPixmapMenuItem";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
     my $work;
     my $stock_item = uc($class->use_par($proto, 'stock_item', $DEFAULT, '' ));
     my $stock_icon = $class->use_par($proto, 'stock_icon', $LOOKUP, '' );
@@ -828,6 +845,7 @@ sub new_GtkPixmapMenuItem {
 # FIXME - decide how to mix accellabels and labels with visible accelerators
 # with menuitems. pixmapmenuitems and stock_icons
 # FIXME parse_uline
+#    $class->escape_text($label);
     if ($stock_item) {
         $stock_item =~ s/GNOMEUIINFO_MENU_(.*)_ITEM/$1/;
         $label = __PACKAGE__->lookup("GNOME_MENU_$stock_item\_STRING") unless $label;
@@ -875,7 +893,7 @@ sub new_GtkPixmapMenuItem {
 
         if ($accelerator_key || $ac_mods) {
 #print "Found accelerator_key of '$accelerator_key' and ac_mods of '$ac_mods'\n\n";
-            $class->add_to_UI( $depth, "${current_form}\{'accelgroup'}->add(".
+            $class->add_to_UI( $depth, "${current_form}\{accelgroup}->add(".
                 "$accelerator_key, \['$ac_mods'\], $accel_flags, ".
                 "\$widgets->{'$name'}, 'activate');");
         }
@@ -910,19 +928,19 @@ sub new_GtkPixmapMenuItem {
                 $class->add_to_UI( $depth, "\$widgets->{'$name'}->right_justify;" );
             }
             # Underline accelerators - uuurrrggghhh
-            $class->add_to_UI( $depth, "\$widgets->{'$name-accel'} = ".
+            $class->add_to_UI( $depth, "\$widgets->{$name-accel} = ".
                 "new Gtk::AccelLabel( '$label' );" );
-            $class->add_to_UI( $depth, "\$widgets->{'$name-accel'}->show;");
+            $class->add_to_UI( $depth, "\$widgets->{$name-accel}->show;");
             $class->add_to_UI( $depth, "\$widgets->{'$name'}->add(".
-                "\$widgets->{'$name-accel'});" );
-#            $class->add_to_UI( $depth, "\$widgets->{'$name-accel'}->parse_uline;" );
-            $class->add_to_UI( $depth, "\$widgets->{'$name-accel'}->set_pattern(".
+                "\$widgets->{$name-accel});" );
+#            $class->add_to_UI( $depth, "\$widgets->{$name-accel}->parse_uline;" );
+            $class->add_to_UI( $depth, "\$widgets->{$name-accel}->set_pattern(".
                 "'$pattern');" );
-            $class->add_to_UI( $depth, "${current_form}\{'accelgroup'}->add(".
+            $class->add_to_UI( $depth, "${current_form}\{accelgroup}->add(".
                 ord(lc($accel_key)).", ['mod1_mask'], ['visible', 'locked'], ".
                 "\$widgets->{'$name'}, 'activate_item');");
-            $class->add_to_UI( $depth, "${current_form}\{'$name-accel'} = ".
-                "\$widgets->{'$name-accel'};" );
+            $class->add_to_UI( $depth, "${current_form}\{$name-accel} = ".
+                "\$widgets->{$name-accel};" );
             delete $widgets->{"$name-accel"};
 
         } else {

@@ -33,15 +33,18 @@ BEGIN {
                         $work
                         $data 
                         $forms 
+                        $pixmaps_directory
                       );
     # Tell interpreter who we are inheriting from
     @ISA          = qw( Exporter );
     $PACKAGE      = __PACKAGE__;
-    $VERSION      = q(0.48);
+    $VERSION      = q(0.49);
     $AUTHOR       = q(Dermot Musgrove <dermot.musgrove\@virgin.net>);
-    $DATE         = q(Mon Feb 14 18:45:48 GMT 2000);
+    $DATE         = q(Thu Feb 24 22:57:47 GMT 2000);
     $widgets      = {};
     $all_forms    = {};
+    $pixmaps_directory = "pixmaps";
+#print "\$pixmaps_directory is '$pixmaps_directory'\n";
     # These vars are imported by all Glade-Perl modules for consistency
     @VARS         = qw(  
                         $VERSION
@@ -172,33 +175,6 @@ sub full_Path {
     return $fullname;
 }
 
-sub create_image {
-    my ($class, $filename, $pixmap_dirs) = @_;
-    my $me = "$class->create_image";
-    my ($work, $testfile, $found_filename, $dir);
-    # First look in specified $pixmap_dirs
-    foreach $dir (@{$pixmap_dirs}) {
-        # Make up full path name and test
-        $testfile = $class->full_Path($filename, $dir);
-#        print STDERR "Looking for ImlibImage file '$testfile' in $me\n";
-    	if (-f $testfile) {
-            $found_filename = $testfile;
-            last;
-    	}
-    }
-    unless ($found_filename) {
-    	if (-f $filename) {
-            $found_filename = $filename;
-#            print STDERR "ImlibImage file '$testfile' exists in $me\n";
-    	} else {
-            print STDERR "error ImlibImage file '$filename' does not exist in $me\n";
-            return undef;
-    	}
-    }
-
-    return Gtk::Gdk::ImlibImage->load_image ($found_filename);
-}
-
 sub create_pixmap {
     my ($class, $widget, $filename, $pixmap_dirs) = @_;
     my $me = "$class->create_pixmap";
@@ -208,13 +184,18 @@ sub create_pixmap {
     #   [$project->{'pixmaps_directory'}])
     my ($work, $gdk_pixmap, $gdk_mask, $testfile, $found_filename, $dir);
     # First look in specified $pixmap_dirs
-    foreach $dir (@{$pixmap_dirs}) {
-        # Make up full path name and test
-        $testfile = $class->full_Path($filename, $dir);
-    	if (-f $testfile) {
-            $found_filename = $testfile;
-            last;
-    	}
+    if (-f $filename) {
+        $found_filename = $testfile;
+
+    } else {
+        foreach $dir (@{$pixmap_dirs}, $Glade::PerlRun::pixmaps_directory, cwd) {
+            # Make up full path name and test
+            $testfile = $class->full_Path($filename, $dir);
+        	if (-f $testfile) {
+                $found_filename = $testfile;
+                last;
+        	}
+        }
     }
     unless ($found_filename) {
     	if (-f $filename) {
@@ -231,6 +212,8 @@ sub create_pixmap {
         return new Gtk::Pixmap(
             Gtk::Gdk::Pixmap->colormap_create_from_xpm (
                 undef, $colormap, undef, $found_filename));
+#            Gtk::Gdk::Pixmap->colormap_create_from_xpm (
+#                undef, $colormap, undef, Glade::PerlGenerate->our_logo));
     } else {
         # We have an old Gtk-Perl so we need a realized window
         $work->{'window'} 	    = $widget->get_toplevel->window	 ;
@@ -242,6 +225,8 @@ sub create_pixmap {
         return new Gtk::Pixmap(
             Gtk::Gdk::Pixmap->create_from_xpm(
                 $work->{'window'}, $work->{'style'}, $found_filename ) );
+#            Gtk::Gdk::Pixmap->create_from_xpm_d(
+#                $work->{'window'}, $work->{'style'}, Glade::PerlGenerate->our_logo ) );
     }
 }
 
@@ -368,6 +353,33 @@ sub message_box_close {
     return $data;
 }
 
+sub create_image {
+    my ($class, $filename, $pixmap_dirs) = @_;
+    my $me = "$class->create_image";
+    my ($work, $testfile, $found_filename, $dir);
+    # First look in specified $pixmap_dirs
+    foreach $dir (@{$pixmap_dirs}) {
+        # Make up full path name and test
+        $testfile = $class->full_Path($filename, $dir);
+#        print STDERR "Looking for ImlibImage file '$testfile' in $me\n";
+    	if (-f $testfile) {
+            $found_filename = $testfile;
+            last;
+    	}
+    }
+    unless ($found_filename) {
+    	if (-f $filename) {
+            $found_filename = $filename;
+#            print STDERR "ImlibImage file '$testfile' exists in $me\n";
+    	} else {
+            print STDERR "error ImlibImage file '$filename' does not exist in $me\n";
+            return undef;
+    	}
+    }
+
+    return Gtk::Gdk::ImlibImage->load_image ($found_filename);
+}
+
 sub destroy_all_forms {
     my $class = shift;
     my $hashref = shift || $__PACKAGE__::all_forms;
@@ -393,7 +405,7 @@ sub missing_handler {
                     "a signal ($signal) was caused by widget ($widgetname).\n".
                     "When Perl::Generate writes the Perl source to a file \n".
                     "an AUTOLOADed signal handler sub called '$handler'\n".
-                    "will be specified in the UI class file. You can write a sub with\n".
+                    "will be specified in the ProjectSIGS class file. You can write a sub with\n".
                     "the same name in another module and it will automatically be called instead.\n" ;
     my $widget = $PACKAGE->message_box($message, 
         "Missing handler '$handler' called", ['Dismiss', 'Quit PerlGenerate'], 1, $pixmap);

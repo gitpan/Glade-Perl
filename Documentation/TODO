@@ -16,16 +16,24 @@ Glade-Perl - perl source code generator
 
 TODO
 ----
-*   Make better Examples/tests.
-    1) Simple 'getting started' project and subclass example with docs
-    2) UI from string (exists)
-    3) More complex Gtk UI with subclass and use_modules
-    4) Gnome App with example subclass
+*   Make better Examples/tests with docs.
+    1) Simple 'getting started' project, signal handlers and subclass
+    2) UI from string (exists already)
+    3) More complex Gtk UI with subclass and use_modules (exists already)
+    4) Gnome App with example signal handlers and subclass
+    5) Libglade project with signal handlers, use_modules and subclass
+    
+*   Generate extract and display subs to give examples of how to set and get
+    widget data. Perhaps not necessary.
 
 *   Cut out all checks and diagnostics if verbose == 0
 
+*   Clean all the debugging stuff out and tidy the code properly.
+
 *   Recombine into fewer .pm files, possibly fewer packages
 
+*   Possibly move UI subs to PerlGenerate
+    
 *   Make dist files eg Makefile.PL, MANIFEST, Changelog etc etc
 
 *   Internationalise every stage but particularly the source code generation
@@ -45,8 +53,7 @@ TODO
     ReferenceForm would be in file Generated/ReferenceForm.pm and fileselection1
     would be in Generated/fileselection1.pm. You could then use() and new()
     previously generated forms without having to write handlers and so on.
-    
-*   Possibly move UI subs to PerlGenerate
+    This is possible now by use()ing several generated UI files but inefficient
     
 *   Improve the documentation. Find a way to keep perl source, perldoc
     tooltips, help text, README, web page etc in step and up to date.
@@ -55,9 +62,6 @@ TODO
     Investigate (lib)Guide for all docs and trouble-shooting.
     
 *   Check all evals for proper exception handling.
-
-*   Generate extract and display subs to give examples of how to set and get
-    widget data. Perhaps not necessary.
 
 *   I use several 'eval's, one allows for dynamic construction
     of (unknown) widget types and another is only so that the 
@@ -90,25 +94,26 @@ TODO
     When it is stable I should comment out the most frequent and expensive 
     calls to Glade::PerlProject->diag_print() and ->use_par().
     
-*   Clean all the debugging stuff out and tidy the code properly.
-
 *   Make all my modules object-oriented and remove all the Exporter() stuff.
     
 *   Investigate using closures in generated code and allow user_option to
-    select the type of code generated.
+    select the type of code generated. User option 'style' is implemented for
+    AUTOLOAD and Libglade.
 
 *   Improve the Glade source code generation process - Make Glade::PerlHelper 
     UI to allow users more control of the whole shebang.
 
-*   Change 'single' quoted strings to "double" wherever someone might 
-    enter ' eg tooltips, labels, items, text etc. Perhaps decide at run-time so
-    that q(), '', "" etc will always work.
-
 *   Do not generate run() or destroy_Form() subs for the classes, they only
-    cloud the issue and cause problems with multiple Gtk->main() calls
+    cloud the issue and run() causes problems with multiple Gtk->main() calls
+    and destroy_Form calls Gtk->main_quit which usually kills the app.
 
 DONE
 ----
+*   Change 'single' quoted strings to "double" wherever someone might 
+    enter ' eg tooltips, labels, items, text etc. Perhaps decide at run-time so
+    that q(), '', "" etc will always work. This was done by backslash escaping
+    any single quotes (apostrophes) returned by use_par().
+
 *   Check that we are not going to overwrite the existing modules
     file or find way to insert existing subs into any existing SUBS file
 
@@ -180,5 +185,5 @@ LONG TERM
 
 BUGS
 ----
-The biggest deficiencies are with menu/toolbar underline accelerators
+The biggest deficiencies are with menu/toolbar underline accelerators for labels
 and GNOMEUIINFO stuff in Gnome::Apps.

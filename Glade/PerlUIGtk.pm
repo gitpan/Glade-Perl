@@ -26,19 +26,21 @@ BEGIN {
                             @EXPORT @EXPORT_OK %EXPORT_TAGS 
                             $CList_column
                             $CTree_column
+                            $nb
                             @Notebook_panes
                             $Notebook_pane
                             $Notebook_tab
                             $enums
                           );
     $PACKAGE =          __PACKAGE__;
-    $VERSION        = q(0.48);
+    $VERSION        = q(0.49);
     @VARS           = qw( 
                             $VERSION
                             $AUTHOR
                             $DATE
                             $CList_column
                             $CTree_column
+                            $nb
                             @Notebook_panes
                             $Notebook_pane
                             $Notebook_tab
@@ -88,12 +90,8 @@ sub lookup {
             last if $lookup =~ s/^${type}_//; # finish early
         }
         $lookup = lc($lookup);
-#print "Lookup is '$lookup'\n";
         # Cache this enum for later use
         $enums->{$self} = $lookup;
-#        $class->diag_print(2, $Glade::PerlUIExtra::gnome_enums);
-#        $class->diag_print(6, "$indent- I have converted '$key' from '".
-#            "$lookup' to '$self' (GNOME GREP) in $me");
     }
     return $lookup;
 }
@@ -104,7 +102,7 @@ sub lookup {
 sub new_GtkAccelGroup {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkAccelGroup";
-    my $name = $proto->{'name'};
+    my $name = $proto->{name};
 
     $class->add_to_UI( $depth, "\$widgets->{'$name'} = new Gtk::AccelGroup;" );
 
@@ -121,6 +119,7 @@ sub new_GtkAccelLabel {
     my $wrap    = $class->use_par($proto, 'wrap', $BOOL, 'False' );
     my $pattern = $label;
 
+#    $class->escape_text($label);
     # The line below replaces Gtk+ function gtk_label_parse_uline
     $label =~ s/_(.)/$1/;
     $class->add_to_UI( $depth, "\$widgets->{'$name'} = new Gtk::AccelLabel(".
@@ -137,8 +136,8 @@ sub new_GtkAccelLabel {
 # Should we use set_accel_widget? Probably I guess but how?
 # How should we check that this is all correct?
 # Look at gnome-libs gnome-libs/libgnomeui/gnome-app-helper.c
-#        if (eval "${current_form}\{'$parent'}->can('button_press_event')") {
-#            $class->add_to_UI( $depth, "${current_form}\{'accelgroup'}->add(".
+#        if (eval "${current_form}\{$parent}->can('button_press_event')") {
+#            $class->add_to_UI( $depth, "${current_form}\{accelgroup}->add(".
 #                "'".ord(lc($accel_key))."', ['mod1_mask'], ['visible', 'locked'], ".
 #                "$current_form\{'$parent'}, 'button_press_event');");
 #        } else {
@@ -146,13 +145,13 @@ sub new_GtkAccelLabel {
 #                " that can not emit a 'button_press_event'".
 #                " so accelerator NOT added in $me");
 #        }
-#        $class->add_to_UI( $depth, "${current_form}\{'accelgroup'}->add(".
+#        $class->add_to_UI( $depth, "${current_form}\{accelgroup}->add(".
 #            "'".ord(lc($accel_key))."', ['mod1_mask'], ['visible', 'locked'], ".
 #            "\$widgets->{'$name'}, 'activate');");
     }
 #use Data::Dumper; print Dumper($proto);
 #    $class->add_to_UI( -$depth, "\$widgets->{'$name'}->set_accel_widget(".
-#        "$current_form\{'$proto->{'signal'}{'object'}'});" );
+#        "$current_form\{$proto->{'signal'}{'object'}});" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_justify(".
         "'$justify' );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_line_wrap($wrap );" );
@@ -174,7 +173,7 @@ sub new_GtkAdjustment {
     my $hpage    = $class->use_par($proto, 'hpage',        $DEFAULT,    0 );
     my $hpage_size = $class->use_par($proto, 'hpage_size', $DEFAULT,    0 );
 
-    $class->add_to_UI( $depth,  "\$widgets->{'$name-adj'} = new Gtk::Adjustment(".
+    $class->add_to_UI( $depth,  "\$widgets->{$name-adj} = new Gtk::Adjustment(".
                         "$hvalue, $hlower, $hupper, ".
                         "$hstep, $hpage, $hpage_size );" );
 
@@ -226,6 +225,7 @@ sub new_GtkAspectFrame {
     my $label_yalign = $class->use_par($proto, 'label_xalign', $DEFAULT,    0.5    );
     my $shadow_type  = $class->use_par($proto, 'shadow_type',  $LOOKUP,    'right' );
 
+#    $class->escape_text($label);
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::AspectFrame(".
         "'$label', $xalign, $yalign, $ratio, $obey_child );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_label_align(".
@@ -245,6 +245,7 @@ sub new_GtkButton {
 #   but can have a sub-widget. allow this
     unless ($class->new_from_child_name($parent, $name, $proto, $depth )) {
         my $label = $class->use_par($proto, 'label', $DEFAULT,  '' );
+#        $class->escape_text($label);
         my $stock_button = $class->use_par($proto, 'stock_button',  $LOOKUP, '');
         if ($label) {
 # FIXME This should probably be split into GnomeStock(Button) and GtkButton
@@ -329,6 +330,7 @@ sub new_GtkCheckButton {
     my $draw_indicator = $class->use_par($proto, 'draw_indicator', $BOOL, 'False' );
     my $active  = $class->use_par($proto, 'active', $BOOL,    'False' );
 
+#    $class->escape_text($label);
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::CheckButton(".
         "'$label' );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_mode($draw_indicator );" );
@@ -346,6 +348,7 @@ sub new_GtkCheckMenuItem {
     my $active = $class->use_par($proto, 'active', $BOOL,    'False' );
     my $always_show_toggle= $class->use_par($proto, 'always_show_toggle',    $BOOL,        'False' );
 
+#    $class->escape_text($label);
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new_with_label Gtk::CheckMenuItem('$label' );" );
     if ($class->use_par($proto, 'right_justify',        $BOOL,        'False'                )) {
         $class->add_to_UI( $depth, "\$widgets->{'$name'}->right_justify;" );
@@ -442,6 +445,7 @@ sub new_GtkColorSelectionDialog {
     my $title  = $class->use_par($proto,'title',  $DEFAULT, 'File Selection' );
     my $policy = $class->use_par($proto,'policy', $LOOKUP, );
     
+#    $class->escape_text($title);
     unless ($class->my_perl_gtk_can_do('gtk_colorselectiondialog_ok_button->child')) {
         $class->diag_print(1, "warn  We are generating code to construct a ".
             "Gtk::ColorSelectionDialog but if you have set the OK button's ".
@@ -520,6 +524,7 @@ sub new_GtkDialog {
     my $name = $proto->{'name'};
     my $title        = $class->use_par($proto, 'title',        $DEFAULT, 'UTIL' );
 
+#    $class->escape_text($title);
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::Dialog;" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_title('$title' );" );
 
@@ -546,6 +551,8 @@ sub new_GtkEntry {
     my $text_visible = $class->use_par($proto, 'text_visible',    $BOOL,    'True' );
     my $editable     = $class->use_par($proto, 'editable',        $BOOL,    'True' );
     my $max_length   = $class->use_par($proto, 'text_max_length', $DEFAULT, 0 );
+
+#    $class->escape_text($text);
     unless ($class->new_from_child_name($parent, $name, $proto, $depth )) {
         if ($max_length) {
             $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
@@ -582,6 +589,7 @@ sub new_GtkFileSelection {
     my $title = $class->use_par($proto,'title', $DEFAULT, 'File Selection' );
     my $show_file_op_buttons    = $class->use_par($proto,'show_file_op_buttons',    $BOOL,    'True' );
 
+#    $class->escape_text($title);
     $class->add_to_UI($depth, "\$widgets->{'$name'} = new Gtk::FileSelection('$title' );" );
     if ($show_file_op_buttons) {
         $class->add_to_UI( $depth, "\$widgets->{'$name'}->show_fileop_buttons;" );
@@ -618,6 +626,7 @@ sub new_GtkFontSelectionDialog {
     my $name = $proto->{'name'};
     my $title = $class->use_par($proto,'title', $DEFAULT, 'Font Selection' );
 
+#    $class->escape_text($title);
     $class->add_to_UI($depth, "\$widgets->{'$name'} = ".
         "new Gtk::FontSelectionDialog('$title' );" );
 
@@ -634,6 +643,7 @@ sub new_GtkFrame {
     my $label_xalign = $class->use_par($proto, 'label_xalign', $DEFAULT, 0 );
     my $label_yalign = $class->use_par($proto, 'label_yalign', $DEFAULT, 0 );
 
+#    $class->escape_text($label);
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::Frame('$label' );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_label_align(".
         "$label_xalign, $label_yalign );" );
@@ -866,6 +876,7 @@ sub new_GtkInputDialog {
     my $name = $proto->{'name'};
     my $title        = $class->use_par($proto, 'title',        $DEFAULT, 'UTIL' );
 
+#    $class->escape_text($title);
     $class->add_to_UI($depth, "\$widgets->{'$name'} = new Gtk::InputDialog;" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_title('$title' );" );
 
@@ -881,6 +892,7 @@ sub new_GtkLabel {
     my $justify = $class->use_par($proto, 'justify', $LOOKUP,  'center' );
     my $wrap    = $class->use_par($proto, 'wrap', $BOOL, 'False' );
 
+#    $class->escape_text($label);
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::Label(".
         "'$label' );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_justify('$justify' );" );
@@ -949,7 +961,7 @@ sub new_GtkMenuBar {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkMenuBar";
     my $name = $proto->{'name'};
-    my $shadow_type = $class->use_par($proto, 'shadow_type', $LOOKUP );
+    my $shadow_type = $class->use_par($proto, 'shadow_type', $LOOKUP, 'out' );
 
     $class->add_to_UI($depth, "\$widgets->{'$name'} = new Gtk::MenuBar;" );
     $shadow_type &&
@@ -993,6 +1005,7 @@ sub new_GtkMenuItem {
 #            "Gnome::Stock->menu_item('$stock_item', '$stock_item');" );
     } 
     if ($label) {
+#        $class->escape_text($label);
         my $pattern = $label;
         # The line below replaces Gtk+ function gtk_label_parse_uline
 # FIXME this only does uline for first char
@@ -1014,7 +1027,7 @@ sub new_GtkMenuItem {
 #            $class->add_to_UI( $depth, "\$widgets->{'$name-accel'}->parse_uline;" );
             $class->add_to_UI( $depth, "\$widgets->{'$name-accel'}->set_pattern(".
                 "'$pattern');", undef, 'NOTABS' );
-            $class->add_to_UI( $depth, "${current_form}\{'accelgroup'}->add(".
+            $class->add_to_UI( $depth, "${current_form}\{accelgroup}->add(".
                 ord(lc($accel_key)).", ['mod1_mask'], ['visible', 'locked'], ".
                 "\$widgets->{'$name'}, 'activate_item');");
             $class->add_to_UI( $depth, "${current_form}\{'$name-accel'} = ".
@@ -1062,6 +1075,7 @@ sub new_GtkNotebook {
         $class->add_to_UI( $depth,  "$current_form\{'$name'}->popup_enable;" );
     }
     # 'num_pages'
+    $nb->{$name} = {'panes' => [], 'pane' => 0, 'tab' => 0};
     @Notebook_panes = ();
     $Notebook_pane = 0;
     $Notebook_tab = 0;
@@ -1093,25 +1107,25 @@ sub new_GtkOptionMenu {
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::OptionMenu;" );
     $class->pack_widget($parent, $name, $proto, $depth );
 
-    $class->add_to_UI( $depth,  "\$widgets->{'$name-menu'} = new Gtk::Menu;" );
-    $class->pack_widget("$name", "$name-menu", $proto, $depth );
+    $class->add_to_UI( $depth,  "\$widgets->{'${name}_menu'} = new Gtk::Menu;" );
+    $class->pack_widget("$name", "${name}_menu", $proto, $depth );
     if (defined $items) {
         @items = split(/\n/, $items );
         foreach $item (@items) {
             if ($item) {
-#                $class->add_to_UI( $depth,  "\$widgets->{'$name-$item'} = ".
-                $class->add_to_UI( $depth,  "\$widgets->{'$name-item$count'} = ".
+#                $class->add_to_UI( $depth,  "\$widgets->{'${name}_$item'} = ".
+                $class->add_to_UI( $depth,  "\$widgets->{${name}_item$count} = ".
                     "new Gtk::MenuItem('$item' );" );
-                $class->pack_widget("$name-menu", "$name-item$count", $proto, $depth+1 );
+                $class->pack_widget("${name}_menu", "${name}_item$count", $proto, $depth+1 );
                 if ($count == $initial_choice) {
                     $class->add_to_UI( $depth, 
-                        "${current_form}\{'$name-item$count'}\->activate;" );
+                        "${current_form}\{${name}_item$count}\->activate;" );
                 }
                 $count++;
             }
         }
         $class->add_to_UI( $depth, 
-            "${current_form}\{'$name'}->set_history( $initial_choice );" );
+            "${current_form}\{$name}->set_history( $initial_choice );" );
     }
     return $widgets->{$name};
 }
@@ -1150,11 +1164,12 @@ sub new_GtkPixmap {
             "'$name' so we are using the project logo instead");
         $filename = $glade2perl->logo;
     }
-    $filename = $class->full_Path(
-        $filename, 
-        $glade2perl->pixmaps_directory );
-    $class->add_to_UI( $depth, "\$widgets->{'$name'} = \$class->create_pixmap(".
-        "$current_window, '$filename' );" );
+#    $filename = $class->full_Path(
+#        $filename, 
+#        $glade2perl->pixmaps_directory );
+    $filename = "${Glade::PerlRun::pixmaps_directory}/$filename";
+    $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
+        "\$class->create_pixmap($current_window, '$filename' );" );
     unless (defined $widgets->{$name}) { 
         die "\nerror $me failed to create pixmap from file '$filename' \n";
     }
@@ -1233,6 +1248,8 @@ sub new_GtkRadioButton {
     my $label  = $class->use_par($proto, 'label'    ,  $DEFAULT, '' );
     my $draw_indicator = $class->use_par($proto, 'draw_indicator', $BOOL, 'False' );
     my $active = $class->use_par($proto, 'active',     $BOOL,    'False' );
+
+#    $class->escape_text($label);
     unless ($class->new_from_child_name($parent, $name, $proto, $depth )) {
         my $group  = $class->use_par($proto, 'group'    ,  $DEFAULT, '' );
         my $rb_group = "$current_form\{'rb-group-$group'}";
@@ -1273,6 +1290,7 @@ sub new_GtkRadioMenuItem {
     my $group  = $class->use_par($proto, 'group',  $DEFAULT, '' );
     my $rmi_group = "$current_form\{'rmi-group-$group'}";
 
+#    $class->escape_text($label);
     if ($group) {
         if (eval "defined $rmi_group") {
             $class->add_to_UI( $depth,  "\$widgets->{'$name'} = ".
@@ -1415,6 +1433,7 @@ sub new_GtkText {
     my $name = $proto->{'name'};
     my $text      = $class->use_par($proto, 'text'    ,  $DEFAULT, '' );
     my $editable  = $class->use_par($proto, 'editable',  $BOOL,    'False' );
+#    $class->escape_text($text);
     $text =~ s/\n/\\n/g;
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::Text(".
         " undef, undef );" );
@@ -1447,6 +1466,7 @@ sub new_GtkToggleButton {
 
     unless ($class->new_from_child_name($parent, $name, $proto, $depth )) {
         my $label        = $class->use_par($proto, 'label'    ,    $DEFAULT, '' );
+#        $class->escape_text($label);
         $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::ToggleButton(".
             "'$label' );" );
         $class->pack_widget($parent, $name, $proto, $depth );
@@ -1689,6 +1709,7 @@ sub new_GtkWindow {
     my $name = $proto->{'name'};
     my $title        = $class->use_par($proto, 'title',        $DEFAULT, 'UTIL' );
 
+#    $class->escape_text($title);
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::Window;" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_title('$title' );" );
 

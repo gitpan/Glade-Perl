@@ -1,0 +1,106 @@
+<html>
+    <head>
+        <title>Where to get Gtk-Perl documentation</title>
+    </head>
+    <body bgcolor=#e7e7ff>
+<h1>Some notes on Gtk-Perl documentation</h1>
+
+    Firstly, make sure that you have the latest Gtk-Perl (or at least 
+    version 0.6123). Older versions have too many errors and omissions.
+
+<h2>HTML</h2>
+
+    Stephen Wilhelm <swilhelm@theriver.com> has finished 12 chapters 
+    (21 Feb 2000) of his
+    <a href="http://personal.riverusers.com/~swilhelm/perlgtk/tutorial/">
+    online tutorial</a>
+    for Gtk-Perl. It follows the Gtk+ style 
+    and has some very pretty syntax highlighting for the code examples :)
+
+    <p>
+    The Gtk-Perl maintainers have started to document the bindings and if you
+    build Gtk-Perl yourself docs should be produced then. Examples of what is
+    produced are the 
+    <a href="http://www.lettere.unipd.it/~lupus/perl-gtk-ref.html">
+            reference manual of modules and functions</a>, and 
+    <a href="http://www.lettere.unipd.it/~lupus/perl-gtk-ds.html">
+            some data structures and types</a>
+    (currently enumerations and flags).
+
+<h2>Gtk-Perl package documentation</h2>
+    <ul>
+    <li>
+    Pod versions of the same files are in the Gtk-Perl build/ directory after 
+    you have called 'perl Makefile.PL'. 
+    <br>You can turn them into cross referenced HTML files by calling:
+    <pre>
+      pod2html perl-gtk-ref.pod > perl-gtk-ref.html
+      pod2html perl-gtk-ds.pod  > perl-gtk-ds.html
+    </pre>
+
+    </li>
+    <li>
+    You may be able to learn something from the Gtk-Perl distribution .xs files
+    </li>
+    <li>
+    The file NOTES in Gtk-Perl also gives some programming guidelines and 
+    information about Gtk-Perl naming.
+    </li>
+    </ul>
+
+<h2>Distribution and source files</h2>
+    <ul>
+    <li>
+        <h3>Gtk documentation</h3>
+        Since Gtk-Perl mimics the toolkits so regularly, I use the
+        Gtk+ documentation gtk-docs-html-1.1.1 IIRC a tar.gz from 
+        the gtk+ download site
+        There is also a tutorial at www.gtk.org/pub/gtk/tutorial/
+        <p>
+        If you have the gtk+ sources, read the .[ch] files
+        <p>
+        All the source files are clearly named but the main confusion is likely
+        to come from the Gtk-Perl structure which is much more obviously object
+        oriented. For example, gtk_container_add is bound as Gtk::Container->add()
+        and this method is inherited by all containers. So, to add a widget to a
+        TreeItem that inherits as follows
+        <pre>
+         GtkObject
+             +----GtkWidget
+                   +----GtkContainer
+                         +----GtkBin
+                               +----GtkItem
+                                     +----GtkTreeItem
+        </pre>
+        you must get a ref $ti_ref to the TreeItem and then call $ti_ref->add()
+        rather than gtk_conatiner_add() as you would in C.
+    </li>
+    <h3> </h3>
+    <li>
+        <h3>Gnome documentation</h3>
+        Again, if you have the gnome sources, read the .[ch] files
+        <p>
+            /usr/doc/gnome-libs-devel-1.0.8/devel-docs/ in my gnome-libs-devel
+            rpm package or directory devel-docs/ in the CVS dir.
+    </li>
+    </ul>
+    
+<h2>Mailing lists</h2>
+
+    A new source of information about using the Gtk-Perl bindings and Gtk 
+    programming in general is the gtk-perl-list mailing list. You can 
+    <a href="mailto:gtk-perl-list-request@redhat.com?subject=subscribe">
+    subscribe</a>
+    by sending an email to gtk-perl-list-request@redhat.com with a subject of 
+    'subscribe' (without the quotes). Then follow the instructions that will be 
+    emailed to you to confirm the request.
+    <p>
+    The gtk-perl-list grew out of 
+    <a href="mailto:gtk-perl-list-request@redhat.com?subject=subscribe">
+    gtk-list@redhat.com</a> and there is still plenty to 
+    learn from that list too.
+
+    <p>
+    Please don't post long code examples or attachments and definitely no HTML :-) 
+    Also use a meaningful subject line, 'How do I add text to a List in Gtk-Perl' 
+    is much better than 'Help, I'm a newbie'

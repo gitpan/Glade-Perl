@@ -1,4 +1,4 @@
-package Example::BusForm_mySUBS;
+package Bus_mySUBS;
 require 5.000; use English; use strict 'vars', 'refs', 'subs';
 
 # Copyright (c) 1999 Dermot Musgrove <dermot.musgrove@virgin.net>

@@ -1,4 +1,35 @@
 Revision history for Perl module Glade::PerlGenerate development branch.
+Thu Feb 24 22:57:47 GMT 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
+  - Version 0.49
+  - PerlSource - some more diagnosticas and write_LIBGLADE() improved
+  - PerlRun->create_pixmap() changed to look relative to current dir
+  - PerlRun::pixmaps_directory new global to hold pixmaps directory for all
+    references to pixmaps. Set this once in your app to relocate modules.
+  - Example application updated, simplified and made clearer.
+  - PerlUI->use_par() all apostrophes in returned text now backslash escaped.
+  - PerlRun->missing_handler() message corrected.
+  - PerlUI->internal_pack_widget() and PerlGtk->new_GtkNotebook() amended to
+    use a work structure rather than a single set of variables to keep track
+    of notebook pages/tabs so that a notebook can be constructed on another 
+    notebook's page. Thanks to Frank de Lange for finding this bug.
+  - PerlUI->Widget_from_Proto() amended to construct hierarchical hashes of
+    hashes to reference the widgets by form structure.
+  - glade2perl regexp fixed to handle 'funny' project file names
+  - PerlProject->use_Glade_Project() spaces, minuses and dots removed from 
+    project name so that we end up with valid package names
+  - PerlUIGtk->new_GtkMenubar() shadow_type new default 'out' (Glade-0.5.6)
+  - Documentation/Gtk-Perl-Docs.html new file updated with details of of the 
+    new gtk-perl-list@redhat.com and converted from .txt to HTML file.
+  - Some changes to improve the LIBGLADE module code generation
+  - PerlUI->new_signal() fixed to check for LIBGLADE type use_modules
+  - PerlUI->new_from_child_name() fixed to handle toolbar buttons without
+    icons or pixmaps. Now they are added just with the text. Code tidied too.
+  - PerlUI->new_from_child_name() error reported for Gnome stock pixmaps in
+    a non-Gnome project but added as text-only rather than failing.
+  - PerlSource->perl_signal_handler() new sub to generate signal handlers in
+    a fairly standard format.
+  - Many widget names single quoted in Glade-Perl so 'funny' names don't fail.
+  
 Mon Feb 14 18:45:48 GMT 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
   - Version 0.48
   - Makefile.PL extended to check for required perl modules and to install

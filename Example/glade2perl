@@ -3,8 +3,10 @@ require 5.000; use English; use strict 'vars', 'refs', 'subs';
 
 use Glade::PerlGenerate;
 
-my $base = $ARGV[0] || 'Test.gld';
-$base =~ s/\..*$//;
+my $base = $ARGV[0] || 'project1.glade';
+# Strip off any suffix (if it exists)
+$base =~ s/(.*)\..*$/$1/;
+
 my $project_options_file = "$base.glade2perl.xml";
 # Default $project_options_file is eg 'Example/BusForm.glade2perl.xml'
 

@@ -3,6 +3,11 @@ NEWS of Glade::PerlGenerate (GPG) Gtk-Perl-Glade UI builder and source generator
 
 NEW 'FEATURES'
 --------------
+version 0.49 pixmaps are now handled with relative paths. Glade-Perl now
+    can also generate hierarchical widget structures so that you can access 
+    widgets like :
+    $form->{'vbox1'}{'frame2'}{'hbox3'}{entry1'}{'__W'}->get_text;
+    
 version 0.48 has a better make install. It fixes some bugs but the main changes
     are to the generated code structure. Old apps that use the generated files
     will work in the same way but the simpler structure means that you can

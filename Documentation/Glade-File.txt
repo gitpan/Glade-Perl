@@ -1,0 +1,37 @@
+GLADE PROJECT
+-------------
+Glade::PerlGenerate uses the Glade <project> details in order to 
+generate the code and uses certain information. These are the <project> 
+elements that it uses from the GTK-Interface XML file:
+
+<project>
+# The Glade project structure
+
+  <name>BusForm</name>
+#   Project name (it is used for the file and package/module/class name)
+
+  <directory></directory>
+#   Directory that Glade was running in when project was written ??
+ 
+  <source_directory>Generated</source_directory>
+#   Directory to hold generated source modules (relative to XML file)
+		
+  <pixmaps_directory>pixmaps</pixmaps_directory>
+#   Directory to search for pixmaps (relative to XML file)
+#   If there is a pixmap in this directory called 'Logo.xpm' this
+#   will be used as the project logo in message boxes etc.
+		
+  <gnome_support>True</gnome_support>
+# From version 0.41 this property is now respected.
+
+# All other project properties are ignored
+
+</project>
+
+Some other project information is generated for inclusion in the generated
+source modules. 
+  <author>  User's long name with email address of username@hostname
+  <date>    Current localtime
+  <copying> '# Unspecified copying policy. Please contact the author'
+  <version> 0.01
+  
