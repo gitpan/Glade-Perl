@@ -27,7 +27,7 @@ BEGIN {
                         $PACKAGE 
                         $VERSION $AUTHOR $DATE
                         @VARS @METHODS 
-                        $TRANS
+                        $I18N
                         $all_forms
                         $project
                         $widgets 
@@ -39,9 +39,9 @@ BEGIN {
     # Tell interpreter who we are inheriting from
     @ISA          = qw( Exporter );
     $PACKAGE      = __PACKAGE__;
-    $VERSION      = q(0.51);
+    $VERSION      = q(0.52);
     $AUTHOR       = q(Dermot Musgrove <dermot.musgrove\@virgin.net>);
-    $DATE         = q(Thu Mar  2 04:30:08 GMT 2000);
+    $DATE         = q(Fri Mar 31 16:44:38 BST 2000);
     $widgets      = {};
     $all_forms    = {};
     $pixmaps_directory = "pixmaps";
@@ -51,11 +51,9 @@ BEGIN {
                         $VERSION
                         $AUTHOR
                         $DATE
-                        $TRANS
+                        $I18N
                     );
     @METHODS      = qw( 
-                        D_ 
-                        S_ 
                         full_Path 
                         create_image 
                         create_pixmap 
@@ -63,12 +61,10 @@ BEGIN {
                         new_message_box 
                         message_box 
                         message_box_close 
-                        destroy_all_forms
                         show_skeleton_message 
                     );
     # These symbols (globals and functions) are always exported
     @EXPORT       = qw( 
-                        _ 
                     );
     # Optionally exported package symbols (globals and functions)
     @EXPORT_OK    = ( @METHODS, @VARS );
@@ -104,8 +100,8 @@ BEGIN {
 sub AUTOLOAD {
   my $self = shift;
   my $type = ref($self)
-      or die "$self "._("is not an object so we cannot")." '$AUTOLOAD'\n",
-          _("We were called from")." ".join(", ", caller),"\n\n";
+      or die "$self is not an object so we cannot '$AUTOLOAD'\n",
+          "We were called from ".join(", ", caller),"\n\n";
   my $name = $AUTOLOAD;
   $name =~ s/.*://;       # strip fully-qualified portion
 
@@ -128,8 +124,8 @@ sub AUTOLOAD {
       'pixmaps/Logo.xpm');
     
   } else {
-    die _("Can't access method")." `$name' "._("in class")." $type\n",
-        _("We were called from")." ",join(", ", caller),"\n\n";
+    die "Can't access method `$name' in class $type\n",
+        "We were called from ",join(", ", caller),"\n\n";
 
   }
 }
@@ -142,49 +138,60 @@ sub new {
     my $self  = {
         _permitted_fields   => \%fields, %fields,
         _permitted_stubs    => \%stubs,  %stubs,
-  };
+    };
+    bless $self, $class;
 #$class->PARTYPE = [];
-    $class->PARTYPE->[$class->LOOKUP]         = "Lookup ";
-    $class->PARTYPE->[$class->BOOL]           = "Bool   ";
-    $class->PARTYPE->[$class->DEFAULT]        = "Default";
-    $class->PARTYPE->[$class->KEYSYM]         = "KeySym";
-    $class->PARTYPE->[$class->LOOKUP_ARRAY]   = "Lookup Array";
-
+    $self->PARTYPE->[$self->LOOKUP]         = "Lookup ";
+    $self->PARTYPE->[$self->BOOL]           = "Bool   ";
+    $self->PARTYPE->[$self->DEFAULT]        = "Default";
+    $self->PARTYPE->[$self->KEYSYM]         = "KeySym";
+    $self->PARTYPE->[$self->LOOKUP_ARRAY]   = "Lookup Array";
+    return $self;
 }
 
 #===============================================================================
 #=========== Gettext Utilities                                              ====
 #=========== 'borrowed' from the gettext dist and recoded to house style    ====
 #===============================================================================
+sub _ {gettext(@_)}
+
+sub gettext {
+    defined $I18N->{'__'}{$_[0]} ? $I18N->{'__'}{$_[0]} : $_[0];
+}
+
 sub load_translations {
     my ($class, $domain, $language, $locale_dir, $file, $key, $merge) = @_;
-    my ($reverse, $buffer, $catalog);
+
+    $key ||= '__';
+    $I18N->{$key} = {} unless $merge and $merge eq "MERGE";;
+
+    $language ||= $ENV{"LANG"};
+    return unless $language;
+    $locale_dir ||= "/usr/local/share/locale";
+    $domain     ||= "Glade-Perl";
+    my $catalog_filename = $file || 
+        "$locale_dir/$language/LC_MESSAGES/$domain.mo";
+
+    return unless -f $catalog_filename;
+    $class->load_mo($catalog_filename, $key);
+}
+
+sub load_mo {
+    my ($class, $catalog, $key) = @_;
+    my ($reverse, $buffer);
     my ($magic, $revision, $nstrings);
     my ($orig_tab_offset, $orig_length, $orig_pointer);
     my ($trans_length, $trans_pointer, $trans_tab_offset);
 
-#    $key ||= $domain;
-    $key ||= '_';
-    $TRANS->{$key} = {} unless $merge and $merge eq "MERGE";;
-
-    $language ||= $ENV{"LANG"};
-    return unless $language;
-
-    $locale_dir ||= "/usr/local/share/locale";
-    $domain     ||= "glade2perl";
-    $catalog = $file || "$locale_dir/$language/LC_MESSAGES/$domain.mo";
-
-    return unless -f $catalog;
-#print "Reading catalog from '$catalog'\n";
     # Slurp in the catalog
     my $save = $/;
     open CATALOG, $catalog or return;
-    undef $/;
-    $buffer = <CATALOG>;
+    undef $/; 
+    $buffer = <CATALOG>; 
     close CATALOG;
     $/ = $save;
     
-    # Check magic and whether reverse
+    # Check magic order
     $magic = unpack ("I", $buffer);
     if (sprintf ("%x", $magic) eq "de120495") {
     	$reverse = 1;
@@ -208,13 +215,13 @@ sub load_translations {
 	    $trans_pointer = &mo_format_value ($trans_tab_offset + 4,$reverse, $buffer);
 	    $trans_tab_offset += 8;
 
-    	$TRANS->{$key}{substr ($buffer, $orig_pointer, $orig_length)}
+    	$I18N->{$key}{substr ($buffer, $orig_pointer, $orig_length)}
 	        = substr ($buffer, $trans_pointer, $trans_length);
     }
-#use Data::Dumper; print STDOUT Dumper($TRANS);
-    # Allow for real empty strings
-    $TRANS->{$key}{'__MO_HEADER_INFO'} = $TRANS->{$key}{''};
-    $TRANS->{$key}{''} = '';
+
+    # Allow for translation of really empty strings
+    $I18N->{$key}{'__MO_HEADER_INFO'} = $I18N->{$key}{''};
+    $I18N->{$key}{''} = '';
 }
 
 sub mo_format_value {
@@ -225,35 +232,13 @@ sub mo_format_value {
 	    : substr ($buffer, $string, 4));
 }
 
-sub _ {
-    defined $TRANS->{'_'}{$_[0]} ? $TRANS->{'_'}{$_[0]} : $_[0];
-}
-
-sub S_ {
-    defined $TRANS->{'_S'}{$_[0]} ? $TRANS->{'_S'}{$_[0]} : $_[0];
-}
-
-sub D_ {
-    defined $TRANS->{'_D'}{$_[0]} ? $TRANS->{'_D'}{$_[0]} : $_[0];
-}
-
-sub debugD_ {
-    if (defined $TRANS->{'_D'}{$_[0]}) {
-        print "Found value '", $TRANS->{'_D'}{$_[0]},"'\n";
-        return $TRANS->{'_D'}{$_[0]};
-    } else {
-#        print "No value found for $_[0]\n";
-        return $_[0];
-    }
-}
-
 #===============================================================================
 #=========== Hierarchy Utilities                                            ====
 #===============================================================================
 sub WH {
-    my ($class, $new) = @_;
+    my ($class, $new) = @_; 
     if ($new) {
-      return $class->{'__WH'} = $new;
+        return $class->{'__WH'} = $new;
     } else {
       return $class->{'__WH'};
     }
@@ -377,10 +362,10 @@ sub get_file  {
     my ($class, $filename) = @_;
     my $s;
     $filename or 
-        die _("no filename for")." ".__PACKAGE__;         # we need a filename
+        die ("no filename for")." ".__PACKAGE__;         # we need a filename
     {   local $/;
         open CONFIG,"$filename" or
-            die _("Can't open file name")." '$filename'";
+            die sprintf("Can't open file name '%s'"),$filename;
         $s = <CONFIG>;
         close CONFIG;
     }
@@ -500,11 +485,11 @@ sub message_box {
 }
 
 sub message_box_close {
-    my ($class, $mbno, $data) = @_;
+    my ($class, $mbno, $button_label) = @_;
     # Close this message_box and undef the $widget->{'MessageBox-$mbno'} structure
     $widgets->{"MessageBox-$mbno"}->get_toplevel->destroy;
     undef $widgets->{"MessageBox-$mbno"};
-    if (D_('*Quit Program*Quit PerlGenerate*Quit UI Build*Close Form*') =~ m/\*$data\*/) {
+    if (_("*Quit Program*Quit PerlGenerate*Quit UI Build*Close Form*") =~ m/\*$button_label\*/) {
         Gtk->main_quit;
     }
     return $data;
@@ -556,9 +541,9 @@ sub destroy_all_forms {
 sub missing_handler {
     my ($class, $widgetname, $signal, $handler, $pixmap) = @_;
     my $me = "$PACKAGE->missing_handler";
-    print STDOUT sprintf(D_(" - %s - called with args ('%s')"),
+    print STDOUT sprintf(_(" - %s - called with args ('%s')"),
         $me, join("', '", @_)), "\n";
-    my $message = sprintf("\n".D_("%s has been called because\n".
+    my $message = sprintf("\n"._("%s has been called because\n".
                     "a signal (%s) was caused by widget (%s).\n".
                     "When Perl::Generate writes the Perl source to a file \n".
                     "an AUTOLOADed signal handler sub called '%s'\n".
@@ -566,8 +551,8 @@ sub missing_handler {
                     "the same name in another module and it will automatically be called instead.\n"),
                     $me, $signal, $widgetname, $handler) ;
     my $widget = $PACKAGE->message_box($message, 
-        D_("Missing handler")." '$handler' ".D_("called"), 
-        [D_("Dismiss"), D_("Quit PerlGenerate")], 1, $pixmap);
+        _("Missing handler")." '$handler' "._("called"), 
+        [_("Dismiss"), _("Quit")." PerlGenerate"], 1, $pixmap);
     
     # Stop the signal before it triggers the missing one
     $class->signal_emit_stop($signal);
@@ -577,7 +562,7 @@ sub missing_handler {
 sub show_skeleton_message {
     # This proc pops up a message_box to prove that a stub has been called
     my ($class, $me, $data, $package, $pixmap) = @_;
-    $PACKAGE->message_box(sprintf(D_("
+    $PACKAGE->message_box(sprintf(_("
 A signal handler has just been triggered.
 
 %s was
@@ -585,7 +570,11 @@ called with parameters ('%s')
 
 Until the sub is fleshed out, I will show you 
 this box to prove that I have been called
-"), $me, join("', '", @$data)), $me, [D_('Dismiss'), D_('Quit Program')], 1, $pixmap);
+"), $me, join("', '", @$data)), 
+    $me, 
+    [_('Dismiss'), _("Quit")." Program"], 
+    1, 
+    $pixmap);
 }
 
 #===============================================================================

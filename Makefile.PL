@@ -39,9 +39,10 @@ my @need_perl_modules = (
     'test'      => 'Gnome::Types',
     'version'   => '0.6123',
     'reason'    => "implements the perl bindings to Gnome.\n".
-                    "It is a submodule of the Gtk-Perl package\n".
-                    "Glade-Perl will still work but you will not be able to \n".
-                    "use any Gnome widgets in your Glade projects"},
+                   "It is a submodule of the Gtk-Perl package and needs to be built separately.\n".
+                   "Read the Gtk-Perl INSTALL file for details of how to do this.\n".
+                   "Glade-Perl will still work but you will not be able to \n".
+                   "use any Gnome widgets in your Glade projects"},
     );
 #--- End Configuration - You should not have to change anything below this line
 
@@ -63,8 +64,8 @@ foreach my $mod (@need_perl_modules) {
     print "Checking for $mod->{'name'}..";
     eval "require $mod->{'test'}";
     if ($@) {
-        print " failed\n";
         $missing_modules++;
+        print " failed\n";
         print   "-------------------------------------------------------".
                 "\n$@\n",
                 "$mod->{'name'} is needed, it $mod->{'reason'}\n",
@@ -78,13 +79,12 @@ foreach my $mod (@need_perl_modules) {
 
 #--------------------------------------
 print "-------------------------------------------------------
-The missing modules can be obtained from CPAN.  Visit
+The missing modules can be obtained from CPAN. Visit
 <URL:http://www.perl.com/CPAN/> to find a CPAN site near you.
 -------------------------------------------------------\n\n"
      if $missing_modules;
 
 #--------------------------------------
-
 # Last of all generate the Makefile
 WriteMakefile(
     'DISTNAME'     => 'Glade-Perl',

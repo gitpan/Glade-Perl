@@ -6,11 +6,14 @@ BEGIN     {
     use Glade::PerlGenerate;
     }
 
+my $VERSION = "0.52";
+
 # We expect to be supplied with parameter
 #   $_[0] is name of a Glade <GTK-Interface> XML file
 my $glade = $_[0] || 'Bus/Bus.glade';
 my $base = $glade;
-$base =~ s/\..*$//;
+# Strip off any suffix (if it exists)
+$base =~ s/(.+)\..*$/$1/;
 my $project_options_file = "$base.glade2perl.xml";
 # Default $project_options_file is eg 'Bus.glade2perl.xml'
 
@@ -20,16 +23,21 @@ my $log_file = "$base.glade2perl.log";
 sub main {
     # Build a UI from a string
     open SAVOUT, ">&STDOUT";
+    select SAVOUT;
+    SAVOUT->autoflush(1);
     print SAVOUT "Test 1..3 Building a UI from a string of XML\n";
     &string_test || print "Not ";
     open STDOUT, ">&SAVOUT";
+    select STDOUT;
+    STDOUT->autoflush(1);
     close(SAVOUT) || die "can't close stdout: $!" ;
     print "Test 1..3 OK\n\n";
 
     # Generate source code for the example Glade file
     print "Test 2..3 Generating source code for the example Glade file\n";
     $Glade::PerlSource::first_form = '';
-    bless $main::Glade_Perl_Generate_options, '';
+    $Glade::PerlRun::Glade_Perl = {};
+    $Glade::PerlRun::Glade_Perl = {};
     chdir "Example";
     &file_test || print "Not ";
     print "Test 2..3 OK\n\n";
@@ -132,6 +140,7 @@ sub Test_XML_String {
   <pixmaps_directory>pixmaps</pixmaps_directory>
   <language>C</language>
   <gettext_support>False</gettext_support>
+  <gnome_support>False</gnome_support>
   <use_widget_names>False</use_widget_names>
   <main_source_file>gladesrc.c</main_source_file>
   <main_header_file>gladesrc.h</main_header_file>

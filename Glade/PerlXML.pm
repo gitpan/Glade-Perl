@@ -17,20 +17,24 @@ require 5.000; use strict 'vars', 'refs', 'subs';
 # author, who can be contacted at dermot.musgrove@virgin.net
 
 BEGIN {
-    use XML::Parser   qw(  );              # for new, parse, parsefile
+    use XML::Parser   qw(  );               # for new, parse, parsefile
+    # Uncomment the line below if you are using european characters 
+    # NB you will also have to uncomment line 183 and comment out line 181
+#    use Unicode::String qw(utf8 latin1);    # To read ISO-8859-1 chars
     use vars          qw( 
                             @ISA 
                             @EXPORT @EXPORT_OK %EXPORT_TAGS 
                             $PACKAGE $VERSION $AUTHOR $DATE
+                            $seq
                        );
     $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.51);
+    $VERSION        = q(0.52);
     $AUTHOR         = q(Dermot Musgrove <dermot.musgrove\@virgin.net>);
     $DATE           = q(30 June 1999);
     # Tell interpreter who we are inheriting from
     @ISA            = qw(  );
 }
-
+$seq = 1;
 #===============================================================================
 #=========== Utilities to read XML and build the Proto                ==========
 #===============================================================================
@@ -44,6 +48,13 @@ sub QuoteXMLChars {
     my %ents=('&'=>'amp','<'=>'lt','>'=>'gt',"'"=>'apos','"'=>'quot');
     $text =~ s/([&<>'"])/&$ents{$1};/g;
     $text =~ s/([\x80-\xFF])/&XmlUtf8Encode(ord($1))/ge;
+    return $text;
+}
+
+sub UnQuoteXMLChars {
+    my $text = shift;
+    my %ents=('&lt;'=>'<','&gt;'=>'>','&apos;'=>"'",'&quot;'=>'"', '&amp;'=>'&');
+    $text =~ s/(&lt;|&gt;|&apos;|&quot;|&amp;)/$ents{$1}/g;
     return $text;
 }
 
@@ -77,24 +88,29 @@ sub XmlUtf8Encode {
 }
 
 sub Proto_from_File {
-    my ($class, $filename, $special, $repeated) = @_;
+    my ($class, $filename, $repeated, $special) = @_;
     my $me = "$class->Proto_from_File";
     my $tree = new XML::Parser(
-        Style =>'Tree', ErrorContext => 2)->parsefile($filename );
+        Style =>'Tree', 
+        ProtocolEncoding => 'ISO-8859-1',
+        ErrorContext => 2)->parsefile($filename );
     return $class->Proto_from_XML_Parser_Tree(
-        $tree->[1], 0, $special, $repeated );
+        $tree->[1], 0, $repeated, $special );
 }
 
 sub Proto_from_XML {
-    my ($class, $xml, $special, $repeated) = @_;
+    my ($class, $xml, $repeated, $special) = @_;
     my $me = "$class->Proto_from_XML";
-    my $tree = new XML::Parser(Style =>'Tree', ErrorContext => 2)->parse($xml );
-    return $class->Proto_from_XML_Parser_Tree($tree->[1], 
-        0, $special, $repeated );
+    my $tree = new XML::Parser(
+        Style =>'Tree', 
+        ProtocolEncoding => 'ISO-8859-1',
+        ErrorContext => 2)->parse($xml );
+    return $class->Proto_from_XML_Parser_Tree(
+        $tree->[1], 0, $repeated, $special );
 }
 
 sub Proto_from_XML_Parser_Tree {
-    my ($class, $self, $depth, $special, $repeated) = @_;
+    my ($class, $self, $depth, $repeated, $special) = @_;
     my $me = "$class->Proto_from_XML_Parser_Tree";
     # Tree[0]      contains fileelement name
     # Tree[1]      contains fileelement contents
@@ -114,7 +130,7 @@ sub Proto_from_XML_Parser_Tree {
     # Tree[3] cannot exist since the fileelement must enclose everything
     my ($tk, $i, $ilimit );
     my ($count, $np, $key, $work );
-    my $limit = scalar(@$self );
+    my $limit = scalar(@$self);
     my $child;
     $key = 0;
     for ($count = 3; $count < $limit; $count += 4) {
@@ -126,11 +142,12 @@ sub Proto_from_XML_Parser_Tree {
 #                $class->diag_print(4, "Found a scalar called '".
 #                    "$self->[$count]' which contains '$self->[$count+1][2]'".
 #                    " in a repeated container type element !" );
-                $np->{$self->[$count]} = $self->[$count+1][2];
+                $np->{$self->[$count]} = ($self->[$count+1][2]);
+
             } else {
                 # call ourself to expand nested xml but use sequence no
                 $work = $class->Proto_from_XML_Parser_Tree($self->[$count + 1], 
-                    ++$depth, $special, $repeated );
+                    ++$depth, $repeated, $special );
                 $work->{&typeKey} = $self->[$count];
                 # prefix with tilde to force to end (alphabetically)
                 $tk = "~$self->[$count]-".sprintf(&keyFormat, $key, $self->[$count] );
@@ -138,11 +155,10 @@ sub Proto_from_XML_Parser_Tree {
             }
 
         } elsif (" $special " =~ / $self->[$count] /) {
-            # this is a unique container definition so 
+            # this is a unique container definition so just
             # expand and store it with no sequence no
-#            $class->diag_print(2, "Found a signal length ".(scalar $self->[$count+1]) );
             $work = $class->Proto_from_XML_Parser_Tree($self->[$count + 1], 
-                ++$depth, $special, $repeated );
+                ++$depth, $repeated, $special );
             $work->{&typeKey} = $self->[$count];
             $np->{$self->[$count]} = $work;
 
@@ -155,13 +171,16 @@ sub Proto_from_XML_Parser_Tree {
             $work->{&typeKey} = $work->{'class'} || $self->[$count];
             # prefix with tilde to force to end (alphabetically)
             $tk = "~$self->[$count]-".
-            sprintf(&keyFormat, $key, $self->[$count] );
+                sprintf(&keyFormat, $key, $self->[$count] );
             $np->{$tk} = $work;
 
         } else {
             # this is a simple element to add with 
             # key in $self->[$count] and val in $self->[$count+1][2]
+            # Comment out the line below if you are using european characters
             $np->{$self->[$count]} = $self->[$count+1][2];
+            # Uncomment the line below if you are using european characters
+#            $np->{$self->[$count]} = &utf8($self->[$count+1][2])->latin1;
         }
     }
     return $np;
@@ -213,6 +232,65 @@ sub XML_from_Proto {
 	return $xml
 }
 	
+sub simple_Proto_from_File {
+    my ($class, $filename, $repeated) = @_;
+    my $me = __PACKAGE__."->new_Proto_from_File";
+    my $save = $/;
+    undef $/;
+    open GLADE, $filename or 
+        die sprintf((
+            "error %s - can't open file '%s' for input"),
+            $me, $filename);    
+    undef $/;
+    my $xml = <GLADE>;
+    close GLADE;
+    $/ = $save;
+#print $xml."\n";
+    my $pos = -1;
+    return $class->simple_Proto_from_XML(\$xml, 0, \$pos, $repeated);
+}
+
+sub simple_Proto_from_XML {
+    my ($class, $xml, $depth, $pos, $repeated) = @_;
+    my ($self, $tag, $use_tag, $prev_contents, $work);
+    my $new_pos;
+#    my $pos = -1;
+    while (($new_pos = index($$xml, "<", $$pos)) > -1) {
+        $prev_contents = substr($$xml, $$pos, $new_pos-$$pos);
+        $$pos = $new_pos;
+        $new_pos = index($$xml, ">", $$pos);
+        $tag = substr($$xml, $$pos+1, $new_pos-$$pos-1);
+        $$pos = $new_pos+1;
+#print "Depth = $depth\tPos is $$pos\ttag = '$tag'\n";
+        next if $tag =~ /^\?/;
+        if ($tag =~ s|^/||) {
+            # We are an endtag so return the $prev_contents
+            if  (ref $self) {
+                return $self;
+
+            } else {
+#print "Depth = $depth\tPos = $$pos\t'$tag'\t => '$prev_contents'\n";
+                return &UnQuoteXMLChars($prev_contents);
+            }
+
+        } else {
+            # We are a starttag so recurse
+            $work = $class->simple_Proto_from_XML(
+                $xml, $depth + 1, $pos, $repeated);
+            if (" $repeated " =~ / $tag /) {
+                $use_tag = "~$tag-".sprintf(&keyFormat, $seq++);
+            } else {
+                $use_tag = $tag;
+            }
+            $self->{$use_tag} = $work;
+            if (ref $work eq 'HASH') {
+                $self->{$use_tag}{&typeKey} = $tag ;
+            }
+        }
+    }
+    return $self;
+}
+
 1;
 
 __END__

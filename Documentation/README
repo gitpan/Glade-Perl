@@ -41,8 +41,8 @@ you can edit.
 It is made up of two main packages. Glade::PerlGenerate does the clever 
 stuff and Glade::PerlRun has some run-time utilities that are needed 
 by Glade::PerlGenerate and also by your generated modules.
-There are now several support modules for PerlGenerate that read the XML
-build the UI, write the source and handle the project options.
+There are several support modules for PerlGenerate that read the XML, build the 
+UI, write the source and handle the project options.
 
 There are several options
 1) Simply show and run the interface. Any missing signal handlers are
@@ -111,4 +111,4 @@ AUTHOR
 Dermot Musgrove <dermot@glade.perl.connectfree.net>
 Dermot Musgrove <dermot.musgrove@virgin.net>
 
-Any errors, omissions and general stupidity are my fault - sorry.
+Errors, omissions and general stupidity are all my fault - sorry.

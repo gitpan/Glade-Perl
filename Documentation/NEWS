@@ -3,6 +3,10 @@ NEWS of Glade::PerlGenerate (GPG) Gtk-Perl-Glade UI builder and source generator
 
 NEW 'FEATURES'
 --------------
+version 0.52 has some utilities to help you to produce the gettext strings
+    that need to be translated, just by running the generated subclass.
+    More defaults added so that Glade-0.5.7 files will not fail.
+    
 version 0.51 generates i18n-capable code - except underline accelerators :(
     It is also i18n capable itself. See the diagnostics in one language, the
     source code in another and the generated apps will run in any language

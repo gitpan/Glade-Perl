@@ -26,11 +26,10 @@ BEGIN {
                             $PACKAGE 
                           );
     $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.51);
+    $VERSION        = q(0.52);
     # Tell interpreter who we are inheriting from
     @ISA            = qw(
                             Glade::PerlProject
-                            Glade::PerlSource 
                             Glade::PerlUI
                         );
 }
@@ -53,7 +52,7 @@ sub about_Form {
     my $widget = $PACKAGE->message_box($message, 
         D_("About")." \u$PACKAGE", 
         [D_('Dismiss'), D_('Quit Program')], 1, 
-        $Glade_Perl->{'glade2perl_logo_filename'}, 'left' );
+        $Glade_Perl->{'options'}{'glade2perl_logo_filename'}, 'left' );
 }
 
 sub destroy_Form {
@@ -68,17 +67,21 @@ sub destroy_Form {
 sub Form_from_Glade_File {
     my ($class, %params) = @_;
     my $me = "$class->Form_from_Glade_File";
+#    my $glade_proto = $class->simple_Proto_from_File( 
+#        $params{'glade_filename'}, " widget child accelerator ")->
+#        {'GTK-Interface'};
+#    use Data::Dumper; print Dumper($glade_proto);
     my $glade_proto = $class->Proto_from_File( $params{'glade_filename'}, 
-        ' project child accelerator ', ' signal widget ' );
+        ' accelerator signal widget ', ' project child ');
+    $Glade_Perl->{'options'}{'glade_filename'} = $params{'glade_filename'};    
+    $Glade_Perl->{'run_options'} = $class->use_Glade_Project($glade_proto );
+    $Glade_Perl->{'options'}{'name'} = $glade_proto->{'project'}{'name'};
+    $class->add_to_hash_from($Glade_Perl->{'options'}, $Glade_Perl->{'run_options'});
     $params{'use_modules'} ||= 
-        [split (/\n/, ($main::Glade_Perl_Generate_options->use_modules || '' ))];
-    $Glade_Perl->{'glade_filename'} = $params{'glade_filename'};    
-    $Glade_Perl = $class->use_Glade_Project($glade_proto );
-    $Glade_Perl->{'name'} = $glade_proto->{'project'}{'name'};
-#    $Glade_Perl->glade_proto($glade_proto->{'project'});
+        [split (/\n/, ($Glade_Perl->{'options'}->use_modules || '' ))];
     $current_form && eval "$current_form = {};";
     my $window = $class->Form_from_Proto(
-        $Glade_Perl, \%params );
+        $Glade_Perl->{'run_options'}, \%params );
 #    $class->diag_print(2, $Glade_Perl);
     return $window;
 }
@@ -86,20 +89,20 @@ sub Form_from_Glade_File {
 sub Form_from_XML {
     my ($class, %params) = @_;
     my $me = "$class->Form_from_XML";
-    my $save_options = $main::Glade_Perl_Generate_options;
-    $main::Glade_Perl_Generate_options->verbose(0);
-    $main::Glade_Perl_Generate_options->write_source(undef);
+    my $save_options = $Glade_Perl->{'options'};
+    $Glade_Perl->{'options'}->verbose(0);
+    $Glade_Perl->{'options'}->write_source(undef);
     my $glade_proto = $class->Proto_from_XML( $params{'xml'}, 
-        ' project child accelerator ', ' signal widget ' );
-    $glade_proto->{'glade_filename'} = 'XML String';
+        ' accelerator signal widget ' , ' project child ');
     my $form;
     $indent = ' ';
-    $form->{'glade_proto'} = $glade_proto->{'project'};
-    $Glade_Perl = $form;
-    if ($main::Glade_Perl_Generate_options->allow_gnome) {
+    $Glade_Perl->{'glade_options'} = $glade_proto->{'project'};
+    $Glade_Perl->{'options'}{'glade_filename'} = 'XML String';    
+    if (($Glade_Perl->{'glade_options'}{'gnome_support'} || 'True') eq 'True') {
         $class->diag_print (6, 
             "%s- Use()ing Gnome in %s",
             $indent, $me);
+        $Glade_Perl->{'options'}->allow_gnome(1);
         Gnome->init('Form_from_XML', '0.0.0');
     } else {
         Gtk->init;
@@ -108,38 +111,7 @@ sub Form_from_XML {
         'No Parent', $glade_proto, 0, 'Form from string' );
     $forms->{$first_form}{$first_form}->show( );
     Gtk->main;
-    $main::Glade_Perl_Generate_options = $save_options;
-    return $window;
-}
-
-# FIXME to read a stream (not just a string) and parse/build as we go
-# This means providing handlers for XML::Parser (Start, End, Char)
-# when it is run in 'Stream' mode
-sub Form_from_XML_Stream {
-    my ($class, $params) = @_;
-    my $me = "$class->Form_from_XML";
-    my $save_options = $main::Glade_Perl_Generate_options;
-    $main::Glade_Perl_Generate_options->verbose(0);
-    $main::Glade_Perl_Generate_options->write_source(undef);
-    my $proto = $class->Proto_from_XML( $params->{'xml'}, 
-        ' project child accelerator ', ' signal widget ' );
-    $proto->{'class'} = 'Application';    
-    my $form = $class->use_Glade_Project($proto );
-    $form->{'glade_proto'} = $proto->{'project'};
-    $Glade_Perl = $form;
-    if ($main::Glade_Perl_Generate_options->allow_gnome) {
-        $class->diag_print (6, 
-            "%s- Use()ing Gnome in %s",
-            $indent, $me);
-        Gnome->init('Form_from_XML', '0.0.0');
-    } else {
-        Gtk->init;
-    }
-    my $window = $class->Widget_from_Proto(
-        'No Parent', $proto, 0, $proto->{'class'} );
-    eval "${first_form}->show( );" ;
-    Gtk->main;
-    $main::Glade_Perl_Generate_options = $save_options;
+    $Glade_Perl->{'options'} = $save_options;
     return $window;
 }
 
@@ -150,18 +122,21 @@ sub Form_from_Proto {
     $forms = {};
     $widgets = {};
     my ($module);
-    my $options = $main::Glade_Perl_Generate_options;
+    my $object = new Glade::PerlSource;
+    my $options = $Glade_Perl->{'options'};
     my $glade_proto = $proto->{'glade_proto'};
 
+#use Data::Dumper; print Dumper($params);
     foreach $module (@{$params->{'use_modules'}}) {
+#    foreach $module (@{$options->{'use_modules'}}) {
         if ($module && $module ne '') {
             eval "use $module;" or
                 ($@ && 
-                    die  "\n\nin $me\n\t".D_("while trying to eval").
+                    die  "\n\nin $me\n\t".("while trying to eval").
                         " 'use $module'".
-                         "\n\t".D_("FAILED with Eval error")." '$@'\n" );
+                         "\n\t".("FAILED with Eval error")." '$@'\n" );
             push @use_modules, $module;
-            $class->diag_print (6, 
+            $class->diag_print (2, 
                 "%s- Use()ing existing module '%s' in %s",
                 $indent, $module, $me);
         }
@@ -199,10 +174,11 @@ sub Form_from_Proto {
         unless ($options->source_LANG) {
             $options->source_LANG($options->diag_LANG);
         }
-        $class->load_translations('Glade-Perl', $options->source_LANG, 
-            undef, undef, '_S', undef);
-#        $class->load_translations('Glade-Perl', $options->source_LANG, undef, 
-#            '/home/dermot/Devel/Glade-Perl/Glade/de.mo', '_S', undef);
+#        $class->load_translations('Glade-Perl', $options->source_LANG, 
+#            undef, undef, '__S', undef);
+        $class->load_translations('Glade-Perl', $options->source_LANG, undef, 
+            '/home/dermot/Devel/Glade-Perl/ppo/en.mo', '__S', undef);
+#        $class->check_gettext_strings("__S");
         $class->diag_print (2, "%s- Source code will be generated for locale <%s>", 
             $indent, $options->source_LANG);
 
@@ -217,7 +193,7 @@ sub Form_from_Proto {
             $class->diag_print (2, 
                 "%s- One way to run the generated source from dir '%s/':\n".
                 "%sperl -e 'use %s%s; %s->run'",
-                    $indent, $Glade_Perl->{'directory'}, ($indent x 3), $module,
+                    $indent, $proto->{'directory'}, ($indent x 3), $module,
                     $proto->{'LIBGLADE_class'}, $proto->{'LIBGLADE_class'});
         } else {
             $class->diag_print (4, "%s- Generating UI construction code", $indent);
@@ -232,7 +208,7 @@ sub Form_from_Proto {
                 "%s- Some of the ways to run the generated source", $indent);
             $class->diag_print (2, 
                 "%s  Change directory to '%s' and then enter one of :",
-                "$indent$indent", $Glade_Perl->{'directory'});
+                "$indent$indent", $proto->{'directory'});
 #            $class->diag_print (2, 
 #                "${indent}- ${indent}perl -e 'use $module".
 #                    "$proto->{'UI_class'}; ".
@@ -241,11 +217,11 @@ sub Form_from_Proto {
 #                "${indent}- ${indent}perl -e 'use $module".
 #                    "$proto->{'SIGS_class'}; ".
 #                    "${first_form}->run'");
-            $class->diag_print (2, 
+            $class->diag_print (2,"%s", 
                 "$indent$indent  perl -e 'use $module".
                     "$proto->{'APP_class'}; ".
                     "${first_form}->run'");
-            $class->diag_print (2, 
+            $class->diag_print (2, "%s",
                 "$indent$indent  perl -e 'use $module".
                     "$proto->{'SUBAPP_class'}; ".
                     "Sub${first_form}->run'");
@@ -255,7 +231,7 @@ sub Form_from_Proto {
     }
     # Look through $proto and report any unused attributes (still defined)
     if ($class->diagnostics(2)) {
-        $class->diag_print (2, "-----------------------------------------------------------------------------");
+        $class->diag_print (2, "%s", "-----------------------------------------------------------------------------");
         $class->diag_print (2, "%s  CONSISTENCY CHECKS", $indent);
         $class->diag_print (2, "%s- %s unused widget properties", $indent, $missing_widgets);
         $class->diag_print (2, "%s- %s widgets were ignored (one or more of '%s')", 
@@ -263,12 +239,13 @@ sub Form_from_Proto {
         $class->diag_print (2, "%s- %s unpacked widgets",
             $indent, $class->unpacked_widgets);
 #        $class->diag_print (2, "$indent- ".$class->unhandled_signals." unhandled signals");
-        $class->diag_print (2, "-----------------------------------------------------------------------------");
+        $class->diag_print (2, "%s", "-----------------------------------------------------------------------------");
         $class->diag_print (2, "%s  UI MESSAGES - showing missing_handler calls that you triggered, ".
             "don't worry, %s will generate dynamic stubs for them all",
             $indent, $PACKAGE);
+#      $object->write_gettext_strings('__S');
     }
-
+#    $object->write_gettext_strings('__D', "&STDOUT", "NO_HEADER");
     my $endtime = `date`;
     chomp $endtime;
     $class->diag_print (2, 
@@ -278,6 +255,7 @@ sub Form_from_Proto {
         "-----------------------------------------------------------------------------");
     $class->diag_print (2, 
         "-----------------------------------------------------------------------------");
+#use Data::Dumper; print Dumper($Glade_Perl);
     # And show it if necessary
     unless ($class->Writing_Source_only) { 
         $forms->{$first_form}{$first_form}->show;
@@ -300,14 +278,20 @@ sub unused_elements {
         if (defined $proto->{$key}) {
             unless (" class $typekey name " =~ m/ $key /) {
                 unless (ref $proto->{$key}) {
-                    # We have found an unused element
+                    # We have found an unused widget property
                     unless ($proto->{$typekey} eq 'project') {
-                    $object = $proto->{'class'} || '';
+                        $object = $proto->{'class'} || '';
                         $name = $proto->{'name'} || '(no name)';
-                        $class->diag_print (1, 
-                            "error Unused widget property for %s %s {'%s'}{'%s'} => '%s' seen by %s",
-                            $proto->{$typekey}, $object, $name, $key, $proto->{$key}, $me);
-                        $missing_widgets++;
+                        if (" $cxx_properties " =~ m/ $key /) {
+                            $class->diag_print (4, 
+                                "warn  Intentionally ignored property for %s %s {'%s'}{'%s'} => '%s' seen by %s",
+                                $proto->{$typekey}, $object, $name, $key, $proto->{$key}, $me);
+                        } else {
+                            $class->diag_print (1, 
+                                "error Unused widget property for %s %s {'%s'}{'%s'} => '%s' seen by %s",
+                                $proto->{$typekey}, $object, $name, $key, $proto->{$key}, $me);
+                            $missing_widgets++;
+                        }
                     }
                 }
             }

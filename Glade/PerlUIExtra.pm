@@ -19,22 +19,18 @@ require 5.000; use strict 'vars', 'refs', 'subs';
 BEGIN {
     use Glade::PerlSource qw( :VARS :METHODS );
     use vars              qw( 
-                            @ISA 
                             $PACKAGE
                             $VERSION
-                            @EXPORT
                             $enums
                           );
     $PACKAGE =          __PACKAGE__;
-    $VERSION            = q(0.51);
+    $VERSION            = q(0.52);
     # These cannot be looked up in the include files
     $enums =      {
         'GNOME_ANIMATOR_LOOP_NONE'      => 'none',
         'GNOME_ANIMATOR_LOOP_RESTART'   => 'restart',
         'GNOME_ANIMATOR_LOOP_PING_PONG' => 'ping_pong',
     };
-    # Tell interpreter who we are inheriting from
-    @ISA =              qw( Glade::PerlSource );
 }
 
 #===============================================================================
@@ -175,12 +171,12 @@ sub new_GnomeAbout {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeAbout";
     my $name = $proto->{name};
-    my $title     = $class->use_par($proto, 'title',     $DEFAULT, $Glade_Perl->{'name'} );
-    my $version   = $class->use_par($proto, 'version',   $DEFAULT, $Glade_Perl->{'version'} );
-    my $logo      = $class->use_par($proto, 'logo',      $DEFAULT, $Glade_Perl->{'logo'} );
-    my $copyright = $class->use_par($proto, 'copyright', $DEFAULT, S_("Copyright")." $Glade_Perl->{'date'}" );
-    my $authors   = $class->use_par($proto, 'authors',   $DEFAULT, $Glade_Perl->{'author'} );
-    my $comments  = $class->use_par($proto, 'comments',  $DEFAULT, $Glade_Perl->{'copying'} );
+    my $title     = $class->use_par($proto, 'title',     $DEFAULT, $Glade_Perl->{'options'}{'name'} );
+    my $version   = $class->use_par($proto, 'version',   $DEFAULT, $Glade_Perl->{'options'}{'version'} );
+    my $logo      = $class->use_par($proto, 'logo',      $DEFAULT, $Glade_Perl->{'options'}{'logo'} );
+    my $copyright = $class->use_par($proto, 'copyright', $DEFAULT, S_("Copyright")." $Glade_Perl->{'options'}{'date'}" );
+    my $authors   = $class->use_par($proto, 'authors',   $DEFAULT, $Glade_Perl->{'options'}{'author'} );
+    my $comments  = $class->use_par($proto, 'comments',  $DEFAULT, $Glade_Perl->{'options'}{'copying'} );
 #    $logo = $class->full_Path(
 #            $logo, 
 #            $Glade_Perl->{'pixmaps_directory'}, 
@@ -222,8 +218,8 @@ sub new_GnomeApp {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeApp";
     my $name = $proto->{name};
-    my $appname   = $class->use_par($proto, 'title',  $DEFAULT,  $Glade_Perl->{'name'}  );
-    my $title     = $class->use_par($proto, 'title',  $DEFAULT,  $Glade_Perl->{'name'}  );
+    my $appname   = $class->use_par($proto, 'title',  $DEFAULT,  $Glade_Perl->{'options'}{'name'}  );
+    my $title     = $class->use_par($proto, 'title',  $DEFAULT,  $Glade_Perl->{'options'}{'name'}  );
     my $enable_layout_config = $class->use_par($proto, 'enable_layout_config',  $BOOL, 'True'  );
 
     $class->add_to_UI( $depth, "\$widgets->{'$name'} = new Gnome::App(".
@@ -304,7 +300,7 @@ sub new_GnomeColorPicker {
     my $name = $proto->{name};
     my $dither    = $class->use_par($proto, 'dither',   $BOOL, 'True' );
     my $use_alpha = $class->use_par($proto, 'use_alpha',$BOOL, 'False' );
-    my $title     = $class->use_par($proto, 'title'     );
+    my $title     = $class->use_par($proto, 'title', $DEFAULT, '' );
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = ".
         "new Gnome::ColorPicker;" );
@@ -587,7 +583,7 @@ sub new_GnomeFontPicker {
     my $me = "$class->new_GnomeFontPicker";
     my $name = $proto->{name};
     my $the_time  = localtime;
-    my $title     = $class->use_par($proto, 'title'     );
+    my $title     = $class->use_par($proto, 'title', $DEFAULT, '' );
     my $preview_text = $class->use_par($proto, 'preview_text',   $DEFAULT, 'The quick brown fox jumped over the lazy dog' );
     my $mode = $class->use_par($proto, 'mode', $LOOKUP, 'pixmap' );
     my $show_size = $class->use_par($proto, 'show_size',    $BOOL, 'True' );
@@ -646,8 +642,8 @@ sub new_GnomeIconList {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeIconList";
     my $name = $proto->{name};
-    my $text_editable  = $class->use_par($proto, 'text_editable', $BOOL, 'False' );
-    my $icon_width     = $class->use_par($proto, 'icon_width', $DEFAULT, 78);
+    my $text_editable  = $class->use_par($proto, 'text_editable',  $BOOL, 'False' );
+    my $icon_width     = $class->use_par($proto, 'icon_width',     $DEFAULT, 78);
     my $selection_mode = $class->use_par($proto, 'selection_mode', $LOOKUP, 'single' );
     my $row_spacing    = $class->use_par($proto, 'row_spacing',    $DEFAULT, 4 );
     my $column_spacing = $class->use_par($proto, 'column_spacing', $DEFAULT, 2 );
@@ -705,7 +701,7 @@ sub new_GnomeMessageBox {
     my $me = "$class->new_GnomeMessageBox";
     my $name = $proto->{name};
     my $type    = $class->use_par($proto, 'type',    $LOOKUP );
-    my $message = $class->use_par($proto, 'message' );
+    my $message = $class->use_par($proto, 'message', $DEFAULT, '' );
     my $message_box_type = $class->use_par($proto, 'message_box_type', $LOOKUP );
     my $auto_close    = $class->use_par($proto, 'auto_close',    $BOOL, 'True' );
     my $hide_on_close = $class->use_par($proto, 'hide_on_close', $BOOL, 'True' );

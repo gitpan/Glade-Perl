@@ -16,13 +16,19 @@ Glade-Perl - perl source code generator
 
 TODO
 ----
+*   Spread all pod documentation throughout the files so that they get updated
+    more regularly (eg user options). Perhaps PerlGenerate and PerlProject 
+    should be combined into PerlGenerate for this reason among others.
+    
 *   Make better Examples/tests with docs.
     1) Simple 'getting started' project, signal handlers and subclass
     2) UI from string (exists already)
     3) More complex Gtk UI with subclass and use_modules (exists already)
     4) Gnome App with example signal handlers and subclass
     5) Libglade project with signal handlers, use_modules and subclass
-    
+    6) Hierarchical widget structure
+    7) I18N example of gettext app
+        
 *   Generate extract and display subs to give examples of how to set and get
     widget data. Perhaps not necessary.
 

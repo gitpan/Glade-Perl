@@ -8,20 +8,21 @@ To install
     perl Makefile.PL
     make
     make test
+    su
     make install (if test was OK)
         
 TO RUN FROM GLADE
 -----------------
-If you use Glade >= 0.5.0 you can set the project language to Perl and copy
-the supplied script called 'glade2perl' to a directory in your path . Then 
-when you click the 'Build' button or menu item the script will generate Perl 
-sources for you.
+If you use Glade >= 0.5.0 you can set the project language to Perl and
+Then when you click the 'Build' button or 'File/Build Source Code' menu item 
+the supplied script (called 'glade2perl' and installed in a directory in 
+your path) will generate Perl sources for you. 
 
-We use options files to store information about such things as existing signal 
-handler modules and so on. This means that signal handler stubs are only 
-specified if they are not available at Build time even though Glade knows 
-nothing about them. This approach also allows you to control other options
-for the Glade build phase.
+Glade-Perl uses options files to store information about such things as 
+existing signal handler modules and so on. This means that signal handler 
+stubs are only specified if they are not available at Build time even though 
+Glade knows nothing about them. This approach also allows you to control other 
+options for the Glade build phase.
 
 TO RUN MANUALLY
 ---------------

@@ -20,22 +20,22 @@ BEGIN {
     use Carp qw(cluck);
     $SIG{__DIE__}  = \&Carp::confess;
     $SIG{__WARN__} = \&Carp::cluck;
+
     use File::Path     qw( mkpath );        # in use_Glade_Project
     use File::Basename qw( dirname );       # in use_Glade_Project
     use Cwd            qw( chdir cwd );     # in use_Glade_Project
     use Sys::Hostname  qw( hostname );      # in use_Glade_Project
     use Text::Wrap     qw( wrap $columns ); # in options, diag_print
-    use Glade::PerlSource qw(:VARS :METHODS);        # Source writing vars and methods
-#    use Glade::PerlRun;
+    use Glade::PerlSource qw(:VARS :METHODS ); # Source writing vars and methods
     use Glade::PerlXML;
     use vars           qw( 
                             @ISA 
-                            $AUTOLOAD
                             $PACKAGE 
                             $VERSION
+                            $xAUTOLOAD
                        );
     $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.51);
+    $VERSION        = q(0.52);
     # Tell interpreter who we are inheriting from
     @ISA            = qw( 
                             Glade::PerlXML 
@@ -133,12 +133,13 @@ sub new {
   return $self;
 }
 
-sub AUTOLOAD {
+sub xAUTOLOAD {
   my $self = shift;
   my $i = 1;
+  my $AUTOLOAD;
   my $type = ref($self)
-    or die sprintf(D_("%s is not an object\n",
-        "We were called from "), $self), join(", ", caller),"\n\n";
+    or die "$self is not an object so we cannot '$AUTOLOAD'\n",
+      "We were called from ".join(", ", caller)."\n\n";
   my $name = $AUTOLOAD;
   $name =~ s/.*://;       # strip fully-qualified portion
 
@@ -153,7 +154,7 @@ sub AUTOLOAD {
     }
 
   } else {
-      die sprintf(D_("Can't access method `%s' in class %s\n"),
+      die sprintf("Can't access method `%s' in class %s\n",
           $name, $type);
 
   }
@@ -162,13 +163,13 @@ sub AUTOLOAD {
 #===============================================================================
 #=========== Diagnostics utilities                                  ============
 #===============================================================================
-sub verbosity            { $main::Glade_Perl_Generate_options->verbose }
-sub Writing_to_File      { $main::Glade_Perl_Generate_options->write_source }
-sub Building_UI_only     {!defined $main::Glade_Perl_Generate_options->write_source }
-sub Writing_Source_only  { $main::Glade_Perl_Generate_options->dont_show_UI }
+sub verbosity            { $Glade_Perl->{'options'}->verbose }
+sub Writing_to_File      { $Glade_Perl->{'options'}->write_source }
+sub Building_UI_only     {!defined $Glade_Perl->{'options'}->write_source }
+sub Writing_Source_only  { $Glade_Perl->{'options'}->dont_show_UI }
 
 sub diagnostics { 
-    ($_[1] || 1) <= ($main::Glade_Perl_Generate_options->verbose);
+    ($_[1] || 1) <= ($Glade_Perl->{'options'}->verbose);
 }
 
 sub diag_print {
@@ -176,14 +177,14 @@ sub diag_print {
     my $level = shift;
     return unless $class->diagnostics($level);
     my $message = shift;
-    my $options = $main::Glade_Perl_Generate_options;
+    my $options = $Glade_Perl->{'options'};
     my @times = times;
     my $time='';
     if ($options->benchmark) {
         $time = int( $times[0] + $times[1] );
     }
     unless (ref $message) {
-        $message = sprintf(D_($message), @_);
+        $message = sprintf(D_($message, 2), @_);
         print STDOUT wrap($time, 
             $options->indent.$options->indent, "$message\n");
 
@@ -195,7 +196,7 @@ sub diag_print {
 sub diag_ref_print {
     my ($class, $level, $message, $desc, $pad) = @_;
     return unless $class->diagnostics($level);
-    my $options = $main::Glade_Perl_Generate_options;
+    my $options = $Glade_Perl->{'options'};
     my ($key, $val, $ref);
     my $padkey = $pad || 17;
     my $title = D_($desc || "");
@@ -287,7 +288,7 @@ sub get_versions {
 #            " $Gtk::VERSION (CVS $cpan_date) ");
     }
     unless ($class->my_perl_gtk_can_do('MINIMUM REQUIREMENTS')) {
-        die D_("You need to upgrade your")." Gtk-Perl";
+        die "You need to upgrade your Gtk-Perl";
     }
 
     if ($options->allow_gnome) {
@@ -308,7 +309,7 @@ sub get_versions {
         }
 #        unless (Gnome::Stock->can('button')) {
         unless ($class->my_gnome_libs_can_do('MINIMUM REQUIREMENTS')) {
-            die D_("You need to upgrade your")." gnome-libs";
+            die "You need to upgrade your gnome-libs";
         }
     }
     return $options;
@@ -317,75 +318,89 @@ sub get_versions {
 #===============================================================================
 #=========== Options utilities                                      ============
 #===============================================================================
-sub merge_options {
-    my ($class, $filename, $base_options) = @_;
-    my $me = "$class->merge_options";
-    my $options = $base_options;
-    my ($file_options, $key);
-    if ($filename && -f $filename) {
-        # Override the defaults with values from the options file
-        $file_options = $class->Proto_from_File($filename, '  ', '');
-        foreach $key (keys %$file_options) {
-            if ($file_options->{$key}) {
-                if ($file_options->{$key} eq 'True') {
-                    $file_options->{$key} = 1;
-                } elsif ($file_options->{$key} eq 'False') {
-                    $file_options->{$key} = 0;
-                }
-                $options->{$key} = $file_options->{$key};
+sub add_to_hash_from {
+    my ($class, $to_hash, $from_hash) = @_;
+    my ($key, $value);
+    foreach $key (keys %$from_hash) {
+        if ($from_hash->{$key}) {
+            if ($from_hash->{$key} =~ /^(true|y|yes|on)$/i) {
+                $from_hash->{$key} = 1;
+            } elsif ($from_hash->{$key} =~ /^(false|n|no|off)$/i) {
+                $from_hash->{$key} = 0;
             }
+            $to_hash->{$key} = $from_hash->{$key};
         }
-    }
-    bless $options, $PACKAGE;
-    return $options;
+    }    
 }
 
 sub save_options {
     my ($class, $filename) = @_;
 #use Data::Dumper; print Dumper(\@_);print Dumper($Glade_Perl);
     my $me = __PACKAGE__."->save_options";
-    my ($file_options, $key);
+    my ($user_options, $site_options, $key, $default);
     # Take a copy of the options supplied and work on that (for deleting keys)
+    # so that we still have some options to use (verbode etc) :)
     my %options = %{$class};
-    my $user_filename = $class->{'user_options'};
-    $class->diag_print(4, $class, "Options to save");
-    if ($user_filename && -f $user_filename) {
+    my $site_filename = $class->{'site_options'} || "/etc/glade2perl.xml";
+    if (-f $site_filename) {
         # Only save options that are different to user_options in file
-        $file_options = $class->Proto_from_File(
-             $user_filename, 
-             '  ', '');
-        $class->diag_print(4, $file_options, "User options");
+#        $site_options = $class->simple_Proto_from_File(
+#             $site_filename, '')->{'G2P-Options'};
+        $site_options = $class->Proto_from_File(
+             $site_filename, '', '');
+        $class->diag_print(4, $site_options, "Site options");
     }
-    foreach $key (keys %options) {
+
+    my $user_filename = $class->{'user_options'} || "$ENV{'HOME'}/.glade2perl.xml";
+    if (-f $user_filename) {
+        # Only save options that are different to user_options in file
+#        $user_options = $class->simple_Proto_from_File(
+#             $user_filename, '')->{'G2P-Options'};
+        $user_options = $class->Proto_from_File(
+             $user_filename, '', '');
+        $class->diag_print(4, $user_options, "User options");
+    }
+
+    $class->diag_print(4, $class, "Options to save");
+    foreach $key (sort keys %{$class}) {
         if (!defined $class->{$key}) {
             $class->diag_print (6, 
                 "%s- NOT saving option '%s' (no value)", $indent, $key);
             delete $options{$key};
 
-        } elsif ($file_options->{$key} &&
-            ($file_options->{$key} eq $options{$key})) {
-            $class->diag_print (6, 
-                "%s- NOT saving option '%s' (eq user_option)", $indent, $key);
-            delete $options{$key};
-
         } elsif ($key eq '_permitted_fields') {
             # Ignore the AUTOLOAD dynamic data access hash
             delete $options{$key};
+
+        } else {
+            if (defined $user_options->{$key}) {
+                $default = $user_options->{$key};
+            } elsif (defined $site_options->{$key}) {
+                $default = $site_options->{$key};
+            } elsif (defined $fields{$key}) {
+                $default = $fields{$key};
+            } else {
+                $default = '__IMPOSSIBLE_DEFAULT__';
+            }
+            if ($class->{$key} eq $default) {
+                $class->diag_print (6, 
+                    "%s- NOT saving option '%s' (default value)", $indent, $key);
+            delete $options{$key};
+            }
         }
     }
     $options{'glade2perl_version'} = $VERSION;
-    $class->diag_print (2, 
-        "%s- Saving project options in file '%s'", 
+    $class->diag_print (2, "%s- Saving project options in file '%s'", 
         $indent, $filename);
 #    $class->diag_print (2, "${indent}- Saving project options in file '$filename'");
     my $xml = $class->XML_from_Proto('', '  ', 'G2P-Options', \%options);
     $class->diag_print(6, $xml);
     open OPTIONS, ">".($filename) or 
-        die sprintf(D_("error %s - can't open file '%s' for output"), 
+        die sprintf("error %s - can't open file '%s' for output", 
             $me, $filename);
     print OPTIONS $xml;
     close OPTIONS or
-        die sprintf(D_("error %s - can't close file '%s'"), 
+        die sprintf("error %s - can't close file '%s'", 
             $me, $filename);
 }
 
@@ -394,48 +409,47 @@ sub options {
     my $me = (ref $class || $class)."->options";
     my ($key, $first_time, $file);
     my $options;
-    if (ref $main::Glade_Perl_Generate_options eq __PACKAGE__) {
-        $options = $main::Glade_Perl_Generate_options;
+    my $file_options;
+    if (ref $Glade_Perl->{'options'} eq __PACKAGE__) {
+        $options = $Glade_Perl->{'options'};
     } else {
         # This is first time through
         $options = $PACKAGE->new;
         $first_time = 1;
-        # Mege default, site , user options
+        # Mege default, site , user options, project options and args
         foreach $file ( 
                 $params{'site_options'} || "/etc/glade2perl.xml", 
                 $params{'user_options'} || "$ENV{'HOME'}/.glade2perl.xml", 
                 $params{'project_options'} ) {
-            $options = $options->merge_options($file, $options);
+            if ($file && -f $file) {
+                # Override the defaults with values from the options file
+#                $file_options = $class->simple_Proto_from_File(
+#                    $filename, '')->{'G2P-Options'};
+                $file_options = $class->Proto_from_File($file, '', '');
+                $class->add_to_hash_from($options, $file_options);
+            }
         }
     }
 #use Data::Dumper; print Dumper($options);
     # merge in the supplied arg options
-    foreach $key (keys %params) {
-        if ($params{$key}) {
-            if ($params{$key} eq 'True') {
-                $params{$key} = 1;
-            } elsif ($params{$key} eq 'False') {
-                $params{$key} = 0;
-            }
-        }
-        # Override the defaults/file options with args
-        $options->{$key} = $params{$key};
-    }
+    $class->add_to_hash_from($options, \%params);
+
     if ($options->verbose == 0 ) { 
         open STDOUT, ">/dev/null"; 
     } else {
         # Load the diagnostics gettext translations
-        $class->load_translations('Glade-Perl', $options->diag_LANG, undef, undef, '_D', undef);
-#        $class->load_translations('Glade-Perl', $options->diag_LANG, undef, 
-#            '/home/dermot/Devel/Glade-Perl/Glade/test.mo', '_D', undef);
+#        $class->load_translations('Glade-Perl', $options->diag_LANG, undef, undef, '__D', undef);
+        $class->load_translations('Glade-Perl', $options->diag_LANG, undef, 
+            '/home/dermot/Devel/Glade-Perl/ppo/en.mo', '__D', undef);
+#        $class->check_gettext_strings("__D");
     }
     unless ($options->my_perl_gtk &&
             ($options->my_perl_gtk > $Gtk::VERSION)) {
         $options->my_perl_gtk($Gtk::VERSION);
     }
     if ( $options->dont_show_UI && !$options->write_source) {
-        die "$me - ".D_("Much as I like an easy life, please alter options ".
-            "to, at least, show_UI or write_source\n    Run abandoned");
+        die "$me - Much as I like an easy life, please alter options ".
+            "to, at least, show_UI or write_source\n    Run abandoned";
     }
 #    if ($options->{'debug'}) {$options->verbose(0);}
     $indent = $options->indent; 
@@ -453,25 +467,23 @@ sub options {
     $key = `date`;
     chomp $key;
     $options->start_time($key);
-    $main::Glade_Perl_Generate_options = $options;
+    $Glade_Perl->{'options'} = $options;
     if ($first_time) {
         my $log_file = $options->log_file;
         if ($log_file) {
             open STDOUT, ">$log_file" or
-                die sprintf(D_("error %s - can't open file '%s' for output"), 
+                die sprintf("error %s - can't open file '%s' for output", 
                     $me, $log_file);
             open STDERR, ">&1" or
-                die sprintf(
-                    D_("error %s - can't redirect STDERR to file '%s'"),
+                die sprintf("error %s - can't redirect STDERR to file '%s'",
                     $me, $log_file);
         }
         if ($class->diagnostics(2)) {
             $class->diag_print (2, 
                 "--------------------------------------------------------");
-            $class->diag_print (2, $options->indent. 
-                "  DIAGNOSTICS (locale <%s> verbosity %s) ".
+            $class->diag_print (2, "%s  DIAGNOSTICS (locale <%s> verbosity %s) ".
                 "started by %s (version %s) at %s", 
-                $options->diag_LANG, $options->verbose, 
+                $indent, $options->diag_LANG, $options->verbose, 
                 $PACKAGE, $VERSION, $options->start_time);
             $class->Write_to_File;
             $class->diag_print(6, $options, "Options used for Generate run");
@@ -488,14 +500,16 @@ sub options {
 sub use_Glade_Project {
     my ($class, $glade_proto) = @_;
     my $me = "$class->use_Glade_Project";
-    $class->diag_print(6, $glade_proto->{'project'}, 'Input Proto project');
-    my $options = $main::Glade_Perl_Generate_options;
+    $class->diag_print(6, $glade_proto->{'project'}, "Input Proto project");
+    my $options = $Glade_Perl->{'options'};
     # Ensure that the options are set (use defaults, site, user, project)
-    $options->options('options_set' => $me);
-    my $form = {};
-    bless $form, $PACKAGE;
+    $options->options_set($me);
+    my $project_options = {};
+    bless $project_options, $PACKAGE;
     my $gnome_support = $glade_proto->{'project'}{'gnome_support'};
-    $options->allow_gnome($glade_proto->{'project'}{'gnome_support'} eq 'True');
+    $options->allow_gnome(
+        ($glade_proto->{'project'}{'gnome_support'} || 'True')
+            eq 'True');
     $options->gettext(
         ($glade_proto->{'project'}{'output_translatable_strings'} || 'False') 
             eq 'True');
@@ -503,7 +517,7 @@ sub use_Glade_Project {
 #    $options = $class->get_versions($options;
     # Glade assumes that all directories are named relative to the Glade 
     # project (.glade) file (not <directory>) !
-    my $glade_file_dirname = dirname($Glade_Perl->{'glade_filename'});
+    my $glade_file_dirname = dirname($options->{'glade_filename'});
     # Replace any spaces with underlines
     my $replaced = $glade_proto ->{'project'}{'name'} =~ s/[ -\.]//g;
     if ($replaced) {
@@ -511,107 +525,105 @@ sub use_Glade_Project {
             "removed from project name - it is now '%s'",
             $indent, $replaced, $glade_proto->{'project'}{'name'});
     }
-    $form->{'name'}  = $glade_proto->{'project'}{'name'};
-    $form->{'directory'} = $class->full_Path(
+    $project_options->{'name'}  = $glade_proto->{'project'}{'name'};
+    $project_options->{'directory'} = $class->full_Path(
         $glade_proto->{'project'}{'directory'}, 
         $glade_file_dirname);
-    $form->{'glade_filename'} = $class->full_Path(
-        $Glade_Perl->{'glade_filename'},
-        $form->{'directory'});
+    $project_options->{'glade_filename'} = $class->full_Path(
+        $Glade_Perl->{'options'}{'glade_filename'},
+        $project_options->{'directory'});
 
-    $form->{'source_directory'} = $class->full_Path(
+    $project_options->{'source_directory'} = $class->full_Path(
         ($glade_proto->{'project'}{'source_directory'} || './src'),     
         $glade_file_dirname,
-        $form->{'directory'} );
+        $project_options->{'directory'} );
     if ($class->Writing_to_File && 
-        !-d $form->{'source_directory'}) { 
+        !-d $project_options->{'source_directory'}) { 
         # Source directory does not exist yet so create it
         $class->diag_print (2, "%s- Creating source_directory '%s' in %s", 
-            $indent, $form->{'source_directory'}, $me);
-        mkpath($form->{'source_directory'} );
+            $indent, $project_options->{'source_directory'}, $me);
+        mkpath($project_options->{'source_directory'} );
     }
 
-    $form->{'pixmaps_directory'} = $class->full_Path(
+    $project_options->{'pixmaps_directory'} = $class->full_Path(
         ($glade_proto->{'project'}{'pixmaps_directory'} || './pixmaps'),    
         $glade_file_dirname, 
-        $form->{'directory'} );
+        $project_options->{'directory'} );
     if ($class->Writing_to_File && 
-        !-d $form->{'pixmaps_directory'}) { 
+        !-d $project_options->{'pixmaps_directory'}) { 
         # Source directory does not exist yet so create it
         $class->diag_print (2, "%s- Creating pixmaps_directory '%s' in %s",
-            $indent, $form->{'pixmaps_directory'}, $me);
-        mkpath($form->{'pixmaps_directory'} );
+            $indent, $project_options->{'pixmaps_directory'}, $me);
+        mkpath($project_options->{'pixmaps_directory'} );
     }
 
-    # FIXME
-    # Make sure that generated subs source filename is not included 
-    # in 'use'd packages supplied to us
-    $form->{'SIGS_class'} = $form->{'name'}."SIGS";
-    $form->{'SIGS_filename'} = $class->full_Path(
-        "$form->{'SIGS_class'}.pm",         
-        $form->{'source_directory'} );
-#    print "use $form->{'source_directory'}\::$glade_proto->{'project'}{'name'}_SIGS\n";
-#    eval "use $form->{'source_directory'}\::$Glade_Perl->{'name'}_SIGS";
+    $project_options->{'SIGS_class'} = $project_options->{'name'}."SIGS";
+    $project_options->{'SIGS_filename'} = $class->full_Path(
+        "$project_options->{'SIGS_class'}.pm",         
+        $project_options->{'source_directory'} );
+    $project_options->{'UI_class'} = $project_options->{'name'}."UI";
+    $project_options->{'UI_filename'} = $class->full_Path(
+        "$project_options->{'UI_class'}.pm",         
+        $project_options->{'source_directory'} );
+    $project_options->{'APP_class'} = $project_options->{'name'};
+    $project_options->{'APP_filename'} = $class->full_Path(
+        "$project_options->{'APP_class'}.pm",         
+        $project_options->{'source_directory'} );
+    $project_options->{'SUBAPP_class'} = "Sub".$project_options->{'APP_class'};
+    $project_options->{'SUBAPP_filename'} = $class->full_Path(
+        "$project_options->{'SUBAPP_class'}.pm",         
+        $project_options->{'source_directory'} );
+    $project_options->{'SUBCLASS_class'} = "Sub".$project_options->{'SIGS_class'};
+    $project_options->{'SUBCLASS_filename'} = $class->full_Path(
+        "$project_options->{'SUBCLASS_class'}.pm",         
+        $project_options->{'source_directory'} );
+    $project_options->{'LIBGLADE_class'} = $project_options->{'name'}."LIBGLADE";
+    $project_options->{'LIBGLADE_filename'} = $class->full_Path(
+        "$project_options->{'LIBGLADE_class'}.pm",         
+        $project_options->{'source_directory'} );
+    $project_options->{'POT_filename'} = $class->full_Path(
+        $project_options->{'name'}.".pot",
+        $project_options->{'source_directory'} );
 
-    $form->{'UI_class'} = $form->{'name'}."UI";
-    $form->{'UI_filename'} = $class->full_Path(
-        "$form->{'UI_class'}.pm",         
-        $form->{'source_directory'} );
-    $form->{'APP_class'} = $form->{'name'};
-    $form->{'APP_filename'} = $class->full_Path(
-        "$form->{'APP_class'}.pm",         
-        $form->{'source_directory'} );
-    $form->{'SUBAPP_class'} = "Sub".$form->{'APP_class'};
-    $form->{'SUBAPP_filename'} = $class->full_Path(
-        "$form->{'SUBAPP_class'}.pm",         
-        $form->{'source_directory'} );
-    $form->{'SUBCLASS_class'} = "Sub".$form->{'SIGS_class'};
-    $form->{'SUBCLASS_filename'} = $class->full_Path(
-        "$form->{'SUBCLASS_class'}.pm",         
-        $form->{'source_directory'} );
-    $form->{'LIBGLADE_class'} = $form->{'name'}."LIBGLADE";
-    $form->{'LIBGLADE_filename'} = $class->full_Path(
-        "$form->{'LIBGLADE_class'}.pm",         
-        $form->{'source_directory'} );
-    $form->{'glade_proto'} = $glade_proto;
+    $project_options->{'glade_proto'} = $glade_proto;
 
-    $form->{'logo_filename'} = $class->full_Path(
+    $project_options->{'logo_filename'} = $class->full_Path(
         $options->logo, 
-        $form->{'pixmaps_directory'}, 
+        $project_options->{'pixmaps_directory'}, 
         '' );
 
-    $form->{'glade2perl_logo_filename'} = $class->full_Path(
+    $project_options->{'glade2perl_logo_filename'} = $class->full_Path(
         $options->glade2perl_logo, 
-        $form->{'pixmaps_directory'}, 
+        $project_options->{'pixmaps_directory'}, 
         '' );
 
-    unless (-f $form->{'glade2perl_logo_filename'}) {             
+    unless (-f $project_options->{'glade2perl_logo_filename'}) {             
         $class->diag_print (2, "%s- Writing our own logo to '%s' in %s",
-            $indent, $form->{'glade2perl_logo_filename'}, $me);
-        open LOGO, ">$form->{'glade2perl_logo_filename'}" or 
-            die sprintf(D_("error %s - can't open file '%s' for output"), 
-                $me, $form->{'glade2perl_logo_filename'});
+            $indent, $project_options->{'glade2perl_logo_filename'}, $me);
+        open LOGO, ">$project_options->{'glade2perl_logo_filename'}" or 
+            die sprintf("error %s - can't open file '%s' for output", 
+                $me, $project_options->{'glade2perl_logo_filename'});
         print LOGO $class->our_logo;
         close LOGO or
-        die sprintf(D_("error %s - can't close file '%s'"), 
-            $me, $form->{'glade2perl_logo_filename'});
+        die sprintf("error %s - can't close file '%s'", 
+            $me, $project_options->{'glade2perl_logo_filename'});
     }
     
-    unless ($form->{'logo_filename'} && -f $form->{'logo_filename'}) {
+    unless ($project_options->{'logo_filename'} && -f $project_options->{'logo_filename'}) {
         $options->logo($options->glade2perl_logo);
-        $form->{'logo_filename'} = $form->{'glade2perl_logo_filename'};
+        $project_options->{'logo_filename'} = $project_options->{'glade2perl_logo_filename'};
     }            
-#use Data::Dumper; print Dumper($form);
+#use Data::Dumper; print Dumper($project_options);
 #exit;
     if ($options->author) {
-        $form->{'author'} = $options->author;
+        $project_options->{'author'} = $options->author;
     } else {
         my $host = hostname;
         my $pwuid = [(getpwuid($<))];
         my $user = $pwuid->[0];
         my $fullname = $pwuid->[6];
         my $hostname = [split(" ", $host)];
-        $form->{'author'} = "$fullname <$user\\\@$hostname->[0]>";
+        $project_options->{'author'} = "$fullname <$user\\\@$hostname->[0]>";
     }
     # If allow_gnome is not specified, use glade project <gnome_support> property
     unless (defined $options->{'allow_gnome'}) {
@@ -622,19 +634,19 @@ sub use_Glade_Project {
             $options->save_options( $options->project_options );
         }
     }
-    $form->{'logo'}         = $options->logo;
-    $form->{'version'}      = $options->version;
-    $form->{'date'}         = $options->date        || $options->start_time;
-    $form->{'copying'}      = $options->copying;
-    $form->{'description'}  = $options->description || 'No description';
-    $class->diag_print(6, $form);
+    $project_options->{'logo'}         = $options->logo;
+    $project_options->{'version'}      = $options->version;
+    $project_options->{'date'}         = $options->date        || $options->start_time;
+    $project_options->{'copying'}      = $options->copying;
+    $project_options->{'description'}  = $options->description || 'No description';
+    $class->diag_print(6, $project_options);
     # Now change to the <project><directory> so that we can find modules
-    chdir $form->{'directory'};
-    $form->{'_permitted_fields'} = \%fields;
-    bless $form, $PACKAGE;
-#    $class->diag_print(2, $form);exit;
+    chdir $project_options->{'directory'};
+    $project_options->{'_permitted_fields'} = \%fields;
+    bless $project_options, $PACKAGE;
+#    $class->diag_print(2, $project_options);exit;
 
-    return $form;
+    return $project_options;
 }
 
 1;

@@ -17,9 +17,8 @@ require 5.000; use strict 'vars', 'refs', 'subs';
 # author, who can be contacted at dermot.musgrove@virgin.net
 
 BEGIN {
-    use Glade::PerlSource qw( :VARS :METHODS);
+    use Glade::PerlSource qw( :VARS :METHODS );
     use vars              qw( 
-                            @ISA 
                             $PACKAGE
                             $VERSION
                             @VARS @METHODS
@@ -33,7 +32,7 @@ BEGIN {
                             $enums
                           );
     $PACKAGE =          __PACKAGE__;
-    $VERSION        = q(0.51);
+    $VERSION        = q(0.52);
     @VARS           = qw( 
                             $VERSION
                             $AUTHOR
@@ -46,8 +45,6 @@ BEGIN {
                             $Notebook_tab
                             $enums
                         );
-    # Tell interpreter who we are inheriting from
-    @ISA            =   qw( Glade::PerlSource );
     # These symbols (globals and functions) are always exported
     @EXPORT         =   qw(  );
     # Optionally exported package symbols (globals and functions)
@@ -114,8 +111,8 @@ sub new_GtkAccelLabel {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkAccelLabel";
     my $name = $proto->{'name'};
-    my $label   = $class->use_par($proto,'label',   $DEFAULT,    ''     );
-    my $justify = $class->use_par($proto, 'justify',$LOOKUP,    'left'  );
+    my $label   = $class->use_par($proto,'label',   $DEFAULT, '' );
+    my $justify = $class->use_par($proto, 'justify',$LOOKUP,  'left' );
     my $wrap    = $class->use_par($proto, 'wrap', $BOOL, 'False' );
     my $pattern = $label;
 
@@ -340,11 +337,11 @@ sub new_GtkCheckMenuItem {
     my $name = $proto->{'name'};
     my $label  = $class->use_par($proto, 'label',  $DEFAULT, '' );
     my $active = $class->use_par($proto, 'active', $BOOL,    'False' );
-    my $always_show_toggle= $class->use_par($proto, 'always_show_toggle',    $BOOL,        'False' );
+    my $always_show_toggle= $class->use_par($proto, 'always_show_toggle', $BOOL, 'False' );
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = ".
         "new_with_label Gtk::CheckMenuItem(_('$label'));" );
-    if ($class->use_par($proto, 'right_justify',        $BOOL,        'False'                )) {
+    if ($class->use_par($proto, 'right_justify',    $BOOL, 'False' )) {
         $class->add_to_UI( $depth, "\$widgets->{'$name'}->right_justify;" );
     }
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_state($active );" );
@@ -369,7 +366,7 @@ sub new_GtkCList {
         "'$selection_mode' );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_border(".
         "'$shadow_type' );" );
-    if ($class->use_par($proto, 'show_titles',    $BOOL,    'True'    )) {
+    if ($class->use_par($proto, 'show_titles', $BOOL, 'True' )) {
         $class->add_to_UI( $depth,  "\$widgets->{'$name'}->column_titles_show;" );
     }
     my @column_widths     = split(',', $class->use_par($proto, 'column_widths' ));
@@ -425,7 +422,7 @@ sub new_GtkColorSelection {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkColorSelection";
     my $name = $proto->{'name'};
-    my $policy  = $class->use_par($proto,'policy',  $LOOKUP, );
+    my $policy  = $class->use_par($proto, 'policy',  $LOOKUP, 'continuous');
 
     $class->add_to_UI( $depth, "\$widgets->{'$name'} = new Gtk::ColorSelection;");
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_update_policy(".
@@ -440,7 +437,7 @@ sub new_GtkColorSelectionDialog {
     my $me = "$class->new_GtkColorSelectionDialog";
     my $name = $proto->{'name'};
     my $title  = $class->use_par($proto,'title',  $DEFAULT, 'File Selection' );
-    my $policy = $class->use_par($proto,'policy', $LOOKUP, );
+    my $policy = $class->use_par($proto,'policy', $LOOKUP, 'continuous' );
     
     unless ($class->my_perl_gtk_can_do('gtk_colorselectiondialog_ok_button->child')) {
         $class->diag_print(1, "warn  We are generating code to construct a ".
@@ -504,7 +501,7 @@ sub new_GtkCurve {
     my $min_y      = $class->use_par($proto, 'min_y',      $DEFAULT,    0 );
     my $max_x      = $class->use_par($proto, 'max_x',      $DEFAULT,    1 );
     my $max_y      = $class->use_par($proto, 'max_y',      $DEFAULT,    1 );
-    my $curve_type = $class->use_par($proto, 'curve_type', $LOOKUP );
+    my $curve_type = $class->use_par($proto, 'curve_type', $LOOKUP, 'spline' );
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::Curve;" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_curve_type('$curve_type' );" );
@@ -518,7 +515,7 @@ sub new_GtkDialog {
     my ($class, $parent, $proto, $depth, $mainmenu) = @_;
     my $me = "$class->new_GtkDialog";
     my $name = $proto->{'name'};
-    my $title        = $class->use_par($proto, 'title',        $DEFAULT, 'UTIL' );
+    my $title        = $class->use_par($proto, 'title', $DEFAULT, '' );
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::Dialog;" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_title(_('$title') );" );
@@ -653,7 +650,7 @@ sub new_GtkGammaCurve {
     my $min_y      = $class->use_par($proto, 'min_y',        $DEFAULT,    0 );
     my $max_x      = $class->use_par($proto, 'max_x',        $DEFAULT,    1 );
     my $max_y      = $class->use_par($proto, 'max_y',        $DEFAULT,    1 );
-    my $curve_type = $class->use_par($proto, 'curve_type',   $LOOKUP );
+    my $curve_type = $class->use_par($proto, 'curve_type',   $LOOKUP, 'spline' );
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::GammaCurve;" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->curve->set_curve_type(".
@@ -705,7 +702,7 @@ sub new_GtkHButtonBox {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkHButtonBox";
     my $name = $proto->{'name'};
-    my $layout_style    = $class->use_par($proto, 'layout_style',    $LOOKUP );
+    my $layout_style    = $class->use_par($proto, 'layout_style',    $LOOKUP, 'default' );
     my $spacing         = $class->use_par($proto, 'spacing',         $DEFAULT,    0 );
     my $child_min_width = $class->use_par($proto, 'child_min_width', $DEFAULT,    0 );
     my $child_min_height = $class->use_par($proto, 'child_min_height', $DEFAULT,    0 );
@@ -734,15 +731,16 @@ sub new_GtkHPaned {
     my $name = $proto->{'name'};
     my $handle_size = $class->use_par($proto, 'handle_size', $DEFAULT, 0 );
     my $gutter_size = $class->use_par($proto, 'gutter_size', $DEFAULT, 0 );
-    my $position = $class->use_par($proto, 'position');
+    my $position = $class->use_par($proto, 'position', $DEFAULT, 0);
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::HPaned;" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->handle_size(".
         "$handle_size );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->gutter_size(".
         "$gutter_size );" );
-    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_position(".
-        "$position );" );
+    $position &&
+        $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_position(".
+            "$position );" );
 
     $class->pack_widget($parent, $name, $proto, $depth );
     return $widgets->{$name};
@@ -782,11 +780,11 @@ sub new_GtkHScale {
     my $page_size = $class->use_par($proto, $pre.'page_size', $DEFAULT, 10 );
     my $value     = $class->use_par($proto, $pre.'value',     $DEFAULT, 0 );
 #-------------
-    my $policy     = $class->use_par($proto, 'policy',     $LOOKUP );
+    my $policy     = $class->use_par($proto, 'policy',     $LOOKUP, 'continuous' );
     my $draw_value = $class->use_par($proto, 'draw_value', $BOOL,    'True' );
     my $digits     = $class->use_par($proto, 'digits',     $DEFAULT, 1 );
 #    my $numeric    = $class->use_par($proto, 'numeric',    $BOOL,    'False' );
-    my $value_pos  = $class->use_par($proto, 'value_pos',  $LOOKUP );
+    my $value_pos  = $class->use_par($proto, 'value_pos',  $LOOKUP, 'top' );
 
     $class->add_to_UI( $depth,  "\$work->{'$name-adj'} = new Gtk::Adjustment(".
         "$value, $lower, $upper, $step, $page, $page_size );" );
@@ -818,7 +816,7 @@ sub new_GtkHScrollbar {
     my $page_size = $class->use_par($proto, $pre.'page_size', $DEFAULT, 10 );
     my $value     = $class->use_par($proto, $pre.'value',     $DEFAULT, 0 );
 #-------------
-    my $policy     = $class->use_par($proto, 'policy',     $LOOKUP );
+    my $policy     = $class->use_par($proto, 'policy',     $LOOKUP, 'continuous' );
 
     $class->add_to_UI( $depth,  "\$work->{'$name-adj'} = new Gtk::Adjustment(".
         "$value, $lower, $upper, $step, $page, $page_size );" );
@@ -848,8 +846,8 @@ sub new_GtkImage {
     my $name = $proto->{'name'};
     my $image_width  = $class->use_par($proto, 'image_width',  $DEFAULT, 100 );
     my $image_height = $class->use_par($proto, 'image_height', $DEFAULT, 100 );
-    my $image_type   = $class->use_par($proto, 'image_type',   $LOOKUP );
-    my $image_visual = $class->use_par($proto, 'image_visual', $LOOKUP );
+    my $image_type   = $class->use_par($proto, 'image_type',   $LOOKUP, 'normal' );
+    my $image_visual = $class->use_par($proto, 'image_visual', $LOOKUP, 'system' );
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::Image(".
         "Gtk::Gdk::Image->new('$image_type', ".
@@ -865,7 +863,7 @@ sub new_GtkInputDialog {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkHInputDialog";
     my $name = $proto->{'name'};
-    my $title        = $class->use_par($proto, 'title',        $DEFAULT, 'UTIL' );
+    my $title        = $class->use_par($proto, 'title', $DEFAULT, '' );
 
     $class->add_to_UI($depth, "\$widgets->{'$name'} = new Gtk::InputDialog;" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_title(_('$title') );" );
@@ -924,7 +922,7 @@ sub new_GtkList {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkList";
     my $name = $proto->{'name'};
-    my $selection_mode = $class->use_par($proto, 'selection_mode', $LOOKUP );
+    my $selection_mode = $class->use_par($proto, 'selection_mode', $LOOKUP, 'single' );
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::List;" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_selection_mode(".
@@ -1159,7 +1157,7 @@ sub new_GtkPixmap {
     $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
         "\$class->create_pixmap($current_window, '$filename' );" );
     unless (defined $widgets->{$name}) { 
-        die sprintf(D_("\nerror %s failed to create pixmap from file '%s'"),
+        die sprintf(("\nerror %s failed to create pixmap from file '%s'"),
             $me, $filename), "\n";
     }
     unless ($build_insensitive) {
@@ -1182,8 +1180,8 @@ sub new_GtkPreview {
     my $me = "$class->new_GtkPreview";
     my $name = $proto->{'name'};
     my $type;
-    my $color  = $class->use_par($proto, 'type',   $DEFAULT );
-    my $expand = $class->use_par($proto, 'expand',   $BOOL );
+    my $color  = $class->use_par($proto, 'type',   $DEFAULT, 'True' );
+    my $expand = $class->use_par($proto, 'expand', $BOOL,    'False' );
     if ($color) {$type='color'} else {$type = 'grayscale'}
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::Preview(".
@@ -1308,11 +1306,11 @@ sub new_GtkScrolledWindow {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkScrolledWindow";
     my $name = $proto->{'name'};
-    my $hscrollbar_policy = $class->use_par($proto, 'hscrollbar_policy', $LOOKUP );
-    my $vscrollbar_policy = $class->use_par($proto, 'vscrollbar_policy', $LOOKUP );
+    my $hscrollbar_policy = $class->use_par($proto, 'hscrollbar_policy', $LOOKUP, 'always' );
+    my $vscrollbar_policy = $class->use_par($proto, 'vscrollbar_policy', $LOOKUP, 'always' );
     my $border_width      = $class->use_par($proto, 'border_width',      $DEFAULT,    0 );
-    my $hupdate_policy    = $class->use_par($proto, 'hupdate_policy',    $LOOKUP );
-    my $vupdate_policy    = $class->use_par($proto, 'vupdate_policy',    $LOOKUP );
+    my $hupdate_policy    = $class->use_par($proto, 'hupdate_policy',    $LOOKUP, 'continuous' );
+    my $vupdate_policy    = $class->use_par($proto, 'vupdate_policy',    $LOOKUP, 'continuous' );
 
     $class->add_to_UI( $depth,  
         "\$widgets->{'$name'} = new Gtk::ScrolledWindow( undef, undef);" );
@@ -1347,7 +1345,7 @@ sub new_GtkSpinButton {
     my $digits        = $class->use_par($proto, 'digits',        $DEFAULT, 1 );
     my $numeric       = $class->use_par($proto, 'numeric',       $BOOL,    'False' );
     my $wrap          = $class->use_par($proto, 'wrap',          $BOOL,    'False' );
-    my $update_policy = $class->use_par($proto, 'update_policy', $LOOKUP );
+    my $update_policy = $class->use_par($proto, 'update_policy', $LOOKUP, 'continuous' );
     my $snap          = $class->use_par($proto, 'snap',          $BOOL,    'False' );
     
     $class->add_to_UI( $depth,  "\$work->{'$name-adj'} = new Gtk::Adjustment(".
@@ -1497,9 +1495,9 @@ sub new_GtkTree {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkTree";
     my $name = $proto->{'name'};
-    my $selection_mode = $class->use_par($proto, 'selection_mode', $LOOKUP );
-    my $view_mode      = $class->use_par($proto, 'view_mode',      $LOOKUP );
-    my $view_line      = $class->use_par($proto, 'view_line',      $BOOL,    'False' );
+    my $selection_mode = $class->use_par($proto, 'selection_mode', $LOOKUP, 'single' );
+    my $view_mode      = $class->use_par($proto, 'view_mode',      $LOOKUP, 'line' );
+    my $view_line      = $class->use_par($proto, 'view_line',      $BOOL,   'False' );
 
     $class->add_to_UI($depth, "\$widgets->{'$name'} = new Gtk::Tree;" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_selection_mode(".
@@ -1533,7 +1531,7 @@ sub new_GtkVButtonBox {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkVButtonBox";
     my $name = $proto->{'name'};
-    my $layout_style     = $class->use_par($proto, 'layout_style',     $LOOKUP );
+    my $layout_style     = $class->use_par($proto, 'layout_style',     $LOOKUP, 'default' );
     my $spacing          = $class->use_par($proto, 'spacing',          $DEFAULT, 0 );
     my $child_min_width  = $class->use_par($proto, 'child_min_width',  $DEFAULT, 0 );
     my $child_min_height = $class->use_par($proto, 'child_min_height', $DEFAULT, 0 );
@@ -1580,7 +1578,7 @@ sub new_GtkVPaned {
     my $name = $proto->{'name'};
     my $handle_size = $class->use_par($proto, 'handle_size', $DEFAULT, 0 );
     my $gutter_size = $class->use_par($proto, 'gutter_size', $DEFAULT, 0 );
-    my $position = $class->use_par($proto, 'position');
+    my $position = $class->use_par($proto, 'position', $DEFAULT, 0);
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::VPaned;" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->handle_size(".
@@ -1588,8 +1586,8 @@ sub new_GtkVPaned {
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->gutter_size(".
         "$gutter_size );" );
     $position && 
-    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_position(".
-        "$position );" );
+        $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_position(".
+            "$position );" );
 
     $class->pack_widget($parent, $name, $proto, $depth );
     return $widgets->{$name};
@@ -1632,8 +1630,8 @@ sub new_GtkVScale {
     my $draw_value = $class->use_par($proto, 'draw_value', $BOOL, 'True' );
     my $digits     = $class->use_par($proto, 'digits',     $DEFAULT, 1 );
     my $numeric    = $class->use_par($proto, 'numeric',    $BOOL, 'False' );
-    my $value_pos  = $class->use_par($proto, 'value_pos',  $LOOKUP );
-    my $policy     = $class->use_par($proto, 'policy',     $LOOKUP );
+    my $value_pos  = $class->use_par($proto, 'value_pos',  $LOOKUP, 'top' );
+    my $policy     = $class->use_par($proto, 'policy',     $LOOKUP, 'continuous' );
 
     $class->add_to_UI( $depth,  "\$work->{'$name-adj'} = new Gtk::Adjustment(".
         "$value, $lower, $upper, $step, $page, $page_size );" );
@@ -1665,7 +1663,7 @@ sub new_GtkVScrollbar {
     my $page      = $class->use_par($proto, $pre.'page',      $DEFAULT, 10 );
     my $page_size = $class->use_par($proto, $pre.'page_size', $DEFAULT, 10 );
     my $value     = $class->use_par($proto, $pre.'value',     $DEFAULT, 0 );
-    my $policy     = $class->use_par($proto, 'policy',     $LOOKUP );
+    my $policy     = $class->use_par($proto, 'policy',     $LOOKUP, 'continuous' );
 
     $class->add_to_UI( $depth,  "\$work->{'$name-adj'} = new Gtk::Adjustment(".
         "$value, $lower, $upper, $step, $page, $page_size );" );
@@ -1693,7 +1691,7 @@ sub new_GtkWindow {
     my ($class, $parent, $proto, $depth, $mainmenu) = @_;
     my $me = "$class->new_GtkWindow";
     my $name = $proto->{'name'};
-    my $title        = $class->use_par($proto, 'title',        $DEFAULT, 'UTIL' );
+    my $title        = $class->use_par($proto, 'title',        $DEFAULT, '' );
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::Window;" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_title(_('$title') );" );

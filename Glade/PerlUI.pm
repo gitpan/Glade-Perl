@@ -37,9 +37,10 @@ BEGIN {
         $ignore_widgets
         $ignored_widgets
         $missing_widgets
+        $cxx_properties
         );
     $PACKAGE =          __PACKAGE__;
-    $VERSION        = q(0.51);
+    $VERSION        = q(0.52);
 
     $ignored_widgets = 0;
     $missing_widgets = 0;
@@ -51,6 +52,7 @@ BEGIN {
         $ignore_widgets
         $ignored_widgets
         $missing_widgets
+        $cxx_properties
         );
     # Tell interpreter who we are inheriting from
     @ISA            =   qw( Glade::PerlUIGtk Glade::PerlUIExtra );
@@ -68,6 +70,16 @@ BEGIN {
 #===============================================================================
 #=========== Constants and globals                                          ====
 #===============================================================================
+$ignore_widgets         = join (' ', 
+    'Placeholder',
+    'Custom',
+    );
+$cxx_properties    = join(' ',
+    'cxx_separate_class',
+    'cxx_separate_file',
+    'cxx_use_heap',
+    'cxx_visibility',
+    );
 my $gnome_widgets       = join( " ",
     'GnomeAbout',
     'GnomeApp',
@@ -157,10 +169,6 @@ $perl_gtk_depends       = {
     'GnomeStock'        => '19990914',
     'GtkCalendar'       => '19990914',
     };
-$ignore_widgets         = join (' ', 
-    'Placeholder',
-    'Custom',
-    );
 my $dialogs             = join(' ',
     'Gnome::About',
     'Gnome::App',
@@ -200,7 +208,7 @@ sub my_perl_gtk_can_do {
         return 1;
     }
     my ($cpan, $cvs);
-    my $options = $main::Glade_Perl_Generate_options;
+    my $options = $Glade_Perl->{'options'};
     my $check = $action;
     $check = $perl_gtk_depends->{$action};
     $check = $perl_gtk_depends->{$check} if $perl_gtk_depends->{$check};
@@ -244,7 +252,7 @@ sub my_gnome_libs_can_do {
     my ($class, $action) = @_;
     unless ($gnome_libs_depends->{$action}) { return 1;}
     if ($gnome_libs_depends->{$action} le 
-        $main::Glade_Perl_Generate_options->my_gnome_libs) {
+        $Glade_Perl->{'options'}->my_gnome_libs) {
         return 1;
     } else {
         if ($gnome_libs_depends->{$action} ge 19990914) {
@@ -254,13 +262,13 @@ sub my_gnome_libs_can_do {
                 $class->diag_print(1, 
                     "warn  gnome_libs version %s cannot do '%s' (properly)".
                     " and neither can the CVS version !!!",
-                    $main::Glade_Perl_Generate_options->my_gnome_libs, $action);
+                    $Glade_Perl->{'options'}->my_gnome_libs, $action);
             } else {
                 # We need a new CVS version
                 $class->diag_print(1, 
                     "warn  gnome_libs version %s cannot do '%s' (properly)".
                     " we need CVS module 'gnome-libs' after %s",
-                    $main::Glade_Perl_Generate_options->my_gnome_libs, 
+                    $Glade_Perl->{'options'}->my_gnome_libs, 
                     $action, $gnome_libs_depends->{$action});
             }
         } else {
@@ -268,7 +276,7 @@ sub my_gnome_libs_can_do {
             $class->diag_print(1, 
                 "warn  gnome_libs version %s cannot do '%s' (properly)".
                 " we need version %s",
-                $main::Glade_Perl_Generate_options->my_gnome_libs, 
+                $Glade_Perl->{'options'}->my_gnome_libs, 
                 $action, $gnome_libs_depends->{$action});
         }
         return undef;
@@ -281,7 +289,7 @@ sub my_gnome_libs_can_do {
 sub use_par {
     my ($class, $proto, $key, $request, $default, $dont_undef) = @_;
     my $me = "$class->use_par";
-    my $options = $main::Glade_Perl_Generate_options;
+    my $options = $Glade_Perl->{'options'};
     my $type;
     my $self = $proto->{$key};
     unless (defined $self) {
@@ -395,23 +403,18 @@ sub Widget_from_Proto {
             $current_data = "\$data->{'$name'}\{__DATA}";
             $current_name = $name;
             $current_window = "\$forms->{'$name'}\{'$name'}";
-            unless ($first_form) {$first_form = $name};
-#            $class->add_to_UI( $depth,  "bless \\\${forms->{'$name'}}, \$class;" );
+            $first_form ||= $name;
 
-            if ($main::Glade_Perl_Generate_options->hierarchy =~ /^(widget|both)/) {
+            if ($Glade_Perl->{'options'}->hierarchy =~ /^(widget|both)/) {
                 $widget_hierarchy = "\$forms->{'$name'}{__WH}";
-#                $widget_hierarchy = "\$forms->{'$name'}->WH";
             }
-            if ($main::Glade_Perl_Generate_options->hierarchy =~ /^(class|both)/) {
+            if ($Glade_Perl->{'options'}->hierarchy =~ /^(class|both)/) {
                 $class_hierarchy = "\$forms->{'$name'}{__CH}";
-#                $class_hierarchy = "\$forms->{'$name'}->CH";
             }
 
         } else {
             $widget_hierarchy = "$wh\{'$name'}" if $wh;
             $class_hierarchy  = "$ch\{'$proto->{class}'}{'$name'}" if $ch; 
-#            $widget_hierarchy = "$wh\->{'$name'}" if $wh;
-#            $class_hierarchy  = "$ch\->{'$proto->{class}'}{'$name'}" if $ch; 
         }
         $class->add_to_UI( $depth,  "#" );
         $class->add_to_UI( $depth,  "# ".S_("Construct a").
@@ -422,14 +425,14 @@ sub Widget_from_Proto {
             $expr =  "\$widgets->{'$name'} = ".
                 "$class->$constructor('$parentname', \$proto, $depth );";
             eval $expr or 
-                ($@ && die  "\nin $me\n\t".D_("while trying to eval").
-                    " '$expr'\n\t".D_("FAILED with Eval error")." '$@'\n" );
+                ($@ && die  "\nin $me\n\t".("while trying to eval").
+                    " '$expr'\n\t".("FAILED with Eval error")." '$@'\n" );
             if ($widget_hierarchy) {
                 # Add to form widget hierarchy
                 $class->add_to_UI( $depth,  
                     "$widget_hierarchy\{__W} = $current_form\{'$name'};" );
 #                    "\$class->W($widget_hierarchy, $current_form\{'$name'});" );
-                if ($main::Glade_Perl_Generate_options->hierarchy =~ /order/) {
+                if ($Glade_Perl->{'options'}->hierarchy =~ /order/) {
                     if ($depth > 1) {
                         $class->add_to_UI( $depth,  
                             "push \@{$wh\{__C}}, $current_form\{'$name'};" );
@@ -442,7 +445,7 @@ sub Widget_from_Proto {
                 $class->add_to_UI( $depth,  
                     "$class_hierarchy\{__W} = $current_form\{'$name'};" );
 #                    "\$class->W($class_hierarchy, $current_form\{'$name'});" );
-                if ($main::Glade_Perl_Generate_options->hierarchy =~ /order/) {
+                if ($Glade_Perl->{'options'}->hierarchy =~ /order/) {
                     if ($depth > 1) {
                         $class->add_to_UI( $depth,  
                             "push \@{$ch\{__C}}, $current_form\{'$name'};" );
@@ -451,14 +454,14 @@ sub Widget_from_Proto {
                 }
             }
         } else {
-            die D_("error")." $me\n\t".sprintf(
-                D_("I don't have a constructor called '%s'".
+            die ("error")." $me\n\t".sprintf(
+                ("I don't have a constructor called '%s'".
                 "- I guess that it isn't written yet :-)\n"),
                 "$class->$constructor");
         }
     } else {
         # We are a complete GTK-Interface - ie we are the application
-        unless ($main::Glade_Perl_Generate_options->allow_gnome) {
+        unless ($Glade_Perl->{'options'}->allow_gnome) {
             $ignore_widgets .= " $gnome_widgets";
         }
     }
@@ -466,7 +469,7 @@ sub Widget_from_Proto {
     $refself = ref $self;
     foreach $key (sort keys %{$proto}) {
         # Iterate through keys looking for sub widgets
-        if (ref $proto->{$key}) {
+        if (ref $proto->{$key} eq 'HASH') {
             # this is a ref to a sub hash so expand it
             $object = $proto->{$key}{$typekey};
             if ($object) {
@@ -474,12 +477,13 @@ sub Widget_from_Proto {
                     if ($class->my_perl_gtk_can_do($proto->{$key}{'class'})) {
                         unless (" $ignore_widgets " =~ / $proto->{$key}{'class'} /) {
                             # This is a real widget subhash so recurse to expand
-                            $childname = $class->Widget_from_Proto( $proto->{name}, 
-                                $proto->{$key}, $depth + 1, 
+                            $childname = $class->Widget_from_Proto( 
+                                $proto->{name}, $proto->{$key}, $depth + 1, 
                                 $widget_hierarchy, $class_hierarchy );
                             $class->set_child_packing(
                                 $proto->{name}, $childname, $proto->{$key}, $depth+1 );
                             if ($class->diagnostics) {
+                                # Check that we have used all widget properties
                                 $class->unused_elements($proto->{$key} );
                             }
 
@@ -498,19 +502,19 @@ sub Widget_from_Proto {
 
                 } elsif ($object eq 'signal') {
                     # we are a SIGNAL
-                    $class->new_signal($proto->{name}, 
-                        $proto->{$key}, $depth );
+                    $class->new_signal(
+                        $proto->{name}, $proto->{$key}, $depth );
 
                 } elsif ($object eq 'accelerator') {
                     # we are an ACCELERATOR
-                    $class->new_accelerator($proto->{name}, 
-                        $proto->{$key}, $depth );
+                    $class->new_accelerator(
+                        $proto->{name}, $proto->{$key}, $depth );
 
                 } elsif ($object eq 'style') {
                     # Perhaps should be in set_widget_properties
                     if ($current_form) {
-                        $class->new_style($proto->{name}, 
-                            $proto->{$key}, $depth );
+                        $class->new_style(
+                            $proto->{name}, $proto->{$key}, $depth );
                     }
 
                 } elsif ($object eq 'project') {
@@ -535,6 +539,8 @@ sub Widget_from_Proto {
 #                    $proto->{'class'}, '$proto->{name}', $me );
 #                $class->diag_print(1, $proto);
             }
+        } elsif (ref $proto->{$key} eq 'ARRAY') {
+            # We are a new type array of widgets so construct each in order
         }
     }
 #================== Check this and TIDY it up
@@ -580,7 +586,7 @@ sub internal_pack_widget {
     my $child_type;
     my $postpone_show;
     if ($current_form && eval "exists ${current_form}\{'$childname'}") {
-        die sprintf(D_("\nerror %s - There is already a widget called ".
+        die sprintf(("\nerror %s - There is already a widget called ".
             "'%s' constructed and packed - I will not overwrite it !"),
             $me, $childname);
     }
@@ -604,15 +610,21 @@ sub internal_pack_widget {
         $postpone_show = 1;
 
     } else {
-        # We have a parent to pack into somehow
+        # We probably have a parent to pack into somehow
         eval "\$refpar = (ref ${current_form}\{'$parentname'})||'UNDEFINED !!';";
         unless (eval "exists ${current_form}\{'$parentname'}") {
             if ('Gtk::Menu' eq $refwid) {
                 # We are a popup menu so we don't have a root window
 #            $class->add_to_UI( $depth, "${first_form}->popup_enable;" );
+                $class->add_to_UI($depth,   
+                    "${current_form}\{'tooltips'} = new Gtk::Tooltips;" );
+                $class->add_to_UI($depth,   
+                    "${current_form}\{'accelgroup'} = new Gtk::AccelGroup;" );
+                $class->add_to_UI( $depth, 
+                    "${current_form}\{'accelgroup'}->attach(\$widgets->{'$childname'} );" );
                 $postpone_show = 1;
             } else {
-                die sprintf(D_("\nerror %s - Unable to find a widget called '%s' - ".
+                die sprintf(("\nerror %s - Unable to find a widget called '%s' - ".
                     "I can not pack widget '%s' into a non-existant widget!"),
                     $me, $parentname, $childname);
             }
@@ -1060,11 +1072,17 @@ sub set_widget_properties {
     my $has_default = $class->use_par($proto, 'has_default',$BOOL,      'False' );
     my $can_focus   = $class->use_par($proto, 'can_focus',  $BOOL,      'False' );
     my $has_focus   = $class->use_par($proto, 'has_focus',  $BOOL,      'False' );
-# FIXME Use these ???
-#    my $events      = $class->use_par($proto, 'events',     $DEFAULT,   0       );
-#    my $extension_events_string    = $class->use_par(
-#                        $proto, 'extension_events_string',  $LOOKUP,    'none'  );
-    
+    my $extension_events = $class->use_par($proto, 'extension_events', $LOOKUP, '' );
+    my $events      = $class->use_par($proto, 'events',     $DEFAULT,   0       );
+    my ($work, @events);
+    foreach $work (split(/\|/, $events)) {
+        $work =~ s/\s*//g; # Trim off any whitespace
+        $work = Glade::PerlUIGtk->lookup($work);
+        push @events, $work;
+    }
+    $events = '';
+    $events = join("', '", @events) if $#events >= 0;
+
     if ( (defined $proto->{'x'}) || (defined $proto->{'y'}) ) {
         my $x = $class->use_par($proto, 'x',  $DEFAULT, 0 );
         my $y = $class->use_par($proto, 'y',  $DEFAULT, 0 );
@@ -1098,6 +1116,14 @@ sub set_widget_properties {
     if ( $has_focus ) {
         $class->add_to_UI( $depth, "${current_form}\{'$name'}->has_focus(".
             "$has_focus );" );
+    }
+    if ( $extension_events ) {
+        $class->add_to_UI( $depth, "${current_form}\{'$name'}->set_extension_events(".
+            "'$extension_events' );" );
+    }
+    if ( $events ) {
+        $class->add_to_UI( $depth, "${current_form}\{'$name'}->set_events(".
+            "['$events'] );" );
     }
 }
 
@@ -1329,8 +1355,8 @@ sub new_from_child_name {
     } elsif ($type eq 'Toolbar:button') {
         my $pixmap_widget_name = 'undef';
         my ($group, $rb_group, $use_group);
-        my $label   = $class->use_par($proto, 'label',         $DEFAULT, '');
-        my $icon    = $class->use_par($proto, 'icon',          $DEFAULT, '' );
+        my $label   = $class->use_par($proto, 'label', $DEFAULT, '');
+        my $icon    = $class->use_par($proto, 'icon',  $DEFAULT, '' );
 #        my $stock_button = $class->use_par($proto, 'stock_button',  $LOOKUP, '' );
 
         my $tooltip = $class->use_par($proto, 'tooltip',       $DEFAULT, '' );
@@ -1356,7 +1382,7 @@ sub new_from_child_name {
 
         } elsif ($proto->{'stock_pixmap'}) {
             my $stock_pixmap = $class->use_par($proto, 'stock_pixmap',  $LOOKUP, '' );
-            if ($main::Glade_Perl_Generate_options->allow_gnome) {
+            if ($Glade_Perl->{'options'}->allow_gnome) {
                 $pixmap_widget_name = "${current_form}\{'${name}-pixmap'}";
                 if ($class->my_perl_gtk_can_do('gnome_stock_pixmap_widget')) {
                     $class->add_to_UI( $depth, 
@@ -1505,27 +1531,31 @@ sub new_signal {
             $subs .= "$handler\n$indent".(' ' x 19 );
             eval "$current_form\{_HANDLERS}{'$handler'} = 'signal'";
         }
-#        if ($class->can($handler)) {
         if ($class->can($handler) || 
-            eval "$current_name->can('$handler')" || 
-            (($main::Glade_Perl_Generate_options->style || 'AUTOLOAD') eq 'Libglade' &&
-            eval {$use_modules[0]."->can('$handler')"})) {
+            eval "$current_name->can('$handler')"
+            # || 
+            #    (
+            #        #($Glade_Perl->{'options'}->style || 'AUTOLOAD') eq 'Libglade' &&
+            #        defined $use_modules[0] && 
+            #        print "$use_modules[0]\->can('$handler')\n" &&
+            #        eval "$use_modules[0]\->can('$handler')"
+            #    )
+            ) {
             # All is hunky-dory - no need to generate a stub
             eval "delete $current_form\{_HANDLERS}{'$handler'}";
             # First connect the signal handler as best we can
             unless ($class->Writing_Source_only) {
-                $expr = "push \@{${current_form}\{Signal_Strings}}, ".
+                $expr = "push \@{${current_form}\{'Signal_Strings'}}, ".
                     "\"\\${current_form}\{'$object'}->$call( ".
 #                    "'$signal', \\\\\\\"$handler\\\\\\\", '$data', '$object', ".
                     "'$signal', \\\"\$class\\\::$handler\\\", '$data', '$object', ".
                     "'name of form instance' )\"";
-#print $expr."\n";
                 eval $expr
             }
             # Now write a signal_connect for generated code
             # All these back-slashes are really necessary as these strings
             # are passed through so many others (evals and so on)
-            $expr = "push \@{${current_form}\{Signal_Strings}}, ".
+            $expr = "push \@{${current_form}\{'Signal_Strings'}}, ".
                 "\"$class->add_to_UI( 1, ".
                 "\\\"\\\\\\${current_form}\{'$object'}->$call( ".
                 "'$signal', \\\\\\\"\\\\\\\$class\\\\\\\\\::$handler\\\\\\\", '$data', '$object', ".
@@ -1539,17 +1569,17 @@ sub new_signal {
                 "connected to widget '%s' needs to be written",
                 $handler, $object);
             unless ($class->Writing_Source_only) {
-            $expr = "push \@{${current_form}\{Signal_Strings}}, ".
+            $expr = "push \@{${current_form}\{'Signal_Strings'}}, ".
                 "\"\\${current_form}\{'$object'}->$call(".
                 "'$signal', \\\"\$class\\\::missing_handler\\\", ".
                 "'$parentname', '$signal', '$handler', '".
-                $Glade_Perl->{logo_filename}."' )\"";
+                $Glade_Perl->{'options'}{'logo_filename'}."' )\"";
                 eval $expr
             }
             # Now write a signal_connect for generated code
             # All these back-slashes are really necessary as these strings
             # are passed through so many others (evals and so on)
-            $expr = "push \@{${current_form}\{Signal_Strings}}, ".
+            $expr = "push \@{${current_form}\{'Signal_Strings'}}, ".
                 "\"$class->add_to_UI( 1, ".
                 "\\\"\\\\\\${current_form}\{'$object'}->$call( ".
                 "'$signal', \\\\\\\"\\\\\\\$class\\\\\\\\\::$handler\\\\\\\", '$data', '$object', ".
