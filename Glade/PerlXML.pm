@@ -28,7 +28,7 @@ BEGIN {
                             $seq
                        );
     $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.55);
+    $VERSION        = q(0.56);
     $AUTHOR         = q(Dermot Musgrove <dermot.musgrove\@virgin.net>);
     $DATE           = q(30 June 1999);
     # Tell interpreter who we are inheriting from

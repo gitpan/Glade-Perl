@@ -6,7 +6,7 @@ BEGIN     {
     use Glade::PerlGenerate;
     }
 
-my $VERSION = "0.55";
+my $VERSION = "0.56";
 
 # We expect to be supplied with parameter
 #   $_[0] is name of a Glade <GTK-Interface> XML file

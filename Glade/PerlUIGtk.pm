@@ -32,7 +32,7 @@ BEGIN {
                             $enums
                           );
     $PACKAGE =          __PACKAGE__;
-    $VERSION        = q(0.55);
+    $VERSION        = q(0.56);
     @VARS           = qw( 
                             $VERSION
                             $AUTHOR

@@ -39,7 +39,7 @@ BEGIN {
     # Tell interpreter who we are inheriting from
     @ISA          = qw( Exporter );
     $PACKAGE      = __PACKAGE__;
-    $VERSION      = q(0.55);
+    $VERSION      = q(0.56);
     $AUTHOR       = q(Dermot Musgrove <dermot.musgrove\@virgin.net>);
     $DATE         = q(Wed Apr 19 02:28:58 BST 2000);
     $widgets      = {};

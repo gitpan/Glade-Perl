@@ -24,7 +24,7 @@ BEGIN {
                             $enums
                           );
     $PACKAGE =          __PACKAGE__;
-    $VERSION            = q(0.55);
+    $VERSION            = q(0.56);
     # These cannot be looked up in the include files
     $enums =      {
         'GNOME_MENU_SAVE_AS_STRING'     => 'Save _As...',
@@ -951,6 +951,7 @@ sub new_GtkPixmapMenuItem {
                 undef $widgets->{"$name-key"};
             }
             undef $widgets->{"$name-label"};
+
         } else {
             # Use old methods (from Gtk::MenuItem)
             $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".

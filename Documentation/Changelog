@@ -1,5 +1,9 @@
 Revision history for Perl module Glade::PerlGenerate development branch.
 Wed Apr 19 02:28:58 BST 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
+  - Version 0.56 - embarassment release
+  - Makefile.PL unchanged so that it will install all the modules correctly.
+  
+Wed Apr 19 02:28:58 BST 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
   - Version 0.55
   - New FAQ about building Unicode::String for perl 5.6
   - PerlXML->Proto_from_XML_Parser_Tree() changed to cancel the use of 
