@@ -1,5 +1,5 @@
 package Glade::PerlProject;
-require 5.000; use English; use strict 'vars', 'refs', 'subs';
+require 5.000; use strict 'vars', 'refs', 'subs';
 
 # Copyright (c) 1999 Dermot Musgrove <dermot.musgrove@virgin.net>
 #
@@ -17,6 +17,9 @@ require 5.000; use English; use strict 'vars', 'refs', 'subs';
 # author, who can be contacted at dermot.musgrove@virgin.net
 
 BEGIN {
+    use Carp qw(cluck);
+    $SIG{__DIE__}  = \&Carp::confess;
+    $SIG{__WARN__} = \&Carp::cluck;
     use File::Path     qw( mkpath );        # in use_Glade_Project
     use File::Basename qw( dirname );       # in use_Glade_Project
     use Cwd            qw( chdir cwd );     # in use_Glade_Project
@@ -31,7 +34,7 @@ BEGIN {
                             $VERSION
                        );
     $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.47);
+    $VERSION        = q(0.48);
     # Tell interpreter who we are inheriting from
     @ISA            = qw( 
                             Glade::PerlXML 
@@ -58,9 +61,12 @@ my %fields = (
 #    'options_filename'  => undef,   # Don't read or save options in disk file
     'options_set'       => 'DEFAULT', # Who set the options
 # UI
-    'GTK_Interface'     => undef,
+    'glade_proto'       => undef,
     'pixmaps_directory' => undef,
-    'logo'              => undef,   # No defined project logo
+    'logo'              => 'Logo.xpm', # Use specified logo
+    'glade2perl_logo'   => 'glade2perl_logo.xpm',
+#    'logo'              => undef,   # No defined project logo
+
 # Source code
     'indent'            => '    ',  # Source code indent per Gtk 'nesting'
     'tabwidth'          => 8,       # Replace each 8 spaces with a tab in sources
@@ -109,8 +115,10 @@ sub new {
 
 sub AUTOLOAD {
   my $self = shift;
+  my $i = 1;
   my $type = ref($self)
-    or die "$self is not an object";
+    or die "$self is not an object\n",
+        "We were called from ",join(", ", caller),"\n\n";
   my $name = $AUTOLOAD;
   $name =~ s/.*://;       # strip fully-qualified portion
 
@@ -125,7 +133,9 @@ sub AUTOLOAD {
     }
 
   } else {
-    die "Can't access method `$name' in class $type";
+    my $message = "Can't access method `$name' in class $type\n";
+#    while (caller($i)){$message .= "Called from ".join(", ", caller $i++)."\n";}
+    die $message;
 
   }
 }
@@ -139,7 +149,7 @@ sub Building_UI_only     {!defined $main::Glade_Perl_Generate_options->write_sou
 sub Writing_Source_only  { $main::Glade_Perl_Generate_options->dont_show_UI }
 
 sub diagnostics { 
-    ($ARG[1] || 1) <= ($main::Glade_Perl_Generate_options->verbose);
+    ($_[1] || 1) <= ($main::Glade_Perl_Generate_options->verbose);
 }
 
 sub diag_print {
@@ -153,7 +163,7 @@ sub diag_print {
     my $time='';
     if ($class->diagnostics($level)) {
         $ref = ref $message;
-        if ($main::Glade_Perl_Generate_options->benchmark) {
+        if ($options->benchmark) {
             $time = int( $times[0] + $times[1] );
         }
         unless ($ref) {
@@ -285,37 +295,38 @@ sub merge_options {
 
 sub save_options {
     my ($class, $filename) = @_;
+#use Data::Dumper; print Dumper(\@_);
     my $me = __PACKAGE__."->save_options";
     my ($file_options, $key);
-    my %project_options = %{$class};
-    my $user_filename = $project_options{'user_options'};
+    # Take a copy of the options supplied and work on that (for deleting keys)
+    my %options = %{$class};
+    my $user_filename = $class->{'user_options'};
     $class->diag_print(4, $class, 'Options to save');
     if ($user_filename && -f $user_filename) {
         # Only save options that are different to user_options in file
         $file_options = $class->Proto_from_File(
              $user_filename, 
              '  ', '');
-#             ' project file helper source diag dist ', '');
-        $class->diag_print(8, $file_options, 'User options');
+        $class->diag_print(4, $file_options, 'User options');
     }
-    foreach $key (keys %project_options) {
-        if (!defined $project_options{$key}) {
+    foreach $key (keys %options) {
+        if (!defined $class->{$key}) {
             $class->diag_print (6, "NOT saving option '$key' (no value)");
-            delete $project_options{$key};
+            delete $options{$key};
 
         } elsif ($file_options->{$key} &&
-            ($file_options->{$key} eq $project_options{$key})) {
+            ($file_options->{$key} eq $options{$key})) {
             $class->diag_print (6, "NOT saving option '$key' (eq user_option)");
-            delete $project_options{$key};
+            delete $options{$key};
 
         } elsif ($key eq '_permitted_fields') {
             # Ignore the AUTOLOAD dynamic data access hash
-            delete $project_options{$key};
+            delete $options{$key};
         }
     }
-    $project_options{'glade2perl_version'} = $VERSION;
+    $options{'glade2perl_version'} = $VERSION;
     $class->diag_print (2, "${indent}- Saving project options in file '$filename'");
-    my $xml = $class->XML_from_Proto('', '  ', 'G2P-Options', \%project_options);
+    my $xml = $class->XML_from_Proto('', '  ', 'G2P-Options', \%options);
     $class->diag_print(6, $xml);
     open OPTIONS, ">".($filename) or 
         die "error $me - can't open file '$filename' for output";
@@ -343,6 +354,7 @@ sub options {
             $options = $options->merge_options($file, $options);
         }
     }
+#use Data::Dumper; print Dumper($options);
     # merge in the supplied arg options
     foreach $key (keys %params) {
         if ($params{$key}) {
@@ -408,60 +420,112 @@ sub options {
 }
 
 sub use_Glade_Project {
-    my ($class, $proto) = @_;
+    my ($class, $glade_proto) = @_;
     my $me = "$class->use_Glade_Project";
-    $class->diag_print(6, $proto->{'project'}, 'Input Proto project');
+    $class->diag_print(6, $glade_proto->{'project'}, 'Input Proto project');
     my $options = $main::Glade_Perl_Generate_options;
     # Ensure that the options are set (use defaults, site, user, project)
     $options->options('options_set' => $me);
     my $form = {};
     bless $form, $PACKAGE;
-    my $gnome_support = $proto->{'project'}{'gnome_support'};
-    $options->allow_gnome($proto->{'project'}{'gnome_support'} eq 'True');
+    my $gnome_support = $glade_proto->{'project'}{'gnome_support'};
+    $options->allow_gnome($glade_proto->{'project'}{'gnome_support'} eq 'True');
     $class->get_versions($options);
 #    $options = $class->get_versions($options;
     # Glade assumes that all directories are named relative to the Glade 
     # project (.glade) file (not <directory>) !
-    my $glade_file_dirname = dirname($proto->{'glade_filename'});
-    $form->{'name'}  = $proto->{'project'}{'name'};
-    $form->{'glade_filename'} = $proto->{'glade_filename'};
+    my $glade_file_dirname = dirname($glade2perl->{'glade_filename'});
+#print "Using glade_file_dirname of '$glade_file_dirname'\n";
+    $form->{'name'}  = $glade_proto->{'project'}{'name'};
     $form->{'directory'} = $class->full_Path(
-        $proto->{'project'}{'directory'}, 
+        $glade_proto->{'project'}{'directory'}, 
         $glade_file_dirname);
+    $form->{'glade_filename'} = $class->full_Path(
+        $glade2perl->{'glade_filename'},
+        $form->{'directory'});
+
     $form->{'source_directory'} = $class->full_Path(
-        $proto->{'project'}{'source_directory'},     
+        ($glade_proto->{'project'}{'source_directory'} || './src'),     
         $glade_file_dirname,
         $form->{'directory'} );
     if ($class->Writing_to_File && 
         !-d $form->{'source_directory'}) { 
+        # Source directory doesn't exist yet so create it
         $class->diag_print (2, "$indent- Creating source_directory ".
             "'$form->{'source_directory'}' in $me");
-        mkpath($form->{'source_directory'} );   # In case it doesn't exist
+        mkpath($form->{'source_directory'} );
     }
+
     $form->{'pixmaps_directory'} = $class->full_Path(
-        $proto->{'project'}{'pixmaps_directory'},    
+        ($glade_proto->{'project'}{'pixmaps_directory'} || './pixmaps'),    
         $glade_file_dirname, 
         $form->{'directory'} );
+    if ($class->Writing_to_File && 
+        !-d $form->{'pixmaps_directory'}) { 
+        # Source directory doesn't exist yet so create it
+        $class->diag_print (2, "$indent- Creating pixmaps_directory ".
+            "'$form->{'pixmaps_directory'}' in $me");
+        mkpath($form->{'pixmaps_directory'} );
+    }
+
     # FIXME
     # Make sure that generated subs source filename is not included 
     # in 'use'd packages supplied to us
+    $form->{'SIGS_class'} = $form->{'name'}."SIGS";
+    $form->{'SIGS_filename'} = $class->full_Path(
+        "$form->{'SIGS_class'}.pm",         
+        $form->{'source_directory'} );
+#    print "use $form->{'source_directory'}\::$glade_proto->{'project'}{'name'}_SIGS\n";
+#    eval "use $form->{'source_directory'}\::$glade2perl->{'name'}_SIGS";
+
+    $form->{'UI_class'} = $form->{'name'}."UI";
     $form->{'UI_filename'} = $class->full_Path(
-        $proto->{'project'}{'name'}.".pm",         
+        "$form->{'UI_class'}.pm",         
         $form->{'source_directory'} );
+    $form->{'APP_class'} = $form->{'name'};
+    $form->{'APP_filename'} = $class->full_Path(
+        "$form->{'APP_class'}.pm",         
+        $form->{'source_directory'} );
+    $form->{'SUBAPP_class'} = "Sub".$form->{'APP_class'};
+    $form->{'SUBAPP_filename'} = $class->full_Path(
+        "$form->{'SUBAPP_class'}.pm",         
+        $form->{'source_directory'} );
+    $form->{'SUBCLASS_class'} = "Sub".$form->{'SIGS_class'};
     $form->{'SUBCLASS_filename'} = $class->full_Path(
-        "Sub".$proto->{'project'}{'name'}.".pm",         
+        "$form->{'SUBCLASS_class'}.pm",         
         $form->{'source_directory'} );
+    $form->{'LIBGLADE_class'} = $form->{'name'}."LIBGLADE";
     $form->{'LIBGLADE_filename'} = $class->full_Path(
-        "Libglade_".$proto->{'project'}{'name'}.".pm",         
+        "$form->{'LIBGLADE_class'}.pm",         
         $form->{'source_directory'} );
-    $form->{'GTK-Interface'}     = $proto;
-    $form->{'logo'} = $class->full_Path(
-        'Logo.xpm', 
+    $form->{'glade_proto'} = $glade_proto;
+
+    $form->{'logo_filename'} = $class->full_Path(
+        $options->logo, 
         $form->{'pixmaps_directory'}, 
         '' );
-#        $proto->{'project'}{'pixmaps_directory'}."/Logo.xpm";
-        unless ( -f "$form->{'logo'}") { $form->{'logo'} = '';}
 
+    $form->{'glade2perl_logo_filename'} = $class->full_Path(
+        $options->glade2perl_logo, 
+        $form->{'pixmaps_directory'}, 
+        '' );
+
+    unless (-f $form->{'glade2perl_logo_filename'}) {             
+        $class->diag_print (2, "$indent- Writing our own logo to ".
+            "'$form->{'glade2perl_logo_filename'}' in $me");
+        open LOGO, ">$form->{'glade2perl_logo_filename'}" or 
+            die "error $me - can't open file '$form->{'glade2perl_logo_filename'}' ".
+                "for output";
+        print LOGO $class->our_logo;
+        close LOGO;
+    }
+    
+    unless ($form->{'logo_filename'} && -f $form->{'logo_filename'}) {
+        $options->logo($options->glade2perl_logo);
+        $form->{'logo_filename'} = $form->{'glade2perl_logo_filename'};
+    }            
+#use Data::Dumper; print Dumper($form);
+#exit;
     if ($options->author) {
         $form->{'author'} = $options->author;
     } else {
@@ -474,31 +538,25 @@ sub use_Glade_Project {
     }
     # If allow_gnome is not specified, use glade project <gnome_support> property
     unless (defined $options->{'allow_gnome'}) {
+# FIXME This might have to be changed for Glade-0.5.6 to default to True
         $options->{'allow_gnome'} = 
             ('*true*y*yes*on*1*' =~ m/\*$gnome_support\*/i) ? '1' : '0';
         if ($options->project_options) {
             $options->save_options( $options->project_options );
         }
     }
+    $form->{'logo'}         = $options->logo;
     $form->{'version'}      = $options->version;
     $form->{'date'}         = $options->date        || $options->start_time;
     $form->{'copying'}      = $options->copying;
     $form->{'description'}  = $options->description || 'No description';
-    # Clear out project elements that we are not interested in
-    undef $proto->{'project'}{'gettext_support'};
-    undef $proto->{'project'}{'gettext_support'};
-    undef $proto->{'project'}{'handler_header_file'};
-    undef $proto->{'project'}{'handler_source_file'};
-    undef $proto->{'project'}{'language'};
-    undef $proto->{'project'}{'main_header_file'};
-    undef $proto->{'project'}{'main_source_file'};
-    undef $proto->{'project'}{'use_widget_names'};
     $class->diag_print(6, $form);
     # Now change to the <project><directory> so that we can find modules
     chdir $form->{'directory'};
-    $form = {_permitted_fields => \%fields, %fields, %$form};
+    $form->{'_permitted_fields'} = \%fields;
     bless $form, $PACKAGE;
-#    $class->diag_print(2, $form);
+#    $class->diag_print(2, $form);exit;
+
     return $form;
 }
 

@@ -1,7 +1,14 @@
 Some notes on Gtk-Perl documentation
 
-Firstly, make sure that you have the latest Gtk-Perl (version 0.6123). 
+Firstly, make sure that you have the latest Gtk-Perl (at least version 0.6123). 
 Older versions have too many errors and omissions.
+ 
+Stephen Wilhelm <swilhelm@theriver.com> has started an online tutorial for
+Gtk-Perl with some chapters already written. It follows the Gtk+ style and
+has some very pretty syntax highlighting for the code examples :)
+
+  http://personal.riverusers.com/~swilhelm/perlgtk/tutorial/
+
 
 The Gtk-Perl maintainers have started to document the bindings and if you
 build Gtk-Perl yourself docs should be produced then. Examples of what is

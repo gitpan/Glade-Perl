@@ -2,16 +2,13 @@ Glade::PerlGenerate (GPG) Gtk-Perl-Glade UI builder and source generator
 --------------------------------------------------------------------
 TO INSTALL
 ----------
-There is a standard Makefile.PL but it will not check any dependencies
-(Glade, Gtk, Gtk-Perl XML::Parser etc) and neither will it install the
-glade2perl script.
+There is a standard Makefile.PL to handle some checks and install the package
 
 To install
     perl Makefile.PL
     make
     make test
     make install (if test was OK)
-    cp Example/glade2perl /some/dir/in/your/PATH
         
 TO RUN FROM GLADE
 -----------------
@@ -74,9 +71,4 @@ will block the source code generation.
 C) To build a UI from an XML string. Look at the file test.pl for an
 example of doing this. Use a call to Glade::PerlGenerate->Form_from_XML to 
 show a Glade UI.
-
--------------------------------------------------------------------------
-You may have problems with your own Glade project files if they use widgets
-that Glade::PerlGenerate doesn't handle correctly. At least it will warn you 
-about any widgets or properties that it doesn't understand properly. 
 

@@ -3,6 +3,13 @@ NEWS of Glade::PerlGenerate (GPG) Gtk-Perl-Glade UI builder and source generator
 
 NEW 'FEATURES'
 --------------
+version 0.48 has a better make install. It fixes some bugs but the main changes
+    are to the generated code structure. Old apps that use the generated files
+    will work in the same way but the simpler structure means that you can
+    edit the file Project.pm in situ and it will not be overwritten.
+    UI code also connects signal handlers more correctly so that it should
+    work however you call it - even from a perl script (eg package main)
+    
 version 0.45 Has fixes for Gtk-Perl-0.7000 and recent CVS (29 Dec 1999)
 
 version 0.44 Can generate a module that uses libglade to show the UI

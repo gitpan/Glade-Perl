@@ -1,5 +1,5 @@
 package Glade::PerlUIGtk;
-require 5.000; use English; use strict 'vars', 'refs', 'subs';
+require 5.000; use strict 'vars', 'refs', 'subs';
 
 # Copyright (c) 1999 Dermot Musgrove <dermot.musgrove@virgin.net>
 #
@@ -29,10 +29,10 @@ BEGIN {
                             @Notebook_panes
                             $Notebook_pane
                             $Notebook_tab
-                            $gtk_enums
+                            $enums
                           );
     $PACKAGE =          __PACKAGE__;
-    $VERSION        = q(0.47);
+    $VERSION        = q(0.48);
     @VARS           = qw( 
                             $VERSION
                             $AUTHOR
@@ -42,7 +42,7 @@ BEGIN {
                             @Notebook_panes
                             $Notebook_pane
                             $Notebook_tab
-                            $gtk_enums
+                            $enums
                         );
     # Tell interpreter who we are inheriting from
     @ISA            =   qw( Glade::PerlSource );
@@ -61,6 +61,42 @@ $CList_column    = 0;
 $CTree_column    = 0;
 $Notebook_pane   = 0;
 $Notebook_tab    = 0;
+
+#===============================================================================
+#=========== Gtk utilities                                          ============
+#===============================================================================
+sub lookup {
+    my ($class, $self) = @_;
+    # Check cached enums first
+    my $lookup = $enums->{$self};
+    unless ($lookup) {
+        $lookup = $self;
+        $lookup =~ s/^G[DT]K_//;    # strip off leading GDK_ or GTK_
+        foreach my $type ( 
+            'WINDOW',       'WIN_POS',      'JUSTIFY',      
+            'POLICY',       'SELECTION',    'ORIENTATION',
+            'TOOLBAR_SPACE','EXTENSION_EVENTS',
+            'TOOLBAR',      'TOOLBAR_CHILD','TREE_VIEW', 
+            'BUTTONBOX',    'UPDATE',       'PACK',
+            'POS',          'ARROW',        'BUTTONBOX', 
+            'CURVE_TYPE',   'PROGRESS',     'VISUAL',       
+            'IMAGE',        'CALENDAR',     'SHADOW',
+            'CLOCK',        'RELIEF',       'SIDE',
+            'ANCHOR', 
+            ) {
+            # Remove leading GTK type
+            last if $lookup =~ s/^${type}_//; # finish early
+        }
+        $lookup = lc($lookup);
+#print "Lookup is '$lookup'\n";
+        # Cache this enum for later use
+        $enums->{$self} = $lookup;
+#        $class->diag_print(2, $Glade::PerlUIExtra::gnome_enums);
+#        $class->diag_print(6, "$indent- I have converted '$key' from '".
+#            "$lookup' to '$self' (GNOME GREP) in $me");
+    }
+    return $lookup;
+}
 
 #===============================================================================
 #=========== Gtk widget constructors                                ============
@@ -94,9 +130,9 @@ sub new_GtkAccelLabel {
         my $accel_key = $1;
         # Replace chars with spaces (except '_')
         $pattern =~ tr/_/ /c;
-#        $class->add_to_UI( $depth, "\$widgets->{'$name-accel'}->parse_uline;" );
+#        $class->add_to_UI( $depth, "\$widgets->{'$name'}->parse_uline;" );
         $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_pattern(".
-            "'$pattern');" );
+            "'$pattern');", undef, 'NOTABS'  );
 # FIXME How do we know which widget/signal to emit?
 # Should we use set_accel_widget? Probably I guess but how?
 # How should we check that this is all correct?
@@ -119,7 +155,7 @@ sub new_GtkAccelLabel {
 #        "$current_form\{'$proto->{'signal'}{'object'}'});" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_justify(".
         "'$justify' );" );
-    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_line_wrap('$wrap' );" );
+    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_line_wrap($wrap );" );
 
     $class->pack_widget($parent, $name, $proto, $depth );
     $class->set_misc_properties($parent, $name, $proto, $depth);
@@ -139,8 +175,8 @@ sub new_GtkAdjustment {
     my $hpage_size = $class->use_par($proto, 'hpage_size', $DEFAULT,    0 );
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name-adj'} = new Gtk::Adjustment(".
-                        "'$hvalue', '$hlower', '$hupper', ".
-                        "'$hstep', '$hpage', '$hpage_size' );" );
+                        "$hvalue, $hlower, $hupper, ".
+                        "$hstep, $hpage, $hpage_size );" );
 
     $class->pack_widget($parent, $name, $proto, $depth );
     return $widgets->{$name};
@@ -156,7 +192,7 @@ sub new_GtkAlignment {
     my $yscale    = $class->use_par($proto, 'yscale',    $DEFAULT,    0.5 );
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::Alignment(".
-        "'$xalign', '$yalign', '$xscale', '$yscale' );" );
+        "$xalign, $yalign, $xscale, $yscale );" );
 
     $class->pack_widget($parent, $name, $proto, $depth );
     return $widgets->{$name};
@@ -191,9 +227,9 @@ sub new_GtkAspectFrame {
     my $shadow_type  = $class->use_par($proto, 'shadow_type',  $LOOKUP,    'right' );
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::AspectFrame(".
-        "'$label', '$xalign', '$yalign', '$ratio', '$obey_child' );" );
+        "'$label', $xalign, $yalign, $ratio, $obey_child );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_label_align(".
-        "'$label_xalign', '$label_yalign' );" );
+        "$label_xalign, $label_yalign );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_shadow_type(".
         "'$shadow_type' );" );
 
@@ -295,8 +331,8 @@ sub new_GtkCheckButton {
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::CheckButton(".
         "'$label' );" );
-    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_mode('$draw_indicator' );" );
-    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_state('$active' );" );
+    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_mode($draw_indicator );" );
+    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_state($active );" );
 
     $class->pack_widget($parent, $name, $proto, $depth );
     return $widgets->{$name};
@@ -314,8 +350,8 @@ sub new_GtkCheckMenuItem {
     if ($class->use_par($proto, 'right_justify',        $BOOL,        'False'                )) {
         $class->add_to_UI( $depth, "\$widgets->{'$name'}->right_justify;" );
     }
-    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_state('$active' );" );
-    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_show_toggle('$always_show_toggle' );" );
+    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_state($active );" );
+    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_show_toggle($always_show_toggle );" );
 
     $class->pack_widget($parent, $name, $proto, $depth );
     return $widgets->{$name};
@@ -331,7 +367,7 @@ sub new_GtkCList {
     my $shadow_type    = $class->use_par($proto, 'shadow_type',    $LOOKUP );
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::CList(".
-        "'$columns' );" );
+        "$columns );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_selection_mode(".
         "'$selection_mode' );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_border(".
@@ -364,7 +400,7 @@ sub new_GtkCTree {
     my $tree_column    = $class->use_par($proto, 'tree_column',    $DEFAULT,    0 );
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::CTree(".
-        "'$columns', '$tree_column' );" );
+        "$columns, $tree_column );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_selection_mode(".
         "'$selection_mode' );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_border(".
@@ -439,14 +475,14 @@ sub new_GtkCombo {
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::Combo;" );
     if ($value_in_list) {
         $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_value_in_list(".
-            "'$value_in_list', '$ok_if_empty' );" );
+            "$value_in_list, $ok_if_empty );" );
     }
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_case_sensitive(".
-        "'$case_sensitive' );" );
+        "$case_sensitive );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_use_arrows(".
-        "'$use_arrows' );" );
+        "$use_arrows );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_use_arrows_always(".
-        "'$use_arrows_always' );" );
+        "$use_arrows_always );" );
     my @popdown_strings;
     my $popdown_strings;
     if (defined $items) {
@@ -472,7 +508,8 @@ sub new_GtkCurve {
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::Curve;" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_curve_type('$curve_type' );" );
-    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_range('$min_x', '$min_y', '$max_x', '$max_y' );" );
+    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_range(".
+        "$min_x, $min_y, $max_x, $max_y );" );
     $class->pack_widget($parent, $name, $proto, $depth );
     return $widgets->{$name};
 }
@@ -511,7 +548,8 @@ sub new_GtkEntry {
     my $max_length   = $class->use_par($proto, 'text_max_length', $DEFAULT, 0 );
     unless ($class->new_from_child_name($parent, $name, $proto, $depth )) {
         if ($max_length) {
-            $class->add_to_UI( $depth, "\$widgets->{'$name'} = new_with_max_length Gtk::Entry($max_length );" );
+            $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
+                "new_with_max_length Gtk::Entry($max_length );" );
         } else {
             $class->add_to_UI( $depth, "\$widgets->{'$name'} = new Gtk::Entry;" );
         }
@@ -519,10 +557,10 @@ sub new_GtkEntry {
     }
     $class->add_to_UI( $depth, "$current_form\{'$name'}->set_text('$text' );" );
     $class->add_to_UI( $depth, "$current_form\{'$name'}->set_max_length(".
-        "'$text_max_length' );" );
+        "$text_max_length );" );
     $class->add_to_UI( $depth, "$current_form\{'$name'}->set_visibility(".
-        "'$text_visible' );" );
-    $class->add_to_UI( $depth, "$current_form\{'$name'}->set_editable('$editable' );" );
+        "$text_visible );" );
+    $class->add_to_UI( $depth, "$current_form\{'$name'}->set_editable($editable );" );
 
     return $widgets->{$name};
 }
@@ -580,7 +618,8 @@ sub new_GtkFontSelectionDialog {
     my $name = $proto->{'name'};
     my $title = $class->use_par($proto,'title', $DEFAULT, 'Font Selection' );
 
-    $class->add_to_UI($depth, "\$widgets->{'$name'} = new Gtk::FontSelectionDialog('$title' );" );
+    $class->add_to_UI($depth, "\$widgets->{'$name'} = ".
+        "new Gtk::FontSelectionDialog('$title' );" );
 
     $class->set_window_properties($parent, $name, $proto, $depth );
     return $widgets->{$name};
@@ -596,8 +635,10 @@ sub new_GtkFrame {
     my $label_yalign = $class->use_par($proto, 'label_yalign', $DEFAULT, 0 );
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::Frame('$label' );" );
-    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_label_align('$label_xalign', '$label_yalign' );" );
-    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_shadow_type('$shadow_type' );" );
+    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_label_align(".
+        "$label_xalign, $label_yalign );" );
+    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_shadow_type(".
+        "'$shadow_type' );" );
     $class->pack_widget($parent, $name, $proto, $depth );
     return $widgets->{$name};
 }
@@ -616,7 +657,7 @@ sub new_GtkGammaCurve {
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->curve->set_curve_type(".
         "'$curve_type' );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->curve->set_range(".
-        "'$min_x', '$min_y', '$max_x', '$max_y' );" );
+        "$min_x, $min_y, $max_x, $max_y );" );
     $class->pack_widget($parent, $name, $proto, $depth );
     return $widgets->{$name};
 }
@@ -651,7 +692,7 @@ sub new_GtkHBox {
 
     unless ($class->new_from_child_name($parent, $name, $proto, $depth )) {
         $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::HBox(".
-            "'$homogeneous', '$spacing' );" );
+            "$homogeneous, $spacing );" );
     
         $class->pack_widget($parent, $name, $proto, $depth );
     }
@@ -677,9 +718,11 @@ sub new_GtkHButtonBox {
     $class->add_to_UI( $depth, "$current_form\{'$name'}->set_layout(".
         "'$layout_style' );" );
     $class->add_to_UI( $depth, "$current_form\{'$name'}->set_spacing(".
-        "'$spacing' );" );
+        "$spacing );" );
     $class->add_to_UI( $depth, "$current_form\{'$name'}->set_child_size(".
-        "'$child_min_width', '$child_min_height' );" );
+        "$child_min_width, $child_min_height );" );
+    $class->add_to_UI( $depth, "$current_form\{'$name'}->set_child_ipadding(".
+        "$child_ipad_x, $child_ipad_y );" );
 
     return $widgets->{$name};
 }
@@ -690,12 +733,15 @@ sub new_GtkHPaned {
     my $name = $proto->{'name'};
     my $handle_size = $class->use_par($proto, 'handle_size', $DEFAULT, 0 );
     my $gutter_size = $class->use_par($proto, 'gutter_size', $DEFAULT, 0 );
+    my $position = $class->use_par($proto, 'position');
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::HPaned;" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->handle_size(".
-        "'$handle_size' );" );
+        "$handle_size );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->gutter_size(".
-        "'$gutter_size' );" );
+        "$gutter_size );" );
+    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_position(".
+        "$position );" );
 
     $class->pack_widget($parent, $name, $proto, $depth );
     return $widgets->{$name};
@@ -713,7 +759,7 @@ sub new_GtkHRuler {
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::HRuler;" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_range(".
-        "'$lower', '$upper', '$position', '$max_size' );" );
+        "$lower, $upper, $position, $max_size );" );
     if ($metric) {
         $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_metric;" );
     }
@@ -738,17 +784,17 @@ sub new_GtkHScale {
     my $policy     = $class->use_par($proto, 'policy',     $LOOKUP );
     my $draw_value = $class->use_par($proto, 'draw_value', $BOOL,    'True' );
     my $digits     = $class->use_par($proto, 'digits',     $DEFAULT, 1 );
-    my $numeric    = $class->use_par($proto, 'numeric',    $BOOL,    'False' );
+#    my $numeric    = $class->use_par($proto, 'numeric',    $BOOL,    'False' );
     my $value_pos  = $class->use_par($proto, 'value_pos',  $LOOKUP );
 
     $class->add_to_UI( $depth,  "\$work->{'$name-adj'} = new Gtk::Adjustment(".
-        "'$value', '$lower', '$upper', '$step', '$page', '$page_size' );" );
+        "$value, $lower, $upper, $step, $page, $page_size );" );
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::HScale(".
         "\$work->{'$name-adj'} );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_draw_value(".
-        "'$draw_value' );" );
+        "$draw_value );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_digits(".
-        "'$digits' );" );
+        "$digits );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_value_pos(".
         "'$value_pos' );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_update_policy(".
@@ -774,7 +820,7 @@ sub new_GtkHScrollbar {
     my $policy     = $class->use_par($proto, 'policy',     $LOOKUP );
 
     $class->add_to_UI( $depth,  "\$work->{'$name-adj'} = new Gtk::Adjustment(".
-        "'$value', '$lower', '$upper', '$step', '$page', '$page_size' );" );
+        "$value, $lower, $upper, $step, $page, $page_size );" );
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::HScrollbar(".
         "\$work->{'$name-adj'} );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_update_policy(".
@@ -806,7 +852,7 @@ sub new_GtkImage {
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::Image(".
         "Gtk::Gdk::Image->new('$image_type', ".
-            "Gtk::Gdk::Visual->$image_visual, '$image_width', '$image_height' ), ".
+            "Gtk::Gdk::Visual->$image_visual, $image_width, $image_height ), ".
         "undef );" );
 
     $class->pack_widget($parent, $name, $proto, $depth );
@@ -838,7 +884,7 @@ sub new_GtkLabel {
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::Label(".
         "'$label' );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_justify('$justify' );" );
-    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_line_wrap('$wrap' );" );
+    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_line_wrap($wrap );" );
 
     $class->pack_widget($parent, $name, $proto, $depth);
     $class->set_misc_properties($parent, $name, $proto, $depth);
@@ -863,11 +909,11 @@ sub new_GtkLayout {
             "new Gtk::Adjustment( 0.0, 0.0, 101.0, 0.1, 1.0, 1.0) );" );
     }
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_size(".
-        "'$area_width', '$area_height' );" );
+        "$area_width, $area_height );" );
     $class->add_to_UI( $depth, 
-        "\$widgets->{'$name'}->get_hadjustment->step_increment('$hstep' );" );
+        "\$widgets->{'$name'}->get_hadjustment->step_increment($hstep );" );
     $class->add_to_UI( $depth, 
-        "\$widgets->{'$name'}->get_vadjustment->step_increment('$vstep' );" );
+        "\$widgets->{'$name'}->get_vadjustment->step_increment($vstep );" );
 
     $class->pack_widget($parent, $name, $proto, $depth );
     return $widgets->{$name};
@@ -905,7 +951,7 @@ sub new_GtkMenuBar {
     my $name = $proto->{'name'};
     my $shadow_type = $class->use_par($proto, 'shadow_type', $LOOKUP );
 
-    $class->add_to_UI($depth, "\$widgets->{'$name'} = new Gtk::MenuBar("." );" );
+    $class->add_to_UI($depth, "\$widgets->{'$name'} = new Gtk::MenuBar;" );
     $shadow_type &&
         $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_shadow_type(".
             "'$shadow_type' );" );
@@ -934,10 +980,13 @@ sub new_GtkMenuItem {
 
 # FIXME - decide how to mix accellabels and labels with visible accelerators
     if ($proto->{'stock_item'}) {
+# FIXME - this is a Gnome stock menu item and should be in UIExtra
 # FIXME convert this to do a proper lookup (maybe with new sub)
         my $stock_item = $class->use_par($proto, 'stock_item', $DEFAULT, '' );
         $stock_item =~ s/GNOMEUIINFO_MENU_(.*)_TREE/$1/;
+# FIXME this creates the string - we should look it up instead
         $stock_item = ucfirst(lc($stock_item));
+# FIXME this only does uline for first character wrong, wrong, wrong
         $label = "_".$stock_item;
 #        $stock_item = $Glade::PerlUIExtra::gnome_enums->{"GNOME_STOCK_PIXMAP_$stock_item"};
 #        $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
@@ -946,11 +995,12 @@ sub new_GtkMenuItem {
     if ($label) {
         my $pattern = $label;
         # The line below replaces Gtk+ function gtk_label_parse_uline
+# FIXME this only does uline for first char
         if ($label =~ s/_(.)/$1/) {
             # We have an accelerator key indicated by $1
             my $accel_key = $1;
             # Replace chars with spaces (except '_')
-            $pattern =~ tr/_/ /c;
+            $pattern =~ tr/_/ /c;   # complementary (opposite) 
             $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
                 "new Gtk::MenuItem;" );
             if ($right_justify) { 
@@ -965,7 +1015,7 @@ sub new_GtkMenuItem {
             $class->add_to_UI( $depth, "\$widgets->{'$name-accel'}->set_pattern(".
                 "'$pattern');", undef, 'NOTABS' );
             $class->add_to_UI( $depth, "${current_form}\{'accelgroup'}->add(".
-                "'".ord(lc($accel_key))."', ['mod1_mask'], ['visible', 'locked'], ".
+                ord(lc($accel_key)).", ['mod1_mask'], ['visible', 'locked'], ".
                 "\$widgets->{'$name'}, 'activate_item');");
             $class->add_to_UI( $depth, "${current_form}\{'$name-accel'} = ".
                 "\$widgets->{'$name-accel'};" );
@@ -1003,11 +1053,11 @@ sub new_GtkNotebook {
         $class->pack_widget($parent, $name, $proto, $depth );
     }
     $class->add_to_UI( $depth, "$current_form\{'$name'}->set_tab_pos('$tab_pos' );" );
-    $class->add_to_UI( $depth, "$current_form\{'$name'}->set_show_tabs('$show_tabs' );" );
-    $class->add_to_UI( $depth, "$current_form\{'$name'}->set_show_border('$show_border' );" );
-    $class->add_to_UI( $depth, "$current_form\{'$name'}->set_scrollable('$scrollable' );" );
-    $class->add_to_UI( $depth, "$current_form\{'$name'}->set_tab_hborder('$tab_hborder' );" );
-    $class->add_to_UI( $depth, "$current_form\{'$name'}->set_tab_vborder('$tab_vborder' );" );
+    $class->add_to_UI( $depth, "$current_form\{'$name'}->set_show_tabs($show_tabs );" );
+    $class->add_to_UI( $depth, "$current_form\{'$name'}->set_show_border($show_border );" );
+    $class->add_to_UI( $depth, "$current_form\{'$name'}->set_scrollable($scrollable );" );
+    $class->add_to_UI( $depth, "$current_form\{'$name'}->set_tab_hborder($tab_hborder );" );
+    $class->add_to_UI( $depth, "$current_form\{'$name'}->set_tab_vborder($tab_vborder );" );
     if ($class->use_par($proto, 'popup_enable',    $BOOL,    'True'    )) { 
         $class->add_to_UI( $depth,  "$current_form\{'$name'}->popup_enable;" );
     }
@@ -1061,7 +1111,7 @@ sub new_GtkOptionMenu {
             }
         }
         $class->add_to_UI( $depth, 
-            "${current_form}\{'$name'}->set_history( '$initial_choice' );" );
+            "${current_form}\{'$name'}->set_history( $initial_choice );" );
     }
     return $widgets->{$name};
 }
@@ -1079,11 +1129,11 @@ sub new_GtkPacker {
 
     $class->add_to_UI($depth, "\$widgets->{'$name'} = new Gtk::Packer;" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_default_border_width(".
-        "'$default_border_width' );" );
+        "$default_border_width );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_default_pad(".
-        "'$default_pad_x', '$default_pad_y' );" );
+        "$default_pad_x, $default_pad_y );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_default_ipad(".
-        "'$default_ipad_x', '$default_ipad_y' );" );
+        "$default_ipad_x, $default_ipad_y );" );
 
     $class->pack_widget($parent, $name, $proto, $depth );
     return $widgets->{$name};
@@ -1098,11 +1148,11 @@ sub new_GtkPixmap {
     unless ($filename) {
         $class->diag_print(2, "warn  No pixmap file specified for GtkPixmap ".
             "'$name' so we are using the project logo instead");
-        $filename = $project->logo;
+        $filename = $glade2perl->logo;
     }
     $filename = $class->full_Path(
         $filename, 
-        $project->pixmaps_directory );
+        $glade2perl->pixmaps_directory );
     $class->add_to_UI( $depth, "\$widgets->{'$name'} = \$class->create_pixmap(".
         "$current_window, '$filename' );" );
     unless (defined $widgets->{$name}) { 
@@ -1111,10 +1161,10 @@ sub new_GtkPixmap {
     unless ($build_insensitive) {
         if ($class->my_perl_gtk_can_do('gtk_pixmap_set_build_insensitive')) {
             $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_build_insensitive(".
-                "'$build_insensitive' );" );
+                "$build_insensitive );" );
         } else {
             $class->add_to_UI( $depth, "\$widgets->{'$name'}->set(".
-                "'build_insensitive', '$build_insensitive' );" );
+                "'build_insensitive', $build_insensitive );" );
         }
     }
     
@@ -1128,7 +1178,7 @@ sub new_GtkPreview {
     my $me = "$class->new_GtkPreview";
     my $name = $proto->{'name'};
     my $type;
-    my $color  = $class->use_par($proto, 'type',   $BOOL );
+    my $color  = $class->use_par($proto, 'type',   $DEFAULT );
     my $expand = $class->use_par($proto, 'expand',   $BOOL );
     if ($color) {$type='color'} else {$type = 'grayscale'}
 
@@ -1136,7 +1186,7 @@ sub new_GtkPreview {
         "'$type' );" );
 
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_expand(".
-        "'$expand' );" );
+        "$expand );" );
     $class->pack_widget($parent, $name, $proto, $depth );
     return $widgets->{$name};
 }
@@ -1162,15 +1212,15 @@ sub new_GtkProgressBar {
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_bar_style(".
         "'$bar_style' );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_show_text(".
-        "'$show_text' );" );
+        "$show_text );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_activity_mode(".
-        "'$activity_mode' );" );
+        "$activity_mode );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_text_alignment(".
-        "'$text_xalign', '$text_yalign' );" );
+        "$text_xalign, $text_yalign );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_format_string(".
         "'$format' );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->configure(".
-        "'$value', '$lower', '$upper' );" );
+        "$value, $lower, $upper );" );
 
     $class->pack_widget($parent, $name, $proto, $depth );
     return $widgets->{$name};
@@ -1205,9 +1255,9 @@ sub new_GtkRadioButton {
     }
     
     $class->add_to_UI( $depth, "$current_form\{'$name'}->set_mode(".
-        "'$draw_indicator' );" );
+        "$draw_indicator );" );
     $class->add_to_UI( $depth, "$current_form\{'$name'}->set_state(".
-        "'$active' );" );
+        "$active );" );
 
     return $widgets->{$name};
 }
@@ -1241,9 +1291,9 @@ sub new_GtkRadioMenuItem {
         $class->add_to_UI( $depth, "\$widgets->{'$name'}->right_justify;" );
     }
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_state(".
-        "'$active' );" );
+        "$active );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_show_toggle(".
-        "'$always_show_toggle' );" );
+        "$always_show_toggle );" );
 
     $class->pack_widget($parent, $name, $proto, $depth );
     return $widgets->{$name};
@@ -1264,7 +1314,7 @@ sub new_GtkScrolledWindow {
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_policy(".
         "'$hscrollbar_policy', '$vscrollbar_policy' );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->border_width(".
-        "'$border_width' );" );
+        "$border_width );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->hscrollbar->".
         "set_update_policy('$hupdate_policy' );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->vscrollbar->".
@@ -1296,9 +1346,9 @@ sub new_GtkSpinButton {
     my $snap          = $class->use_par($proto, 'snap',          $BOOL,    'False' );
     
     $class->add_to_UI( $depth,  "\$work->{'$name-adj'} = new Gtk::Adjustment(".
-        "'$value', '$lower', '$upper', '$step', '$page', '$page_size' );" );
+        "$value, $lower, $upper, $step, $page, $page_size );" );
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::SpinButton(".
-        "\$work->{'$name-adj'}, '$climb_rate', '$digits' );" );
+        "\$work->{'$name-adj'}, $climb_rate, $digits );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_update_policy(".
         "'$update_policy' );" );
     if ($numeric) {
@@ -1308,7 +1358,7 @@ sub new_GtkSpinButton {
         $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_wrap;" );
     }
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_snap_to_ticks(".
-        "'$snap' );" );
+        "$snap );" );
 
     $class->pack_widget($parent, $name, $proto, $depth );
     return $widgets->{$name};
@@ -1348,12 +1398,12 @@ sub new_GtkTable {
     
     unless ($class->new_from_child_name($parent, $name, $proto, $depth )) {
         $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::Table(".
-            "'$rows', '$columns', '$homogeneous' );" );
+            "$rows, $columns, $homogeneous );" );
     }
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_row_spacings(".
-        "'$row_spacing' );" );
+        "$row_spacing );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_col_spacings(".
-        "'$column_spacing' );" );
+        "$column_spacing );" );
 
     $class->pack_widget($parent, $name, $proto, $depth );
     return $widgets->{$name};
@@ -1369,7 +1419,7 @@ sub new_GtkText {
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::Text(".
         " undef, undef );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_editable(".
-        "'$editable' );" );
+        "$editable );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->insert(".
         "undef, \$widgets->{'$name'}->style->text('normal'), undef, \"$text\" );" );
 
@@ -1402,9 +1452,9 @@ sub new_GtkToggleButton {
         $class->pack_widget($parent, $name, $proto, $depth );
     }
     $class->add_to_UI( $depth, "$current_form\{'$name'}->active(".
-        "'$active' );" );
+        "$active );" );
 #    $class->add_to_UI( $depth, "\$widgets->{'$name'}->active(".
-#        "'$active' );" );
+#        "$active );" );
 
     return $widgets->{$name};
 }
@@ -1423,13 +1473,13 @@ sub new_GtkToolbar {
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::Toolbar(".
         "'$orientation', '$type' );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_space_size(".
-        "'$space_size' );" );
+        "$space_size );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_space_style(".
         "'$space_style' );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_button_relief(".
         "'$relief' );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_tooltips(".
-        "'$tooltips' );" );
+        "$tooltips );" );
 
     $class->pack_widget($parent, $name, $proto, $depth );
     # Store the tooltips parameter for append_element to check later
@@ -1451,7 +1501,7 @@ sub new_GtkTree {
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_view_mode(".
         "'$view_mode' );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_view_lines(".
-        "'$view_line' );" );
+        "$view_line );" );
 
     $class->pack_widget($parent, $name, $proto, $depth );
     return $widgets->{$name};
@@ -1466,7 +1516,7 @@ sub new_GtkVBox {
 
     unless ($class->new_from_child_name($parent, $name, $proto, $depth )) {
         $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::VBox(".
-            "'$homogeneous', '$spacing' );" );
+            "$homogeneous, $spacing );" );
         $class->pack_widget($parent, $name, $proto, $depth );
     }
 
@@ -1491,9 +1541,11 @@ sub new_GtkVButtonBox {
     $class->add_to_UI( $depth, "$current_form\{'$name'}->set_layout(".
         "'$layout_style' );" );
     $class->add_to_UI( $depth, "$current_form\{'$name'}->set_spacing(".
-        "'$spacing' );" );
+        "$spacing );" );
     $class->add_to_UI( $depth, "$current_form\{'$name'}->set_child_size(".
-        "'$child_min_width', '$child_min_height' );" );
+        "$child_min_width, $child_min_height );" );
+    $class->add_to_UI( $depth, "$current_form\{'$name'}->set_child_ipadding(".
+        "$child_ipad_x, $child_ipad_y );" );
 
     return $widgets->{$name};
 }
@@ -1522,12 +1574,16 @@ sub new_GtkVPaned {
     my $name = $proto->{'name'};
     my $handle_size = $class->use_par($proto, 'handle_size', $DEFAULT, 0 );
     my $gutter_size = $class->use_par($proto, 'gutter_size', $DEFAULT, 0 );
+    my $position = $class->use_par($proto, 'position');
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::VPaned;" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->handle_size(".
-        "'$handle_size' );" );
+        "$handle_size );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->gutter_size(".
-        "'$gutter_size' );" );
+        "$gutter_size );" );
+    $position && 
+    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_position(".
+        "$position );" );
 
     $class->pack_widget($parent, $name, $proto, $depth );
     return $widgets->{$name};
@@ -1545,7 +1601,7 @@ sub new_GtkVRuler {
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::VRuler;" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_range(".
-        "'$lower', '$upper', '$position', '$max_size' );" );
+        "$lower, $upper, $position, $max_size );" );
     if ($metric) {
         $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_metric;" );
     }
@@ -1574,13 +1630,13 @@ sub new_GtkVScale {
     my $policy     = $class->use_par($proto, 'policy',     $LOOKUP );
 
     $class->add_to_UI( $depth,  "\$work->{'$name-adj'} = new Gtk::Adjustment(".
-        "'$value', '$lower', '$upper', '$step', '$page', '$page_size' );" );
+        "$value, $lower, $upper, $step, $page, $page_size );" );
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::VScale(".
         "\$work->{'$name-adj'} );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_draw_value(".
-        "'$draw_value' );" );
+        "$draw_value );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_digits(".
-        "'$digits' );" );
+        "$digits );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_value_pos(".
         "'$value_pos' );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_update_policy(".
@@ -1606,7 +1662,7 @@ sub new_GtkVScrollbar {
     my $policy     = $class->use_par($proto, 'policy',     $LOOKUP );
 
     $class->add_to_UI( $depth,  "\$work->{'$name-adj'} = new Gtk::Adjustment(".
-        "'$value', '$lower', '$upper', '$step', '$page', '$page_size' );" );
+        "$value, $lower, $upper, $step, $page, $page_size );" );
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::VScrollbar(".
         "\$work->{'$name-adj'} );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_update_policy(".

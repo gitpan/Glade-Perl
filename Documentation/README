@@ -29,7 +29,10 @@ Documentation/TODO              # What still must be done <sigh>
 test.pl                         # Examples of user options
 
 Glade::PerlGenerate is a module that will read a Glade-Interface XML 
-file, build the UI and/or write the perl source to create the UI later. 
+file, build the UI and/or write the perl source to create the UI later and
+handle signals. It also now creates an 'App' and an 'App subclass' that
+you can edit.
+
 It is made up of two main packages. Glade::PerlGenerate does the clever 
 stuff and Glade::PerlRun has some run-time utilities that are needed 
 by Glade::PerlGenerate and also by your generated modules.
@@ -39,10 +42,14 @@ build the UI, write the source and handle the project options.
 There are several options
 1) Simply show and run the interface. Any missing signal handlers are
    hijacked to show a simple message box.
-2) Write a perl class file. It contains the class constructor, utilities 
-   and a sub that constructs the UI. If you specifiy &STDOUT as the 
-   output filename all the generated code will be written to STDOUT but of
-   course you will have nothing to run later.
+2) Write several perl class files. 
+   A) ProjectUI.pm   - the UI constructor class
+   B) ProjectSIGS.pm - utilities and skeleton signal handlers
+   C) Project.pm     - a base for your app that you can edit
+   D) SubProject.pm  - an example subclass of your app that you can edit
+   
+   If you specifiy &STDOUT as the output filename all the generated code will 
+   be written to STDOUT but of course you will have nothing to run later.
 3) Do both of the above.
 4) Generate (2 above) from Glade's 'Build' button.
 
@@ -95,8 +102,8 @@ REQUIREMENTS (what I use but older versions may well work)
 -------------------------
 Package     my version	available from
 -------     ----------  --------------
-Glade       0.5.5       http://glade.pn.org/
-Glib/Gtk+   1.2.3       ftp://ftp.gimp.org/pub/gtk/
+Glade       0.5.6       http://glade.pn.org/
+Glib/Gtk+   1.2.6       ftp://ftp.gimp.org/pub/gtk/
 gnome-libs  1.0.54      Gnome mirrors or Gnome.org CVS 
                         If you use RPMs you will need gnome-libs-devel too but 
                         you probably worked this out while building Glade and 
@@ -124,7 +131,7 @@ XML::Parser Larry Wall <larry@wall.org> wrote version 1.0.
             API for this version (2.x), provided documentation, and added
             some standard package features.
 
-Information, advice and patches - Damon Chaplin, Robert Schwebel 
+Information, advice and patches - Damon Chaplin, Robert Schwebel, Stas Bekman
 Bug reports and testing - Tim Conrow
 
 AUTHOR

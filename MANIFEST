@@ -17,7 +17,6 @@ Glade/PerlUIExtra.pm            # Gnome and other widgets
 Glade/PerlProject.pm            # Project options module
 Glade/PerlXML.pm                # XML load/save module
 Glade/PerlRun.pm                # Run time module
-pixmaps/Logo.xpm                # A test project logo
 pixmaps/new.xpm                 # Some toolbar icons
 pixmaps/open.xpm                #   "
 pixmaps/save.xpm                #   "

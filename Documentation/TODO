@@ -20,7 +20,7 @@ TODO
     1) Simple 'getting started' project and subclass example with docs
     2) UI from string (exists)
     3) More complex Gtk UI with subclass and use_modules
-    4) Gnome UI with subclass
+    4) Gnome App with example subclass
 
 *   Cut out all checks and diagnostics if verbose == 0
 
@@ -30,6 +30,9 @@ TODO
 
 *   Internationalise every stage but particularly the source code generation
     of Gnome::App and Stock stuff
+    
+*   Rewrite GtkMenuItem and PixmapMenuItem constructors to simplify and reuse
+    code and to handle underline accelerators properly.
     
 *   Sort out Gnome::App accelerators and signals properly Probably it
     would be best to implement the gnome-app-helper methods and use those when
@@ -94,9 +97,6 @@ TODO
 *   Investigate using closures in generated code and allow user_option to
     select the type of code generated.
 
-*   Check that we are not going to overwrite the existing modules
-    file or find way to insert existing subs into any existing SUBS file
-
 *   Improve the Glade source code generation process - Make Glade::PerlHelper 
     UI to allow users more control of the whole shebang.
 
@@ -109,6 +109,9 @@ TODO
 
 DONE
 ----
+*   Check that we are not going to overwrite the existing modules
+    file or find way to insert existing subs into any existing SUBS file
+
 *   Implement Gnome widget 'GnomeAnimator',(in Glade >= 0.5.4)
 
 *   Implement Gnome widget 'GnomeDruid*',(needs Gtk-Perl CVS after 19990925)
@@ -178,4 +181,4 @@ LONG TERM
 BUGS
 ----
 The biggest deficiencies are with menu/toolbar underline accelerators
-particularly in Gnome::Apps.
+and GNOMEUIINFO stuff in Gnome::Apps.

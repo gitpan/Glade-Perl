@@ -1,13 +1,59 @@
 Revision history for Perl module Glade::PerlGenerate development branch.
+Mon Feb 14 18:45:48 GMT 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
+  - Version 0.48
+  - Makefile.PL extended to check for required perl modules and to install
+    Example/glade2perl. Also customises call to pod2man to quote us as the
+    origin (pod2man is not Y2K compliant! check the date :)
+  - PerlGenerate->Form_from_Pad_Proto() and PerlSource->perl_SUBCLASS_header
+    fixed to handle null source_directory and pixmaps_directory project 
+    options for Glade-0.5.6 (defaulting to ./src and ./pixmaps).
+  - Example/glade2perl amended to handle any Glade file suffix properly.
+  - PerlSource changed to generate correct about boxes (doesn't allow_grow)
+  - PerlUI->use_par() tidied a little
+  - PerlUIExtra->new_GtkPixmapMenuitem() updated to use new lookup subs to
+    handle the Gnome UIINFO type Gtk::PixmapMenuItems. Work on underlines
+  - PerlUIGtk->new_GtkMenuItem some work to handle underline accelerators.
+  - PerlUIGtk->lookup() and PerlUIExtra->lookup() new subs to lookup or 
+    synthesise the Gtk/Gnome enums
+  - PerlProject->use_Glade_project() amended to read/store the logo file in 
+    the project.glade2perl.xml options file for later user hand editing.
+  - PerlUI->new_from_child_name() and PerlUI->internal_pack_widget() fixed 
+    to append a space before buttons with new group set.
+  - PerlUI->new_signal() eval amended to quote the signal name to allow the
+    use of 'funny' characters in handler names and so that signal handlers 
+    are searched for in the class that instantiates the UI. This makes the 
+    code much more flexible and useful - for instance perl scripts (package 
+    main) also can new() and show() the UI and expect the signal handlers to 
+    connect.
+    Thanks to Robert Schwebel for ideas and testing.
+  - I have removed all use English; calls and renamed associated system vars.
+  - PerlSource->write_SUBCLASS() and write_LIBGLADE() added some blank lines
+    and ' # End of sub $handler' at end of each generated handler
+  - All widget constructors should now generate numeric args unquoted.
+  - PerlUIGtk->new_GtkVButtonBox() and new_HButtonBox() now generates code
+    for set_child_ipadding()
+  - PerlUIGtk->new_HPaned() and new_VPaned() now set_postion()
+  - PerlGenerate->own_logo() to return our logo. 
+    Our logo written to pixmaps directory on first run for this project
+  - PerlSource reorganised and code generation simplified so that we now
+    generate ProjectUI.pm and ProjectSIGS.pm and Project.pm for the user
+    to edit and a subclass of it called SubProject.pm. The last two files 
+    are only written if they are missing (ie first time through) so you are 
+    safe to edit them in situ and copy-paste new handlers from the generated 
+    ProjectSIGS.pm file.
+    Thanks to Stas Bekman for ideas.
+  - PerlProject and PerlGenerate altered to simlify the project, options and
+    glade file structure.
+    
 Wed Jan 19 17:12:54 GMT 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
   - Version 0.47
-  - PerlRun->message_box() amended to allow an entry field for a question_box
+  - PerlRun->message_box() amended to allow an entry field for a question_box.
   - PerlUI->new_from_child_name(), PerlUIGtk->new_GtkRadioButton() and 
     PerlUIGtk->new_GtkToggleButton() fixed to build correctly when child_name 
     is specified even though Glade doesn't  distinguish between GtkButton,
     GtkRadioButton and GtkToggleButton properly. Thanks to
     jes@presto.med.upenn.edu for pointing this out.    
-  - PerlUIGtk->new_GtkRadioButton() changed to use any existing rb_group widget
+  - PerlUIGtk->new_GtkRadioButton() changed to use an existing rb_group widget
     and not keep updating the rb_group with new widget (pointless behaviour)
   - PerlUI->use_par amended to report any missing GNOMEUIINFO nicknames. This 
     will not work correctly until Gtk-Perl implements the GNOMEUIINFO stuff :(
@@ -15,7 +61,6 @@ Wed Jan 19 17:12:54 GMT 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
     to Curt Johnson <cjohnson@arrayservices.com> for this report.
   - PerlUI->set_window_properties() amended to use 'default_width' or
     'default_height' properties if present.
-  - 
   
 Tue Jan  4 03:38:01 GMT 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
   - Version 0.46

@@ -1,5 +1,5 @@
 package Glade::PerlRun;
-require 5.000; use English; use strict 'vars', 'refs', 'subs';
+require 5.000; use strict 'vars', 'refs', 'subs';
 
 # Copyright (c) 1999 Dermot Musgrove <dermot.musgrove@virgin.net>
 #
@@ -37,9 +37,9 @@ BEGIN {
     # Tell interpreter who we are inheriting from
     @ISA          = qw( Exporter );
     $PACKAGE      = __PACKAGE__;
-    $VERSION      = q(0.47);
+    $VERSION      = q(0.48);
     $AUTHOR       = q(Dermot Musgrove <dermot.musgrove\@virgin.net>);
-    $DATE         = q(Wed Jan 19 17:12:54 GMT 2000);
+    $DATE         = q(Mon Feb 14 18:45:48 GMT 2000);
     $widgets      = {};
     $all_forms    = {};
     # These vars are imported by all Glade-Perl modules for consistency
@@ -391,9 +391,9 @@ sub missing_handler {
 #                    "another module and edit it so that it does something useful.\n" ;
     my $message = "\n$me has been called because\n".
                     "a signal ($signal) was caused by widget ($widgetname).\n".
-                    "When Perl::Generator writes the Perl source to a file \n".
+                    "When Perl::Generate writes the Perl source to a file \n".
                     "an AUTOLOADed signal handler sub called '$handler'\n".
-                    "will be specified in the class file. You can write a sub with\n".
+                    "will be specified in the UI class file. You can write a sub with\n".
                     "the same name in another module and it will automatically be called instead.\n" ;
     my $widget = $PACKAGE->message_box($message, 
         "Missing handler '$handler' called", ['Dismiss', 'Quit PerlGenerate'], 1, $pixmap);
