@@ -38,7 +38,7 @@ BEGIN {
     # Tell interpreter who we are inheriting from
     @ISA          = qw( Exporter );
     $PACKAGE      = __PACKAGE__;
-    $VERSION      = q(0.49);
+    $VERSION      = q(0.50);
     $AUTHOR       = q(Dermot Musgrove <dermot.musgrove\@virgin.net>);
     $DATE         = q(Thu Feb 24 22:57:47 GMT 2000);
     $widgets      = {};
@@ -212,22 +212,33 @@ sub create_pixmap {
         return new Gtk::Pixmap(
             Gtk::Gdk::Pixmap->colormap_create_from_xpm (
                 undef, $colormap, undef, $found_filename));
-#            Gtk::Gdk::Pixmap->colormap_create_from_xpm (
-#                undef, $colormap, undef, Glade::PerlGenerate->our_logo));
+
     } else {
         # We have an old Gtk-Perl so we need a realized window
         $work->{'window'} 	    = $widget->get_toplevel->window	 ;
+        $work->{'style'} = Gtk::Widget->get_default_style->bg('normal')	 ;
         unless ($work->{'window'}) {
     	    print STDOUT "error Couldn't get_toplevel_window to construct pixmap from '$filename' in $me\n";
         	$work->{'window'} = $widget->window	 ;
         }
-        $work->{'style'} = Gtk::Widget->get_default_style->bg('normal')	 ;
         return new Gtk::Pixmap(
             Gtk::Gdk::Pixmap->create_from_xpm(
                 $work->{'window'}, $work->{'style'}, $found_filename ) );
-#            Gtk::Gdk::Pixmap->create_from_xpm_d(
-#                $work->{'window'}, $work->{'style'}, Glade::PerlGenerate->our_logo ) );
     }
+}
+
+sub get_file  {
+    my ($class, $filename) = @_;
+    my $s;
+    $filename or 
+        die "no filename for ".__PACKAGE__;         # we need a filename
+    {   local $/;
+        open CONFIG,"$filename" or
+            die "Can't open file name '$filename'";
+        $s = <CONFIG>;
+        close CONFIG;
+    }
+    return $s;
 }
 
 sub message_box {

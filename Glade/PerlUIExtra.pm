@@ -26,7 +26,7 @@ BEGIN {
                             $enums
                           );
     $PACKAGE =          __PACKAGE__;
-    $VERSION            = q(0.49);
+    $VERSION            = q(0.50);
     # These cannot be looked up in the include files
     $enums =      {
         'GNOME_ANIMATOR_LOOP_NONE'      => 'none',
@@ -928,19 +928,19 @@ sub new_GtkPixmapMenuItem {
                 $class->add_to_UI( $depth, "\$widgets->{'$name'}->right_justify;" );
             }
             # Underline accelerators - uuurrrggghhh
-            $class->add_to_UI( $depth, "\$widgets->{$name-accel} = ".
+            $class->add_to_UI( $depth, "\$widgets->{'$name-accel'} = ".
                 "new Gtk::AccelLabel( '$label' );" );
-            $class->add_to_UI( $depth, "\$widgets->{$name-accel}->show;");
+            $class->add_to_UI( $depth, "\$widgets->{'$name-accel'}->show;");
             $class->add_to_UI( $depth, "\$widgets->{'$name'}->add(".
-                "\$widgets->{$name-accel});" );
-#            $class->add_to_UI( $depth, "\$widgets->{$name-accel}->parse_uline;" );
-            $class->add_to_UI( $depth, "\$widgets->{$name-accel}->set_pattern(".
+                "\$widgets->{'$name-accel'});" );
+#            $class->add_to_UI( $depth, "\$widgets->{'$name-accel'}->parse_uline;" );
+            $class->add_to_UI( $depth, "\$widgets->{'$name-accel'}->set_pattern(".
                 "'$pattern');" );
             $class->add_to_UI( $depth, "${current_form}\{accelgroup}->add(".
                 ord(lc($accel_key)).", ['mod1_mask'], ['visible', 'locked'], ".
                 "\$widgets->{'$name'}, 'activate_item');");
-            $class->add_to_UI( $depth, "${current_form}\{$name-accel} = ".
-                "\$widgets->{$name-accel};" );
+            $class->add_to_UI( $depth, "${current_form}\{'$name-accel'} = ".
+                "\$widgets->{'$name-accel'};" );
             delete $widgets->{"$name-accel"};
 
         } else {

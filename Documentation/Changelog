@@ -1,5 +1,9 @@
 Revision history for Perl module Glade::PerlGenerate development branch.
 Thu Feb 24 22:57:47 GMT 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
+  - Version 0.50 embarassment release
+  - PerlUiExtra->new_GtkPixMeneuItem() fixes to string quoting
+  
+Thu Feb 24 22:57:47 GMT 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
   - Version 0.49
   - PerlSource - some more diagnosticas and write_LIBGLADE() improved
   - PerlRun->create_pixmap() changed to look relative to current dir

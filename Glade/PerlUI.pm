@@ -39,7 +39,7 @@ BEGIN {
         $missing_widgets
         );
     $PACKAGE =          __PACKAGE__;
-    $VERSION        = q(0.49);
+    $VERSION        = q(0.50);
 
     $ignored_widgets = 0;
     $missing_widgets = 0;
