@@ -13,8 +13,10 @@ require 5.000; use strict 'vars', 'refs', 'subs';
 # b) the Artistic License.
 #
 # If you use this library in a commercial enterprise, you are invited,
-# but not required, to pay what you feel is a reasonable fee to the
-# author, who can be contacted at dermot.musgrove@virgin.net
+# but not required, to pay what you feel is a reasonable fee to perl.org
+# to ensure that useful software is available now and in the future. 
+#
+# (visit http://www.perl.org/ or email donors@perlmongers.org for details)
 
 BEGIN {
     use XML::Parser   qw(  );               # for new, parse, parsefile
@@ -28,7 +30,7 @@ BEGIN {
                             $seq
                        );
     $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.56);
+    $VERSION        = q(0.57);
     $AUTHOR         = q(Dermot Musgrove <dermot.musgrove\@virgin.net>);
     $DATE           = q(30 June 1999);
     # Tell interpreter who we are inheriting from
@@ -133,6 +135,7 @@ sub Proto_from_XML_Parser_Tree {
     #        recursed
     
     # Tree[3] cannot exist since the fileelement must enclose everything
+# FIXME make this general for all encodings
     if ($encoding && ($encoding eq 'ISO-8859-1')) {
         eval "use Unicode::String qw(utf8 latin1)";
         undef $encoding if $@;  # We can't use encodings correctly
@@ -192,6 +195,7 @@ sub Proto_from_XML_Parser_Tree {
         } else {
             # this is a simple element to add with 
             # key in $self->[$count] and val in $self->[$count+1][2]
+# FIXME make this general for all encodings
             if ($encoding && ($encoding eq 'ISO-8859-1')) {
                 # We use line below if you are using european characters
                 $np->{$self->[$count]} = &utf8($self->[$count+1][2])->latin1;

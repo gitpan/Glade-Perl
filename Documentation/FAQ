@@ -1,5 +1,60 @@
 This is the Frequently Asked Question list for Glade-Perl source generator
 --------------------------------------------------------------------------
+Q   How do I see diagnostic messages when using glade2perl or from Glade?
+
+A   Copy glade2perl and edit the 'verbose' line to read
+        'verbose' => 2,     # for some diagnostics
+        'verbose' => 4,     # for more diagnostics
+        'verbose' => 6,     # for lots of diagnostics (more than you want ?)
+        'verbose' => 10,    # for every diagnostic message available
+
+    1)  Then either run Glade from a terminal, 
+    2)  call the edited glade2perl directly (and maybe redirect STDOUT to a file)
+    3)  specify a log_file in glade2perl if you want to save the diagnostics.
+        'log_file' => $log_file, # Save diagnostics to Project.glade2perl.log
+        This last option might be best, then all glade2perl runs will save the
+        diagnostics to a file.
+            
+--------------------------------------------------------------------------
+Q   How do I get the value of a GtkOptionMenu using Glade-Perl?
+
+A   One way is to connect a handler to the 'hide' signal of the
+    GtkOptionMenu's menu and then inspect the widget. eg. in a Gnome project
+    called 'Reference' with 'optionmenu4' - edit the app_run() method in
+    Reference.pm and write new on_optionmenu4_hide() to be:
+
+    sub app_run {
+        my ($class) = @_;
+        $class->load_translations('Reference');
+        # You can use the line below to load a test .mo file before it is
+        # installed in the normal place 
+        #     (eg /usr/local/share/locale//LC_MESSAGES/Reference.mo)
+    #    $class->load_translations('Reference', 'test', undef, 
+    #        '/home/dermot/Devel/Glade-Perl/Example/Reference/ppo/Reference.mo');
+        Gnome->init('Reference', '0.53');
+        my $window = $class->new;
+        $window->TOPLEVEL->show;
+
+        $window->FORM->{'optionmenu4'}->get_menu->signal_connect( 
+            'hide', "$class\::on_optionmenu4_hide", '', 'optionmenu4', 
+            $window->INSTANCE );
+
+        Gtk->main;
+
+    } # End of sub app_run
+
+    sub on_optionmenu4_hide {
+        my ($class, $data, $object, $instance, $event) = @_;
+        my $me = __PACKAGE__."->on_optionmenu4_hide";
+        # Get ref to hash of all widgets on our form
+        my $form = $__PACKAGE__::all_forms->{$instance};
+
+        my $selected_string = ($class->get_active->children)[0]->get;
+        print "We have selected string $selected_string\n";
+
+    } # End of sub on_optionmenu4_hide    
+
+--------------------------------------------------------------------------
 Q   Unicode::String 2.05 fails compilation under (default) Perl 5.6.0.
 
 A   The maintainers have been notified and should fix this problem soon 
@@ -201,26 +256,13 @@ Q   Why doesn't Glade-Perl build my stock button correctly?
     warn  Gtk-Perl version 0.6123 cannot do 'GnomeStock' (properly) 
         we need CVS module 'gnome-perl' after 19990914
 
-A   Gtk-Perl 0.6123 doesn't do Gnome::Stock->button. Either remove the
-    Stock Button property and use a label or upgrade to Gtk-Perl CVS after
-    19990914 or version >= 0.7000.
+A   Your Gtk-Perl doesn't do Gnome::Stock->button. Perhaps you don't have
+    the Gnome submodule built - in which case use labels instead.
+
+    Gtk-Perl 0.6123 doesn't do Gnome::Stock->button at all. Either remove 
+    the Stock Button property and use a label or upgrade to Gtk-Perl CVS 
+    after 19990914 or version >= 0.7000.
     
---------------------------------------------------------------------------
-Q   How do I see diagnostic messages when using glade2perl or from Glade?
-
-A   Copy glade2perl and edit the 'verbose' line to read
-        'verbose' => 2,     # for some diagnostics
-        'verbose' => 4,     # for more diagnostics
-        'verbose' => 6,     # for lots of diagnostics (more than you want ?)
-        'verbose' => 10,    # for every diagnostic message available
-
-    1)  Then either run Glade from a terminal, 
-    2)  call the edited glade2perl directly (and maybe redirect STDOUT to a file)
-    3)  specify a log_file in glade2perl if you want to save the diagnostics.
-        'log_file' => $log_file, # Save diagnostics to Project.glade2perl.log
-        This last option might be best, then all glade2perl runs will save the
-        diagnostics to a file.
-            
 --------------------------------------------------------------------------
 Q   How do I write signal handlers in a separate module?
 

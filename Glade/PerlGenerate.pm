@@ -13,8 +13,10 @@ require 5.000; use strict 'vars', 'refs', 'subs';
 # b) the Artistic License.
 #
 # If you use this library in a commercial enterprise, you are invited,
-# but not required, to pay what you feel is a reasonable fee to the
-# author, who can be contacted at dermot.musgrove@virgin.net
+# but not required, to pay what you feel is a reasonable fee to perl.org
+# to ensure that useful software is available now and in the future. 
+#
+# (visit http://www.perl.org/ or email donors@perlmongers.org for details)
 
 BEGIN {
     use Glade::PerlProject;             # Project vars and methods
@@ -26,7 +28,7 @@ BEGIN {
                             $PACKAGE 
                           );
     $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.56);
+    $VERSION        = q(0.57);
     # Tell interpreter who we are inheriting from
     @ISA            = qw(
                             Glade::PerlProject
@@ -191,7 +193,8 @@ sub Form_from_Proto {
         $class->diag_print (2, "%s- Source code will be generated for locale <%s>", 
             $indent, $options->source_LANG);
 
-        $module = $glade_proto->{'project'}{'source_directory'};
+        $module = $glade_proto->{'project'}{'source_directory'}
+            unless $glade_proto->{'project'}{'source_directory'} eq '.';
         $module =~ s/.*\/(.*)$/$1/;
         $module .= "::" if $module;
         if ($options->style && $options->style eq "Libglade") {
@@ -204,20 +207,39 @@ sub Form_from_Proto {
                 "%sperl -e 'use %s%s; %s->run'",
                     $indent, $proto->{'directory'}, ($indent x 3), $module,
                     $proto->{'LIBGLADE_class'}, $proto->{'LIBGLADE_class'});
+
         } else {
             $class->diag_print (4, "%s- Generating UI construction code", $indent);
-            $class->write_UI($proto, $glade_proto);
+            $class->write_UI($proto, $forms);
 
             $class->diag_print (4, "%s- Generating signal handler code", $indent);
-            $class->write_SIGS($proto, $glade_proto);
-
+            if ($options->style && $options->style =~ /split/i) {
+                $class->write_split_SIGS($proto, $forms);
+                $class->diag_print (2, 
+                    "%s- Some of the ways to run the generated source", $indent);
+                $class->diag_print (2, 
+                    "%s  Change directory to '%s' and then enter one of :",
+                    "$indent$indent", $proto->{'directory'});
+                $class->diag_print (2,"%s", 
+                    "$indent$indent  perl -e 'use $module".
+                        "$proto->{'APP_class'}"."_".
+                        "${first_form}; ".
+                        "${first_form}->app_run'");
+            } else {
+                $class->write_SIGS($proto, $forms);
+                $class->diag_print (2, 
+                    "%s- Some of the ways to run the generated source", $indent);
+                $class->diag_print (2, 
+                    "%s  Change directory to '%s' and then enter one of :",
+                    "$indent$indent", $proto->{'directory'});
+                $class->diag_print (2,"%s", 
+                    "$indent$indent  perl -e 'use $module".
+                        "$proto->{'APP_class'}; ".
+                        "${first_form}->app_run'");
+            }
             $class->diag_print (4, "%s- Generating OO subclass code", $indent);
-            $class->write_SUBCLASS($proto, $glade_proto);
-            $class->diag_print (2, 
-                "%s- Some of the ways to run the generated source", $indent);
-            $class->diag_print (2, 
-                "%s  Change directory to '%s' and then enter one of :",
-                "$indent$indent", $proto->{'directory'});
+            $class->write_SUBCLASS($proto, $forms);
+
 #            $class->diag_print (2, 
 #                "${indent}- ${indent}perl -e 'use $module".
 #                    "$proto->{'UI_class'}; ".
@@ -226,14 +248,10 @@ sub Form_from_Proto {
 #                "${indent}- ${indent}perl -e 'use $module".
 #                    "$proto->{'SIGS_class'}; ".
 #                    "${first_form}->run'");
-            $class->diag_print (2,"%s", 
-                "$indent$indent  perl -e 'use $module".
-                    "$proto->{'APP_class'}; ".
-                    "${first_form}->run'");
             $class->diag_print (2, "%s",
                 "$indent$indent  perl -e 'use $module".
                     "$proto->{'SUBAPP_class'}; ".
-                    "Sub${first_form}->run'");
+                    "Sub${first_form}->app_run'");
         }
 #        $class->write_Documentation($proto, $glade_proto);
 #        $class->write_dist($proto, $glade_proto);
@@ -841,7 +859,7 @@ knows about'
 
 =item use_modules - default means don't use() any other modules
 
-When specified as an arg to the options() method, an anonymous hash of 
+When specified as an arg to the options() method, an anonymous array of 
 modules to be use()d in the generated classes.
 
 In an options file, a newline separated list of modules to be use()d by 
@@ -853,13 +871,13 @@ e.g ['Existing::mySUBS', 'Some::Other::Module']
 
 Bool - whether or not to allow Gnome widgets in the generated source
 
-=item site_options - Default is /etc/gpgrc.xml
+=item site_options - Default is /etc/glade2perl.xml
 
 File name containing options for all projects on this site.
 This option is only meaningful when set by Glade::PerlGenerate->options() 
 although it is logged in the project_options file 
 
-=item user_options - Default is ~/.gpgrc.xml
+=item user_options - Default is ~/.glade2perl.xml
 
 File name containing options for all projects in this user. 
 This option is only meaningful when set by Glade::PerlGenerate->options() 
@@ -923,7 +941,7 @@ so that the UI is not shown.
 
 Use the specified logo in about boxes or if any pixmap is missing
 
-=item my_perl_gtk - Default is to use Gtk-Perl's version no
+=item my_perl_gtk - Default is to use Gtk-Perl's version number
 
 Version number of my Gtk-Perl module. This overrides the number reported by
 Gtk::Perl so that CVS fixes can be used.
@@ -992,6 +1010,8 @@ e.g. 'widget_hierarchy'
 AUTOLOAD - OO class implements missing signal handlers with an AUTOLOAD sub
 
 Libglade - generate libglade code and signal handlers
+
+split - generates each class in its own .pm file.
 
 =item source_LANG - default $ENV{'LANG'}
 
@@ -1139,8 +1159,9 @@ Name of the Glade::PerlGenerate logo pixmap used.
  # b) the Artistic License.
  #
  # If you use this library in a commercial enterprise, you are invited,
- # but not required, to pay what you feel is a reasonable fee to the
- # author </copying>
+ # but not required, to pay what you feel is a reasonable fee to cpan.org
+ # at http://www.perl.org or contact donors\@perlmongers.org for details.
+ # </copying>
    <my_perl_gtk>20000301</my_perl_gtk>
  </G2P-Options>
 
@@ -1159,26 +1180,70 @@ inconsistent project files but they do point out errors in hand-edited XML.
 
 =head1 FILES GENERATED
 
-The Perl source to construct the UI is written to a .pm file called 
-<project><name>.pm. . Each toplevel window/dialog has a class generated with 
-code to construct it. 
-An example subclass is generated in another .pm file called 
-Sub<project><name>.pm which contains skeleton subs for every missing signal 
-handler. It can be copied and edited to make a complete app.
+=over 4
+
+=item projectUI.pm
+
+A perl class/module (projectUI.pm) that contains
+a class for each toplevel window/dialog, each with a standard 
+method (new) that will construct the UI. 
+
+=item projectSIGS.pm
+
+A perl class/module (projectSIGS.pm) that contains
+a class for each toplevel window/dialog, with skeleton 
+signal handlers for any that were missing at build time. 
+
+If the 'split' style is used, the typical filename will be
+projectSIGS_class .pm (one file per class).
+
+=item project.pm
+
+A perl class/module (project.pm) that is a copy of projectSIGS.pm
+for you to edit to become your "App".
+You can generate the 
+UI again and again without changing any of your signal handlers as it
+is only written the first time through (if missing). If you add signal
+definitions to your Glade project, skeletons for the handlers will be 
+generated in the projectSIGS.pm file and you can cut-and-paste them
+from there into the relevant class in the project.pm "App" module.
+
+If the 'split' style is used, the typical filename will be
+project_class .pm (one file per class).
+
+=item Subproject.pm
+
+A perl class/module (Subproject.pm) that subclasses project.pm
+that you can edit to subclass your "App". 
+You can generate the 
+UI again and again without changing any of your signal handlers as
+it is only written the first time through (if missing).
+
+=item projectLIBGLADE.pm
+
+An optional perl class/module (projectLIBGLADE.pm) that initialises
+the Libglade bindings and has skeleton signal handlers
+that you can edit to form your "App". 
+You can generate the 
+UI again and again without changing any of your signal handlers as
+it is only written the first time through (if missing).
+
+=back
 
 =head1 SEE ALSO
 
 Documentation that came with the module is in Directory 'Documentation' in 
 files README, Changelog, FAQ, TODO, NEWS, ROADMAP etc.
- 
+
 The test file for 'make test' is test.pl which is runnable and has
 examples of user options.
- 
-Perl script to generate source code from the Glade 'Build' button or menuitem
-is in file 'glade2perl'
+
+A Perl script to generate source code from the Glade 'Build' button or menuitem
+is in file 'Example/glade2perl'. 
+You can also call this script from the command line.
 
 A module that subclasses the test example is in file Example/SubBus.pm. This
-module will use inherit (subclass) the generated perl classes and also use
+module will use (inherit or subclass) the generated perl classes and also use
 the supplied signal handlers module (Example/BusForm_mySUBS.pm)
 
 =cut

@@ -13,8 +13,10 @@ require 5.000; use strict 'vars', 'refs', 'subs';
 # b) the Artistic License.
 #
 # If you use this library in a commercial enterprise, you are invited,
-# but not required, to pay what you feel is a reasonable fee to the
-# author, who can be contacted at dermot.musgrove@virgin.net
+# but not required, to pay what you feel is a reasonable fee to perl.org
+# to ensure that useful software is available now and in the future. 
+#
+# (visit http://www.perl.org/ or email donors@perlmongers.org for details)
 
 BEGIN {
     use Glade::PerlSource qw( :VARS :METHODS );
@@ -24,7 +26,7 @@ BEGIN {
                             $enums
                           );
     $PACKAGE =          __PACKAGE__;
-    $VERSION            = q(0.56);
+    $VERSION            = q(0.57);
     # These cannot be looked up in the include files
     $enums =      {
         'GNOME_MENU_SAVE_AS_STRING'     => 'Save _As...',
@@ -681,7 +683,9 @@ sub new_GnomeMessageBox {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeMessageBox";
     my $name = $proto->{name};
-    my $type    = $class->use_par($proto, 'type',    $LOOKUP );
+#    my $type    = $class->use_par($proto, 'type',    $LOOKUP );
+    # Clear any pre-Glade-0.5.10 (unused) properties
+    undef $proto->{'type'};
     my $message = $class->use_par($proto, 'message', $DEFAULT, '' );
     my $message_box_type = $class->use_par($proto, 'message_box_type', $LOOKUP );
     my $auto_close    = $class->use_par($proto, 'auto_close',    $BOOL, 'True' );
@@ -723,7 +727,7 @@ sub new_GnomePixmap {
     unless ($filename) {
         $class->diag_print(2, "warn  No pixmap file specified for GtkPixmap ".
             "'%s' so we are using the project logo instead", $name);
-        $filename = $Glade_Perl->logo;
+        $filename = $Glade_Perl->{'options'}->logo;
     }
     $filename = "\"\$Glade::PerlRun::pixmaps_directory/$filename\"";
     my $scaled_width   = $class->use_par($proto, 'scaled_width',  $DEFAULT, 0);
@@ -984,7 +988,7 @@ sub new_GtkPixmapMenuItem {
                 "$current_form\{'$name-pixmap'} = \$class->create_pixmap(".
                     "$current_window, '$icon');");
             $class->add_to_UI( $depth, "$current_form\{'$name-pixmap'}->show;");
-# FIXME find out how to show the accelerators
+# FIXME find out how to show the accelerators - they are set but not shown :(
             $class->add_to_UI( $depth,
                 "$current_form\{'$name'}->set_pixmap(".
                     "$current_form\{'$name-pixmap'});");

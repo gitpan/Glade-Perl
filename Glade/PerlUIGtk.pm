@@ -13,8 +13,10 @@ require 5.000; use strict 'vars', 'refs', 'subs';
 # b) the Artistic License.
 #
 # If you use this library in a commercial enterprise, you are invited,
-# but not required, to pay what you feel is a reasonable fee to the
-# author, who can be contacted at dermot.musgrove@virgin.net
+# but not required, to pay what you feel is a reasonable fee to perl.org
+# to ensure that useful software is available now and in the future. 
+#
+# (visit http://www.perl.org/ or email donors@perlmongers.org for details)
 
 BEGIN {
     use Glade::PerlSource qw( :VARS :METHODS );
@@ -32,7 +34,7 @@ BEGIN {
                             $enums
                           );
     $PACKAGE =          __PACKAGE__;
-    $VERSION        = q(0.56);
+    $VERSION        = q(0.57);
     @VARS           = qw( 
                             $VERSION
                             $AUTHOR
@@ -219,6 +221,7 @@ sub new_GtkButton {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkButton";
     my $name = $proto->{'name'};
+    my $relief = $class->use_par($proto, 'relief', $LOOKUP, 'normal' );
 # FIXME - toolbar buttons with a removed label don't have a child_name
 #   but can have a sub-widget. allow this
     unless ($class->new_from_child_name($parent, $name, $proto, $depth )) {
@@ -268,7 +271,10 @@ sub new_GtkButton {
             undef $widgets->{"$name-key"};
         }
     }
-
+    if ($relief ne 'normal') {
+        $class->add_to_UI( $depth, 
+            "$current_form\{'$name'}->set_relief('$relief');");
+    }
     return $widgets->{$name};
 }
 
@@ -1139,11 +1145,12 @@ sub new_GtkPixmap {
     unless ($filename) {
         $class->diag_print(2, "warn  No pixmap file specified for GtkPixmap ".
             "'%s' so we are using the project logo instead", $name);
-        $filename = $Glade_Perl->logo;
+        $filename = $Glade_Perl->{'options'}->logo;
     }
-    $filename = "${Glade::PerlRun::pixmaps_directory}/$filename";
+    $filename = "\"\$Glade::PerlRun::pixmaps_directory/$filename\"";
+#    $filename = "${Glade::PerlRun::pixmaps_directory}/$filename";
     $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
-        "\$class->create_pixmap($current_window, '$filename' );" );
+        "\$class->create_pixmap($current_window, $filename );" );
     unless (defined $widgets->{$name}) { 
         die sprintf(("\nerror %s failed to create pixmap from file '%s'"),
             $me, $filename), "\n";
@@ -1453,7 +1460,8 @@ sub new_GtkToggleButton {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkToggleButton";
     my $name = $proto->{'name'};
-    my $active       = $class->use_par($proto, 'active',       $BOOL,    'False' );
+    my $active       = $class->use_par($proto, 'active', $BOOL, 'False' );
+    my $relief = $class->use_par($proto, 'relief', $LOOKUP, 'normal' );
 
     unless ($class->new_from_child_name($parent, $name, $proto, $depth )) {
         my $label        = $class->use_par($proto, 'label'    ,    $DEFAULT, '' );
@@ -1473,8 +1481,10 @@ sub new_GtkToggleButton {
     }
     $class->add_to_UI( $depth, "$current_form\{'$name'}->active(".
         "$active );" );
-#    $class->add_to_UI( $depth, "\$widgets->{'$name'}->active(".
-#        "$active );" );
+    if ($relief ne 'normal') {
+        $class->add_to_UI( $depth, 
+            "$current_form\{'$name'}->set_relief('$relief');");
+    }
 
     return $widgets->{$name};
 }

@@ -42,6 +42,18 @@ BEGIN {
     use Bus_mySUBS;
 } # End of sub BEGIN
 
+sub app_run {
+    my ($class) = @_;
+    Gtk->init;
+    my $window = $class->new;
+    $window->TOPLEVEL->show;
+
+    # Put any extra UI initialisation (eg signal_connect) calls here
+
+    # Now let Gtk handle signals
+    Gtk->main;
+} # End of sub run
+
 #===============================================================================
 #=== Below are the default signal handlers for 'BusFrame' class
 #===============================================================================

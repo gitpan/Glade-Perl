@@ -40,7 +40,7 @@ BEGIN {
         $cxx_properties
         );
     $PACKAGE =          __PACKAGE__;
-    $VERSION        = q(0.56);
+    $VERSION        = q(0.57);
 
     $ignored_widgets = 0;
     $missing_widgets = 0;
@@ -80,6 +80,17 @@ $cxx_properties    = join(' ',
     'cxx_use_heap',
     'cxx_visibility',
     );
+my $gnome_db_widgets    = join( " ",
+    'GnomeDbGrid',
+    'GnomeDbList',
+    'GnomeDbCombo',
+    'GnomeDbReport',
+    'GnomeDbError',
+    'GnomeDbLogin',
+    'GnomeDbBrowser',
+    'GnomeDbErrorDlg',
+    'GnomeDbLoginDlg',
+);
 my $gnome_widgets       = join( " ",
     'GnomeAbout',
     'GnomeApp',
@@ -127,12 +138,25 @@ $perl_gtk_depends       = {
     '0.7000'                => '20000102',
     '0.7001'                => '20000123',
     '0.7002'                => '20000129',
+    '0.7003'                => '20000816',
 
 #    'MINIMUM REQUIREMENTS'  => '0.7000',
     'MINIMUM REQUIREMENTS'  => '0.6123',
-    'LATEST_CPAN'           => '0.7002',
-    'LATEST_CVS'            => '20000414',
+    'LATEST_CPAN'           => '0.7003',
+    'LATEST_CVS'            => '20000901',
+    
     # Those below don't work yet even in the latest CVS version
+    'GnomeDbGrid'           => '99999999',
+    'GnomeDbList'           => '99999999',
+    'GnomeDbCombo'          => '99999999',
+    'GnomeDbReport'         => '99999999',
+    'GnomeDbError'          => '99999999',
+    'GnomeDbLogin'          => '99999999',
+    'GnomeDbBrowser'        => '99999999',
+    'GnomeDbErrorDlg'       => '99999999',
+    'GnomeDbLoginDlg'       => '99999999',
+
+    # Those below work in the CVS version after 20000410
     'gtk_pixmap_menu_item'  => '20000410',
     # Those below work in the CVS version after 20000301
     'gnome_dialog_append_button' => '20000301',
@@ -454,15 +478,17 @@ sub Widget_from_Proto {
                 }
             }
         } else {
-            die ("error")." $me\n\t".sprintf(
-                ("I don't have a constructor called '%s'".
-                "- I guess that it isn't written yet :-)\n"),
+            $class->diag_print(1, "error I don't have a constructor called '%s'".
+                "- I guess that it isn't written yet :-)",
                 "$class->$constructor");
         }
     } else {
         # We are a complete GTK-Interface - ie we are the application
         unless ($Glade_Perl->{'options'}->allow_gnome) {
             $ignore_widgets .= " $gnome_widgets";
+        }
+        unless ($Glade_Perl->{'options'}->allow_gnome_db) {
+            $ignore_widgets .= " $gnome_db_widgets";
         }
     }
     $self = $widgets->{$proto->{name}};
@@ -694,7 +720,7 @@ sub internal_pack_widget {
                     "\$widgets->{'$childname'} );" );
 
 #---------------------------------------
-        } elsif (' Gtk::MenuItem ' =~ m/ $refpar /) {
+        } elsif (' Gtk::MenuItem Gtk::PixmapMenuItem ' =~ m/ $refpar /) {
             # We are a menu for a meuitem
             $class->add_to_UI( $depth, 
                 "${current_form}\{'$parentname'}->set_submenu(".
@@ -1328,7 +1354,7 @@ sub new_from_child_name {
         #
         # For Gnome::Dialog and derivatives we can use ->append_button() 
         # (which calls gnome_dialog_init_action_area)
-        if (!$class->my_perl_gtk_can_do('gnome_dialog_append_button')) {
+        unless ($class->my_perl_gtk_can_do('gnome_dialog_append_button')) {
             # Force HButtonbox to construct its widget and add it to the VBox 
             # This will look wrong (above the separator)
             return undef;
@@ -1375,8 +1401,6 @@ sub new_from_child_name {
 
         if ($icon) {
             $pixmap_widget_name = "${current_form}\{'${name}-pixmap'}";
-#            $icon = $class->full_Path( 
-#                $icon, $Glade_Perl->pixmaps_directory );
             $class->add_to_UI( $depth, 
                 "$pixmap_widget_name = \$class->create_pixmap(".
                     "${current_window}, \"\$Glade::PerlRun::pixmaps_directory/$icon\" );" ); 
@@ -1482,10 +1506,15 @@ sub new_from_child_name {
         }
 
 #---------------------------------------
+    } elsif ($type eq 'notebook') {
+        return undef;
+        
+#---------------------------------------
     } else {
         $class->diag_print (1, "error Don't know how to get a ref to %s ".
             "(type '%s')",
             "${current_form}\{'${name}'}{'child_name'}", $type);
+#use Data::Dumper; print Dumper($proto);
         return undef;
     }
 
@@ -1523,6 +1552,14 @@ sub new_signal {
         } else {
             $call .= 'signal_connect'
         }
+        if ($handler =~ /[- \.]/) {
+            my %ents=('-'=>'MINUS',' '=>'SPACE','.'=>'DOT');
+            my $replaced = $handler =~ s/([- \.])/_$ents{$1}_/g;
+            $class->diag_print (1, "error signal handler ('%s') ".
+                "contains %s minus sign/space/dot(s) which has(ve) been ".
+                "substituted because they are illegal in a sub name in Perl. ",
+                $handler, $replaced);
+        }            
         # We can check dynamically below
         # Flag that we are done
         delete $need_handlers->{$parentname}{$signal};

@@ -13,13 +13,16 @@ require 5.000; use strict 'vars', 'refs', 'subs';
 # b) the Artistic License.
 #
 # If you use this library in a commercial enterprise, you are invited,
-# but not required, to pay what you feel is a reasonable fee to the
-# author, who can be contacted at dermot.musgrove@virgin.net
+# but not required, to pay what you feel is a reasonable fee to perl.org
+# to ensure that useful software is available now and in the future. 
+#
+# (visit http://www.perl.org/ or email donors@perlmongers.org for details)
 
 BEGIN {
     use Exporter    qw(  );
     use Gtk;             # For message_box
     use Cwd         qw( cwd chdir );
+    use File::Basename;
     use vars        qw( @ISA 
                         $AUTOLOAD
                         %fields %stubs
@@ -39,9 +42,9 @@ BEGIN {
     # Tell interpreter who we are inheriting from
     @ISA          = qw( Exporter );
     $PACKAGE      = __PACKAGE__;
-    $VERSION      = q(0.56);
+    $VERSION      = q(0.57);
     $AUTHOR       = q(Dermot Musgrove <dermot.musgrove\@virgin.net>);
-    $DATE         = q(Wed Apr 19 02:28:58 BST 2000);
+    $DATE         = q(Fri Oct 20 01:19:45 BST 2000);
     $widgets      = {};
     $all_forms    = {};
     $pixmaps_directory = "pixmaps";
@@ -277,28 +280,31 @@ sub C {
 sub full_Path {
     my ($class, $file, $directory, $default) = @_;
     my $me = "$class->full_Path";
-    my $leaning_toothpick = '/';
+    my $basename;
+    my $slash = '/';
+    my $updir = '/\.\./';
     # set to $default if not defined
     my $fullname = $file || $default || '';
     # add $base unless we are absolute already
-    if ($fullname =~ /^$leaning_toothpick/) {
-        # We are already an absolute filename so remove double //'s
-        $fullname =~ s/$leaning_toothpick$leaning_toothpick/$leaning_toothpick/g;
-
-    } elsif (defined $directory) {
+    if ($fullname !~ /^$slash/ && defined $directory) {
         # We are supposed to be relative to a directory so use Cwd->chdir to
         # change to specified directory and Cwd->cwd to get full path names
         my $save_dir = cwd;
         chdir($directory);
         my $fulldir = cwd;
         # Now change directory to where we were on entry
+        $fullname = "$fulldir$slash$fullname"; 
         chdir($save_dir);
-        $fullname = "$fulldir/$fullname"; 
-#    } else {
-#        # Nothing else to do
     }
-    # remove any trailing /'s
-    $fullname =~ s/$leaning_toothpick$//;
+    
+    # Remove double //s and /./s
+    $fullname =~ s/$slash\.?$slash/$slash/g;
+    # Remove /../ relative directories
+    while ($fullname =~ /$updir/) {
+        $fullname =~ s/(.+)(?!$updir)$slash.+?$updir/$1$slash/;
+    }
+    # Remove trailing /s
+    $fullname =~ s/$slash$//;
     return $fullname;
 }
 

@@ -13,8 +13,10 @@ require 5.000; use strict 'vars', 'refs', 'subs';
 # b) the Artistic License.
 #
 # If you use this library in a commercial enterprise, you are invited,
-# but not required, to pay what you feel is a reasonable fee to the
-# author, who can be contacted at dermot.musgrove@virgin.net
+# but not required, to pay what you feel is a reasonable fee to perl.org
+# to ensure that useful software is available now and in the future. 
+#
+# (visit http://www.perl.org/ or email donors@perlmongers.org for details)
 
 BEGIN {
     use Carp qw(cluck);
@@ -32,10 +34,9 @@ BEGIN {
                             @ISA 
                             $PACKAGE 
                             $VERSION
-                            $xAUTOLOAD
                        );
     $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.56);
+    $VERSION        = q(0.57);
     # Tell interpreter who we are inheriting from
     @ISA            = qw( 
                             Glade::PerlXML 
@@ -54,6 +55,7 @@ my %fields = (
     'description'       => undef,   # Description for About box etc.
     'use_modules'       => undef,   # Existing signal handler modules
     'allow_gnome'       => undef,   # Dont allow gnome widgets
+    'allow_gnome_db'    => undef,   # Dont allow gnome widgets
     'start_time'        => undef,   # Time that this run started
     'project_options'   => undef,   # Dont read or save options in disk file
 #    'options_filename'  => undef,   # Dont read or save options in disk file
@@ -133,33 +135,6 @@ sub new {
   };
   bless $self, $class;
   return $self;
-}
-
-sub xAUTOLOAD {
-  my $self = shift;
-  my $i = 1;
-  my $AUTOLOAD;
-  my $type = ref($self)
-    or die "$self is not an object so we cannot '$AUTOLOAD'\n",
-      "We were called from ".join(", ", caller)."\n\n";
-  my $name = $AUTOLOAD;
-  $name =~ s/.*://;       # strip fully-qualified portion
-
-  if (exists $self->{_permitted_fields}->{$name} ) {
-    # This allows dynamic data methods - see %fields above
-    # eg $class->UI('new_value');
-    # or $current_value = $class->UI;
-    if (@_) {
-      return $self->{$name} = shift;
-    } else {
-      return $self->{$name};
-    }
-
-  } else {
-      die sprintf("Can't access method `%s' in class %s\n",
-          $name, $type);
-
-  }
 }
 
 #===============================================================================
@@ -274,20 +249,11 @@ sub get_versions {
             " but user overrode with version %s",
             $indent, "Gtk-Perl", "$Gtk::VERSION (CVS $cpan_date)",
             $options->my_perl_gtk);
-#        $options->diag_print (2, 
-#            $options->indent."- Gtk-Perl ".
-#            D_("reported version").
-#            " $Gtk::VERSION (CVS $cpan_date) ".
-#            D_("but user overrode with version").
-#            " ".$options->my_perl_gtk);
-##        $options->my_perl_gtk($cpan_date);
 
     } else {
         $options->my_perl_gtk($cpan_date);
         $options->diag_print (2, "%s- %s reported version %s",
             $indent, "Gtk-Perl", "$Gtk::VERSION (CVS $cpan_date)");
-#            $options->indent."- Gtk-Perl ".D_("reported version").
-#            " $Gtk::VERSION (CVS $cpan_date) ");
     }
     unless ($class->my_perl_gtk_can_do('MINIMUM REQUIREMENTS')) {
         die "You need to upgrade your Gtk-Perl";
@@ -306,10 +272,7 @@ sub get_versions {
             $options->my_gnome_libs($gnome_libs_version);
             $options->diag_print (2, "%s- %s reported version %s",
                 $indent, "gnome-libs", $gnome_libs_version);
-#            $class->diag_print (2, 
-#                $options->indent."- gnome_libs reported version $gnome_libs_version");
         }
-#        unless (Gnome::Stock->can('button')) {
         unless ($class->my_gnome_libs_can_do('MINIMUM REQUIREMENTS')) {
             die "You need to upgrade your gnome-libs";
         }
@@ -337,7 +300,6 @@ sub add_to_hash_from {
 
 sub save_options {
     my ($class, $filename) = @_;
-#use Data::Dumper; print Dumper(\@_);print Dumper($Glade_Perl);
     my $me = __PACKAGE__."->save_options";
     my ($user_options, $site_options, $key, $default, $encoding);
     # Take a copy of the options supplied and work on that (for deleting keys)
@@ -346,8 +308,6 @@ sub save_options {
     my $site_filename = $class->{'site_options'} || "/etc/glade2perl.xml";
     if (-f $site_filename) {
         # Only save options that are different to user_options in file
-#        $site_options = $class->simple_Proto_from_File(
-#             $site_filename, '')->{'G2P-Options'};
         ($encoding, $site_options) = $class->Proto_from_File(
              $site_filename, '', '', $class->glade2perl_encoding);
         $class->diag_print(4, $site_options, "Site options");
@@ -356,8 +316,6 @@ sub save_options {
     my $user_filename = $class->{'user_options'} || "$ENV{'HOME'}/.glade2perl.xml";
     if (-f $user_filename) {
         # Only save options that are different to user_options in file
-#        $user_options = $class->simple_Proto_from_File(
-#             $user_filename, '')->{'G2P-Options'};
         ($encoding, $user_options) = $class->Proto_from_File(
              $user_filename, '', '', $class->glade2perl_encoding);
         $class->diag_print(4, $user_options, "User options");
@@ -394,7 +352,6 @@ sub save_options {
     $options{'glade2perl_version'} = $VERSION;
     $class->diag_print (2, "%s- Saving project options in file '%s'", 
         $indent, $filename);
-#    $class->diag_print (2, "${indent}- Saving project options in file '$filename'");
     my $xml = $class->XML_from_Proto('', '  ', 'G2P-Options', \%options);
     $class->diag_print(6, $xml);
     open OPTIONS, ">".($filename) or 
@@ -433,8 +390,6 @@ sub options {
                 $params{'project_options'} ) {
             if ($file && -f $file) {
                 # Override the defaults with values from the options file
-#                $file_options = $class->simple_Proto_from_File(
-#                    $filename, '')->{'G2P-Options'};
                 ($encoding, $file_options) = $class->Proto_from_File(
                     $file, '', '', $options->glade2perl_encoding);
                 $class->add_to_hash_from($options, $file_options);
@@ -467,7 +422,7 @@ sub options {
     $indent = $options->indent; 
     $tab = (' ' x $options->tabwidth);
     if ($options->diag_wrap == 0) {
-        $columns = 999;
+        $columns = 1500;
     } else {
         $columns = $options->diag_wrap;
     }
@@ -518,11 +473,14 @@ sub use_Glade_Project {
 
     # Ensure that the options are set (use defaults, site, user, project)
     $options->options_set($me);
-    my $project_options = {};
-    bless $project_options, $PACKAGE;
+    my $proj_opt = {};
+    bless $proj_opt, $PACKAGE;
     my $gnome_support = $glade_proto->{'project'}{'gnome_support'};
     $options->allow_gnome(
         ($glade_proto->{'project'}{'gnome_support'} || 'True')
+            eq 'True');
+    $options->allow_gnome_db(
+        ($glade_proto->{'project'}{'gnome_db_support'} || 'False')
             eq 'True');
     $class->get_versions($options);
 
@@ -538,105 +496,134 @@ sub use_Glade_Project {
             "removed from project name - it is now '%s'",
             $indent, $replaced, $glade_proto->{'project'}{'name'});
     }
-    $project_options->{'name'}  = $glade_proto->{'project'}{'name'};
-    $project_options->{'directory'} = $class->full_Path(
+    $proj_opt->{'name'}  = $glade_proto->{'project'}{'name'};
+    $proj_opt->{'directory'} = $class->full_Path(
         $glade_proto->{'project'}{'directory'}, 
         $glade_file_dirname);
-    $project_options->{'glade_filename'} = $class->full_Path(
+    $proj_opt->{'glade_filename'} = $class->full_Path(
         $Glade_Perl->{'options'}{'glade_filename'},
-        $project_options->{'directory'});
+        $proj_opt->{'directory'});
 
-    $project_options->{'source_directory'} = $class->full_Path(
-        ($glade_proto->{'project'}{'source_directory'} || './src'),     
+    $proj_opt->{'source_directory'} = $class->full_Path(
+        ($glade_proto->{'project'}{'source_directory'} || './'),     
+#        ($glade_proto->{'project'}{'source_directory'} || './src'),     
         $glade_file_dirname,
-        $project_options->{'directory'} );
+        $proj_opt->{'directory'} );
     if ($class->Writing_to_File && 
-        !-d $project_options->{'source_directory'}) { 
+        !-d $proj_opt->{'source_directory'}) { 
         # Source directory does not exist yet so create it
         $class->diag_print (2, "%s- Creating source_directory '%s' in %s", 
-            $indent, $project_options->{'source_directory'}, $me);
-        mkpath($project_options->{'source_directory'} );
+            $indent, $proj_opt->{'source_directory'}, $me);
+        mkpath($proj_opt->{'source_directory'} );
     }
 
-    $project_options->{'pixmaps_directory'} = $class->full_Path(
+    $proj_opt->{'pixmaps_directory'} = $class->full_Path(
         ($glade_proto->{'project'}{'pixmaps_directory'} || './pixmaps'),    
         $glade_file_dirname, 
-        $project_options->{'directory'} );
+        $proj_opt->{'directory'} );
     if ($class->Writing_to_File && 
-        !-d $project_options->{'pixmaps_directory'}) { 
+        !-d $proj_opt->{'pixmaps_directory'}) { 
         # Source directory does not exist yet so create it
         $class->diag_print (2, "%s- Creating pixmaps_directory '%s' in %s",
-            $indent, $project_options->{'pixmaps_directory'}, $me);
-        mkpath($project_options->{'pixmaps_directory'} );
+            $indent, $proj_opt->{'pixmaps_directory'}, $me);
+        mkpath($proj_opt->{'pixmaps_directory'} );
     }
 
-    $project_options->{'SIGS_class'} = $project_options->{'name'}."SIGS";
-    $project_options->{'SIGS_filename'} = $class->full_Path(
-        "$project_options->{'SIGS_class'}.pm",         
-        $project_options->{'source_directory'} );
-    $project_options->{'UI_class'} = $project_options->{'name'}."UI";
-    $project_options->{'UI_filename'} = $class->full_Path(
-        "$project_options->{'UI_class'}.pm",         
-        $project_options->{'source_directory'} );
-    $project_options->{'APP_class'} = $project_options->{'name'};
-    $project_options->{'APP_filename'} = $class->full_Path(
-        "$project_options->{'APP_class'}.pm",         
-        $project_options->{'source_directory'} );
-    $project_options->{'SUBAPP_class'} = "Sub".$project_options->{'APP_class'};
-    $project_options->{'SUBAPP_filename'} = $class->full_Path(
-        "$project_options->{'SUBAPP_class'}.pm",         
-        $project_options->{'source_directory'} );
-    $project_options->{'SUBCLASS_class'} = "Sub".$project_options->{'SIGS_class'};
-    $project_options->{'SUBCLASS_filename'} = $class->full_Path(
-        "$project_options->{'SUBCLASS_class'}.pm",         
-        $project_options->{'source_directory'} );
-    $project_options->{'LIBGLADE_class'} = $project_options->{'name'}."LIBGLADE";
-    $project_options->{'LIBGLADE_filename'} = $class->full_Path(
-        "$project_options->{'LIBGLADE_class'}.pm",         
-        $project_options->{'source_directory'} );
-    $project_options->{'POT_filename'} = $class->full_Path(
-        $project_options->{'name'}.".pot",
-        $project_options->{'source_directory'} );
+    my $src = $class->full_Path('', $proj_opt->{'source_directory'} );
+    
+    $proj_opt->{'SIGS_class'}         = "$proj_opt->{'name'}SIGS";
+    $proj_opt->{'SIGS_BASE_filename'} = "$src/$proj_opt->{'SIGS_class'}";
+    $proj_opt->{'SIGS_filename'}      = "$proj_opt->{'SIGS_BASE_filename'}.pm";
 
-    $project_options->{'glade_proto'} = $glade_proto;
+    $proj_opt->{'UI_class'}           = "$proj_opt->{'name'}UI";
+    $proj_opt->{'UI_BASE_filename'}   = "$src/$proj_opt->{'UI_class'}";
+    $proj_opt->{'UI_filename'}        = "$proj_opt->{'UI_BASE_filename'}.pm";
 
-    $project_options->{'logo_filename'} = $class->full_Path(
+    $proj_opt->{'APP_class'}          = "$proj_opt->{'name'}";
+    $proj_opt->{'APP_BASE_filename'}  = "$src/$proj_opt->{'APP_class'}";
+    $proj_opt->{'APP_filename'}       = "$proj_opt->{'APP_BASE_filename'}.pm";
+
+    $proj_opt->{'SUBAPP_class'}       = "Sub$proj_opt->{'APP_class'}";
+    $proj_opt->{'SUBAPP_filename'}    = "$src/$proj_opt->{'SUBAPP_class'}.pm";
+    $proj_opt->{'SUBCLASS_class'}     = "Sub$proj_opt->{'SIGS_class'}";
+    $proj_opt->{'SUBCLASS_filename'}  = "$src/$proj_opt->{'SUBCLASS_class'}.pm";
+
+    $proj_opt->{'LIBGLADE_class'}     = "$proj_opt->{'name'}LIBGLADE";
+    $proj_opt->{'LIBGLADE_filename'}  = "$src/$proj_opt->{'LIBGLADE_class'}.pm";
+
+    $proj_opt->{'POT_filename'}       = "$src/$proj_opt->{'name'}.pot";
+
+#    $proj_opt->{'SIGS_class'} = $proj_opt->{'name'}."SIGS";
+#    $proj_opt->{'SIGS_BASE_filename'} = $class->full_Path(
+#        $proj_opt->{'SIGS_class'},         
+#        $proj_opt->{'source_directory'} );
+#    $proj_opt->{'SIGS_filename'} = 
+#        "$proj_opt->{'SIGS_BASE_filename'}.pm";
+#    $proj_opt->{'UI_class'} = $proj_opt->{'name'}."UI";
+#    $proj_opt->{'UI_filename'} = $class->full_Path(
+#        "$proj_opt->{'UI_class'}.pm",         
+#        $proj_opt->{'source_directory'} );
+#    $proj_opt->{'APP_class'} = $proj_opt->{'name'};
+#    $proj_opt->{'APP_BASE_filename'} = $class->full_Path(
+#        "$proj_opt->{'APP_class'}",         
+#        $proj_opt->{'source_directory'} );
+#    $proj_opt->{'APP_filename'} = 
+#        "$proj_opt->{'APP_BASE_filename'}.pm";
+#    $proj_opt->{'SUBAPP_class'} = "Sub".$proj_opt->{'APP_class'};
+#    $proj_opt->{'SUBAPP_filename'} = $class->full_Path(
+#        "$proj_opt->{'SUBAPP_class'}.pm",         
+#        $proj_opt->{'source_directory'} );
+#    $proj_opt->{'SUBCLASS_class'} = "Sub".$proj_opt->{'SIGS_class'};
+#    $proj_opt->{'SUBCLASS_filename'} = $class->full_Path(
+#        "$proj_opt->{'SUBCLASS_class'}.pm",         
+#        $proj_opt->{'source_directory'} );
+#    $proj_opt->{'LIBGLADE_class'} = $proj_opt->{'name'}."LIBGLADE";
+#    $proj_opt->{'LIBGLADE_filename'} = $class->full_Path(
+#        "$proj_opt->{'LIBGLADE_class'}.pm",         
+#        $proj_opt->{'source_directory'} );
+#    $proj_opt->{'POT_filename'} = $class->full_Path(
+#        $proj_opt->{'name'}.".pot",
+#        $proj_opt->{'source_directory'} );
+
+    $proj_opt->{'glade_proto'} = $glade_proto;
+
+    $proj_opt->{'logo_filename'} = $class->full_Path(
         $options->logo, 
-        $project_options->{'pixmaps_directory'}, 
+        $proj_opt->{'pixmaps_directory'}, 
         '' );
 
-    $project_options->{'glade2perl_logo_filename'} = $class->full_Path(
+    $proj_opt->{'glade2perl_logo_filename'} = $class->full_Path(
         $options->glade2perl_logo, 
-        $project_options->{'pixmaps_directory'}, 
+        $proj_opt->{'pixmaps_directory'}, 
         '' );
 
-    unless (-f $project_options->{'glade2perl_logo_filename'}) {             
+    unless (-f $proj_opt->{'glade2perl_logo_filename'}) {             
         $class->diag_print (2, "%s- Writing our own logo to '%s' in %s",
-            $indent, $project_options->{'glade2perl_logo_filename'}, $me);
-        open LOGO, ">$project_options->{'glade2perl_logo_filename'}" or 
+            $indent, $proj_opt->{'glade2perl_logo_filename'}, $me);
+        open LOGO, ">$proj_opt->{'glade2perl_logo_filename'}" or 
             die sprintf("error %s - can't open file '%s' for output", 
-                $me, $project_options->{'glade2perl_logo_filename'});
+                $me, $proj_opt->{'glade2perl_logo_filename'});
         print LOGO $class->our_logo;
         close LOGO or
         die sprintf("error %s - can't close file '%s'", 
-            $me, $project_options->{'glade2perl_logo_filename'});
+            $me, $proj_opt->{'glade2perl_logo_filename'});
     }
     
-    unless ($project_options->{'logo_filename'} && -f $project_options->{'logo_filename'}) {
+    unless ($proj_opt->{'logo_filename'} && -f $proj_opt->{'logo_filename'}) {
         $options->logo($options->glade2perl_logo);
-        $project_options->{'logo_filename'} = $project_options->{'glade2perl_logo_filename'};
+        $proj_opt->{'logo_filename'} = $proj_opt->{'glade2perl_logo_filename'};
     }            
-#use Data::Dumper; print Dumper($project_options);
+#use Data::Dumper; print Dumper($proj_opt);
 #exit;
     if ($options->author) {
-        $project_options->{'author'} = $options->author;
+        $proj_opt->{'author'} = $options->author;
     } else {
         my $host = hostname;
         my $pwuid = [(getpwuid($<))];
         my $user = $pwuid->[0];
         my $fullname = $pwuid->[6];
         my $hostname = [split(" ", $host)];
-        $project_options->{'author'} = "$fullname <$user\\\@$hostname->[0]>";
+        $proj_opt->{'author'} = "$fullname <$user\\\@$hostname->[0]>";
     }
     # If allow_gnome is not specified, use glade project <gnome_support> property
     unless (defined $options->{'allow_gnome'}) {
@@ -647,19 +634,19 @@ sub use_Glade_Project {
             $options->save_options( $options->project_options );
         }
     }
-    $project_options->{'logo'}         = $options->logo;
-    $project_options->{'version'}      = $options->version;
-    $project_options->{'date'}         = $options->date        || $options->start_time;
-    $project_options->{'copying'}      = $options->copying;
-    $project_options->{'description'}  = $options->description || 'No description';
-    $class->diag_print(6, $project_options);
+    $proj_opt->{'logo'}         = $options->logo;
+    $proj_opt->{'version'}      = $options->version;
+    $proj_opt->{'date'}         = $options->date        || $options->start_time;
+    $proj_opt->{'copying'}      = $options->copying;
+    $proj_opt->{'description'}  = $options->description || 'No description';
+    $class->diag_print(6, $proj_opt);
     # Now change to the <project><directory> so that we can find modules
-    chdir $project_options->{'directory'};
-    $project_options->{'_permitted_fields'} = \%fields;
-    bless $project_options, $PACKAGE;
-#    $class->diag_print(2, $project_options);exit;
+    chdir $proj_opt->{'directory'};
+    $proj_opt->{'_permitted_fields'} = \%fields;
+    bless $proj_opt, $PACKAGE;
+#    $class->diag_print(2, $proj_opt);exit;
 
-    return $project_options;
+    return $proj_opt;
 }
 
 1;

@@ -13,9 +13,10 @@ require 5.000; use strict 'vars', 'refs', 'subs';
 # b) the Artistic License.
 #
 # If you use this library in a commercial enterprise, you are invited,
-# but not required, to pay what you feel is a reasonable fee to the
-# author, who can be contacted at dermot.musgrove@virgin.net
-#                              or dermot@glade.perl.connrctfree.co.uk
+# but not required, to pay what you feel is a reasonable fee to perl.org
+# to ensure that useful software is available now and in the future. 
+#
+# (visit http://www.perl.org/ or email donors@perlmongers.org for details)
 
 BEGIN {
     use File::Copy; # for copying generated files
@@ -60,9 +61,10 @@ BEGIN {
                         $current_form_name
                         $current_window
                         $first_form
+                        $init_string
                       );
     $PACKAGE      = __PACKAGE__;
-    $VERSION        = q(0.56);
+    $VERSION        = q(0.57);
     @VARS         = qw( 
                         $VERSION
                         $AUTHOR
@@ -92,6 +94,7 @@ BEGIN {
                         $current_form_name
                         $current_window
                         $first_form
+                        $init_string
                     );
     @METHODS      = qw( 
                         _
@@ -558,7 +561,7 @@ ${name} - ".S_("version")." $project->{'version'} $project->{'date'}
  
  ".S_("OR use the shorthand for the above calls")."
  
- ${first_form}->run;
+ ${first_form}->app_run;
 
 \=head1 DESCRIPTION
 
@@ -606,9 +609,6 @@ sub write_UI {
         # FIXME Now generate different source code for each user choice
         push @code, $class->perl_AUTOLOAD_top(
             $Glade_Perl->{'options'}, $proto, $form, $permitted_stubs)."\n";
-#print "Working on form '$form'\n";
-#use Data::Dumper; print Dumper($forms);
-#print "'",join("'\n", @{$forms->{$form}{'UI_Strings'}}),"'\n";
         $UI_String = join("\n", @{$forms->{$form}{'UI_Strings'}});
         push @code, $UI_String;
         push @code, $class->perl_constructor_bottom($Glade_Perl->{'options'}, $form);
@@ -634,7 +634,7 @@ sub perl_AUTOLOAD_top {
     my ($class, $project, $proto, $name, $permitted_stubs) = @_;
     my $me = "$class->AUTOLOAD_top";
     my $module;
-    my $init_string = '';
+    $init_string = '';
     my $isa_string = 'Glade::PerlRun';
     my $use_string = '';
     $permitted_stubs = $permitted_stubs || '';
@@ -766,11 +766,88 @@ ${indent}while (defined \$__PACKAGE__::all_forms->{\"$name-\$instance\"}) {\$ins
 #===============================================================================
 #=========== SIGS signal handler class
 #===============================================================================
+sub write_split_SIGS {
+    my ($class, $proto, $forms) = @_;
+    my $me = "$class->write_APP";
+    my ($permitted_stubs);
+    my ($handler, $module, $form, $filename );
+    my @code;
+
+    foreach $form (keys %$forms) {
+        # Open SIGS for output unless the filehandle is already open 
+        @code = ();
+        $filename = $proto->{'SIGS_BASE_filename'}."_".$form.".pm";
+        open SIGS, ">$filename"    or 
+            die sprintf((
+                "error %s - can't open file '%s' for output"),
+                $me, $filename);
+        $class->diag_print (2, "%s- Writing %s source to %s - in %s",
+            $indent, 'SIGS', $filename, $me);
+        if ($Glade_Perl->{'options'}->autoflush) {
+            SIGS->autoflush(1);
+        }
+        $autosubs &&
+            $class->diag_print (4, "%s- Automatically generated SUBS are '%s' by %s",
+                $indent, $autosubs, $me);
+
+        $class->diag_print(4, "%s- Writing %s for class %s", 
+            $indent, 'SIGS', $form);
+        $permitted_stubs = '';
+
+        push @code, $class->perl_SIGS_top(
+            $Glade_Perl->{'options'}, $proto, $form, $permitted_stubs);
+        push @code,  "
+#==============================================================================
+#=== ".S_("Below are the signal handlers for")." '$form' class 
+#==============================================================================";
+
+        foreach $handler (sort keys (%{$forms->{$form}{'_HANDLERS'}})) {
+            unless ($autosubs =~ / $handler /) {
+                push @code, $class->perl_signal_handler($handler, 'SIGS');
+            }
+        }
+
+        print SIGS "#!/usr/bin/perl -w\n";
+        print SIGS "#
+# ".S_("This is the (re)generated signal handler class")."
+# ".S_("You can cut and paste the skeleton signal handler subs from this file")."
+# ".S_("into the relevant classes in your application or its subclasses")."\n";
+        print SIGS $class->warning;
+        print SIGS join("\n", @code);
+        print SIGS $class->perl_doc(
+            $Glade_Perl->{'options'}, $form, $form);
+        close SIGS; # flush buffers
+
+        $filename = $proto->{'APP_BASE_filename'}."_".$form.".pm";
+        unless (-f $filename) {
+            open SIGS, ">$filename" or 
+                die sprintf((
+                    "error %s - can't open file '%s' for output"),
+                    $me, $filename);
+            $class->diag_print(4, "%s- Creating %s file %s",
+                $indent, 'app', $filename);
+            $class->diag_print (2, "%s- Writing %s to %s - in %s",
+                $indent, 'App', $filename, $me);
+            if ($Glade_Perl->{'options'}->autoflush) {
+                SIGS->autoflush(1);
+            }
+            print SIGS "#!/usr/bin/perl -w\n";
+            print SIGS "#
+# ".S_("This is the basis of an application with signal handlers")."\n";
+            print SIGS $class->warning('OKTOEDIT');
+            print SIGS join("\n", @code);
+            print SIGS $class->perl_doc(
+                $Glade_Perl->{'options'}, $proto->{'APP_class'}."_".$form, $form);
+        }
+    }
+}
+
 sub write_SIGS {
-    my ($class, $proto) = @_;
+    my ($class, $proto, $forms) = @_;
     my $me = "$class->write_SIGS";
     my ($permitted_stubs);
     my ($handler, $module, $form );
+
     my @code;
     unless (fileno SIGS) {            # ie user has supplied a filename
         # Open SIGS for output unless the filehandle is already open 
@@ -788,9 +865,8 @@ sub write_SIGS {
         $class->diag_print (4, "%s- Automatically generated SUBS are '%s' by %s",
             $indent, $autosubs, $me);
 
-    $form = $first_form;
     $class->diag_print(4, "%s- Writing %s for class %s", 
-        $indent, 'SIGS', $form);
+        $indent, 'SIGS', $first_form);
     $permitted_stubs = '';
     foreach $form (keys %$forms) {
         push @code, $class->perl_SIGS_top(
@@ -877,6 +953,21 @@ return $class->perl_preamble($module, $project, $proto, "$name").
 $use_string
 } # ".S_("End of sub")." BEGIN
 
+sub app_run {
+${indent}my (\$class) = \@_;
+$init_string
+${indent}my \$window = \$class->new;
+${indent}\$window->TOPLEVEL->show;
+
+${indent}# ".S_("Put any extra UI initialisation (eg signal_connect) calls here")."
+
+${indent}# ".S_("Now let Gtk handle signals")."
+${indent}Gtk->main;
+
+${indent}return \$window;
+
+} # ".S_("End of sub")." run
+
 #===============================================================================
 #=== ".S_("Below are the default signal handlers for")." '$name' class
 #===============================================================================
@@ -897,7 +988,7 @@ sub toplevel_destroy { shift->get_toplevel->destroy }
 #=========== Derived class (subclass)
 #===============================================================================
 sub write_SUBCLASS {
-    my ($class, $proto) = @_;
+    my ($class, $proto, $forms) = @_;
     my $me = "$class->write_SUBCLASS";
     return if (-f $proto->{'SUBAPP_filename'});
     my @code;
@@ -1073,7 +1164,7 @@ sub toplevel_destroy { shift->get_toplevel->destroy }
 #=========== Libglade class
 #===============================================================================
 sub write_LIBGLADE {
-    my ($class, $proto) = @_;
+    my ($class, $proto, $forms) = @_;
     my $me = "$class->write_LIBGLADE";
     my @code;
     my ($permitted_stubs);

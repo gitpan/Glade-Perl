@@ -44,7 +44,7 @@ BEGIN {
                  $VERSION
              );
     # Existing signal handler modules
-    use Generated::Bus;
+    use Generated::Bus_BusFrame;
     use Bus_mySUBS;
     # Uncomment the line below to enable gettext checking
 #    use Glade::PerlSource;
@@ -320,7 +320,8 @@ BEGIN {
                  $VERSION
              );
     # Existing signal handler modules
-    use Generated::Bus;
+#    use Generated::Bus;
+    use Generated::Bus_fileselection1;
     use Bus_mySUBS;
     # Uncomment the line below to enable gettext checking
 #    use Glade::PerlSource;

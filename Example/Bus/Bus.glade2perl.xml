@@ -1,9 +1,0 @@
-<?xml version="1.0"?>
-<G2P-Options>
-  <dont_show_UI>1</dont_show_UI>
-  <glade2perl_version>0.54</glade2perl_version>
-  <log_file>Bus.glade2perl.log</log_file>
-  <options_set>Glade/Build Source</options_set>
-  <project_options>Bus.glade2perl.xml</project_options>
-  <start_time>Thu Apr 13 13:56:33 BST 2000</start_time>
-</G2P-Options>

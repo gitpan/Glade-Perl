@@ -11,18 +11,19 @@ Glade-Perl - perl source code generator
 # b) the Artistic License.
 #
 # If you use this library in a commercial enterprise, you are invited,
-# but not required, to pay what you feel is a reasonable fee to the
-# author, who can be contacted at dermot.musgrove@virgin.net
+# but not required, to pay what you feel is a reasonable fee to perl.org
+# to ensure that useful software is available now and in the future. 
+#
+# (visit http://www.perl.org/ or email donors@perlmongers.org for details)
 
 TODO
 ----
+*   Implement GnomeDb widgets when they are available in Gtk-Perl
+
+*   Improve options handling
+
 *   Perhaps require at least Gtk-Perl-0.7000 (CVS version after 20000102)
     then I could remove all version checks for any prior versions.
-    
-*   Improve the documentation. Find a way to keep perl source, perldoc
-    tooltips, help text, README, web page etc in step and up to date.
-    Perhaps embed XML in the source - or even source in XML and generate
-    everything from that? Please email me if you know how it should be done.
     
 *   Make better Examples/tests with docs.
     1) Simple 'getting started' project, signal handlers and subclass
@@ -42,19 +43,13 @@ TODO
 
 *   Recombine into fewer .pm files, possibly fewer packages
 
-*   Possibly move UI subs to PerlGenerate
+*   Possibly move PerlUI subs to PerlGenerate
     
 *   Make dist files eg Makefile.PL, MANIFEST, Changelog etc etc
 
 *   Fix the signal handling for AccelLabels and pixmaps. Which widget should
     the signal be connected to?
 
-*   Look at writing one perl file for each module/class so that, for instance
-    ReferenceForm would be in file Generated/ReferenceForm.pm and fileselection1
-    would be in Generated/fileselection1.pm. You could then use() and new()
-    previously generated forms without having to write handlers and so on.
-    This is possible now by use()ing several generated UI files but inefficient
-    
 *   Check all evals for proper exception handling.
 
 *   I use several 'eval's, one allows for dynamic construction
@@ -99,6 +94,31 @@ TODO
 
 DONE
 ----
+*   Look at writing one perl file for each module/class so that, for instance
+    ReferenceForm would be in file Generated/ReferenceForm.pm and fileselection1
+    would be in Generated/fileselection1.pm. You could then use() and new()
+    previously generated forms without having to write handlers and so on.
+    This is possible now by use()ing several generated UI files but inefficient
+    
+*   Fix for XML changes in Glade-0.5.10
+    Allow a null source directory and generate correct 'use' lines to work
+    the same way as Glade.
+    Cater for new Gtk::Button/Gtk::ToggleButton->{'relief'}
+    Cater for (now unused) Gnome::MessageBox->{'type'}
+    
+*   Move all handlers to ProjectSIGS.pm and Project.pm (so that run() and
+    about_Form() are editable and easily seen. This needs to be carefully
+    thought out so that existing projects continue to work. Perhaps we
+    need an 'original_version' record so that we know what type of source
+    to generate to work with previously generated code. New sub app_run()
+    generated in App and SIGS for developer to edit.
+
+*   Improve the documentation. Find a way to keep perl source, perldoc
+    tooltips, help text, README, web page etc in step and up to date.
+    Perhaps embed XML in the source - or even source in XML and generate
+    everything from that? Please email me if you know how it should be done.
+    I have resorted to keeping the PerlGenerate perldoc up to date ;->
+    
 *   Spread all pod documentation throughout the files so that they get updated
     more regularly (eg user options). Perhaps PerlGenerate and PerlProject 
     should be combined into PerlGenerate for this reason among others.
