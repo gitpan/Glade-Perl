@@ -79,7 +79,8 @@ gnome-libs  1.0.54      Gnome mirrors or Gnome.org CVS
                         If you use RPMs you will need gnome-libs-devel too but 
                         you probably worked this out while building Glade and 
                         Gtk-Perl :)
-Perl-Gtk    0.7000      CPAN 
+Perl-Gtk    0.7002      CPAN 
+                        I actually use CVS version downloaded 20000301
 Perl        5.004_04    CPAN
 XML::Parser 2.27        CPAN
 
@@ -103,7 +104,7 @@ XML::Parser Larry Wall <larry@wall.org> wrote version 1.0.
             some standard package features.
 
 Information, advice and patches - Damon Chaplin, Robert Schwebel, Stas Bekman
-Bug reports and testing - Tim Conrow
+Bug reports and testing - Tim Conrow, Frank de Lange
 
 AUTHOR
 ------

@@ -2,7 +2,7 @@ ROADMAP Where is Glade::PerlGenerate going?
 
 From version 22 October 1999 I am using Perl type release numbers - ie 0.40
         
-0.50   New options structure (and file) ??
+0.50   New options structure (and file) ?? I am going off the idea :)
 
 0.52   Glade::PerlDist files and methods to build Makefile.PL etc and doc stubs
 0.53   Glade::PerlHelper GUI options editor and generation control

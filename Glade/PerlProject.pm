@@ -17,15 +17,16 @@ require 5.000; use strict 'vars', 'refs', 'subs';
 # author, who can be contacted at dermot.musgrove@virgin.net
 
 BEGIN {
-#    use Carp qw(cluck);
-#    $SIG{__DIE__}  = \&Carp::confess;
-#    $SIG{__WARN__} = \&Carp::cluck;
+    use Carp qw(cluck);
+    $SIG{__DIE__}  = \&Carp::confess;
+    $SIG{__WARN__} = \&Carp::cluck;
     use File::Path     qw( mkpath );        # in use_Glade_Project
     use File::Basename qw( dirname );       # in use_Glade_Project
     use Cwd            qw( chdir cwd );     # in use_Glade_Project
     use Sys::Hostname  qw( hostname );      # in use_Glade_Project
     use Text::Wrap     qw( wrap $columns ); # in options, diag_print
-    use Glade::PerlSource qw(:VARS);        # Source writing vars and methods
+    use Glade::PerlSource qw(:VARS :METHODS);        # Source writing vars and methods
+#    use Glade::PerlRun;
     use Glade::PerlXML;
     use vars           qw( 
                             @ISA 
@@ -34,11 +35,11 @@ BEGIN {
                             $VERSION
                        );
     $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.50);
+    $VERSION        = q(0.51);
     # Tell interpreter who we are inheriting from
     @ISA            = qw( 
                             Glade::PerlXML 
-                            Glade::PerlRun
+                            Glade::PerlSource
                         );
 }
 
@@ -56,10 +57,11 @@ my %fields = (
         '# Unspecified copying policy, please contact the author\n# ',
     'description'       => undef,   # Description for About box etc.
     'use_modules'       => undef,   # Existing signal handler modules
-    'allow_gnome'       => undef,   # Don't allow gnome widgets
+    'allow_gnome'       => undef,   # Dont allow gnome widgets
+    'gettext'           => undef,   # Do we want gettext type code
     'start_time'        => undef,   # Time that this run started
-    'project_options'   => undef,   # Don't read or save options in disk file
-#    'options_filename'  => undef,   # Don't read or save options in disk file
+    'project_options'   => undef,   # Dont read or save options in disk file
+#    'options_filename'  => undef,   # Dont read or save options in disk file
     'options_set'       => 'DEFAULT', # Who set the options
 
 # UI
@@ -74,28 +76,32 @@ my %fields = (
 #------------
     'indent'            => '    ',  # Source code indent per Gtk 'nesting'
     'tabwidth'          => 8,       # Replace each 8 spaces with a tab in sources
-    'write_source'      => undef,   # Don't write source code
+    'write_source'      => undef,   # Dont write source code
     'dont_show_UI'      => undef,   # Show UI and wait
-    'hierarchy'         => '',      # Don't generate any hierarchy
-                                    # 'widget...' 
+    'hierarchy'         => '',      # Dont generate any hierarchy
+                                    # widget... 
                                     #   eg $hier->{'vbox2'}{'table1'}...
-                                    # 'class...' startswith 'class'
-                                    #   eg $hier->{'{'GtkVBox'}{'vbox2'}{'GtkTable'}{'table1'}...
-                                    # 'both...'  widget and class
+                                    # class... startswith class
+                                    #   eg $hier->{'GtkVBox'}{'vbox2'}{'GtkTable'}{'table1'}...
+                                    # both...  widget and class
     'style'             => 'AUTOLOAD', # Generate code using OO AUTOLOAD code
-                                    # 'Libglade' generate libglade code
-                                    # 'closures' generate code using closures
-                                    # 'Export'   generate non-OO code
-
+                                    # Libglade generate libglade code
+                                    # closures generate code using closures
+                                    # Export   generate non-OO code
+    'source_LANG'       => ($ENV{'LANG'} || ''), 
+                                    # Which language we want the source to be in
+    
 # Diagnostics
 #------------
     'verbose'           => 2,       # Show errors and main diagnostics
     'diag_wrap'         => 0,       # Max diagnostic line length (approx)
     'diag_file'         => undef,   # Diagnostics log file name
-    'autoflush'         => undef,   # Don't change the policy
-    'benchmark'         => undef,   # Don't add time to the diagnostic messages
+    'autoflush'         => undef,   # Dont change the policy
+    'benchmark'         => undef,   # Dont add time to the diagnostic messages
     'log_file'          => undef,   # Write diagnostics to STDOUT 
                                     # or Filename to write diagnostics to
+    'diag_LANG'         => ($ENV{'LANG'} || ''),
+                                    # Which language we want the diagnostics
 #    'debug'             => 'True',  # For my testing and debugging.
 
 # Distribution
@@ -131,8 +137,8 @@ sub AUTOLOAD {
   my $self = shift;
   my $i = 1;
   my $type = ref($self)
-    or die "$self is not an object\n",
-        "We were called from ",join(", ", caller),"\n\n";
+    or die sprintf(D_("%s is not an object\n",
+        "We were called from "), $self), join(", ", caller),"\n\n";
   my $name = $AUTOLOAD;
   $name =~ s/.*://;       # strip fully-qualified portion
 
@@ -147,9 +153,8 @@ sub AUTOLOAD {
     }
 
   } else {
-    my $message = "Can't access method `$name' in class $type\n";
-#    while (caller($i)){$message .= "Called from ".join(", ", caller $i++)."\n";}
-    die $message;
+      die sprintf(D_("Can't access method `%s' in class %s\n"),
+          $name, $type);
 
   }
 }
@@ -167,68 +172,83 @@ sub diagnostics {
 }
 
 sub diag_print {
-    my ($class, $level, $message, $desc, $pad) = @_;
+    my $class = shift;
+    my $level = shift;
+    return unless $class->diagnostics($level);
+    my $message = shift;
     my $options = $main::Glade_Perl_Generate_options;
-#    if ($options->{'debug'}) {$level = 12;}
-    my ($key, $val, $ref);
-    my $padkey = $pad || 17;
-    my $title = "      ".($desc || "");
     my @times = times;
     my $time='';
-    if ($class->diagnostics($level)) {
-        $ref = ref $message;
-        if ($options->benchmark) {
-            $time = int( $times[0] + $times[1] );
-        }
-        unless ($ref) {
-             print STDOUT wrap($time, 
-                $time.$options->indent.$options->indent, "$message\n");
+    if ($options->benchmark) {
+        $time = int( $times[0] + $times[1] );
+    }
+    unless (ref $message) {
+        $message = sprintf(D_($message), @_);
+        print STDOUT wrap($time, 
+            $options->indent.$options->indent, "$message\n");
 
-        } elsif (($ref eq 'HASH') or ( $ref =~ /Glade::/)) {
-            print STDOUT "$title $ref contains:\n";
-            foreach $key (sort keys %$message) {
-                my $ref = ref $message->{$key};
-                if (ref $message->{$key}) {
-                    print STDOUT "        {'$key'}".
-                        (' ' x ($padkey-length($key))).
-                        " => is a reference to a $ref\n";
-                } elsif (defined $message->{$key}) {
-                    print STDOUT "        {'$key'}".
-                        (' ' x ($padkey-length($key))).
-                        " => '$message->{$key}'\n";
-                } else {
-                    print STDOUT "        {'$key'}\n";
-                }
-                $val = (ref ) || $message->{$key} || 'undef';
+    } else {
+        $class->diag_ref_print($level, $message, @_);
+    }
+}
+
+sub diag_ref_print {
+    my ($class, $level, $message, $desc, $pad) = @_;
+    return unless $class->diagnostics($level);
+    my $options = $main::Glade_Perl_Generate_options;
+    my ($key, $val, $ref);
+    my $padkey = $pad || 17;
+    my $title = D_($desc || "");
+    my @times = times;
+    my $time='';
+    $ref = ref $message;
+    if ($options->benchmark) {
+        $time = int( $times[0] + $times[1] );
+    }
+    unless ($ref) {
+         print STDOUT wrap($time, 
+            $time.$options->indent.$options->indent, "$message\n");
+
+    } elsif (($ref eq 'HASH') or ( $ref =~ /Glade::/)) {
+        print STDOUT "$title $ref ",D_("contains"), ":\n";
+        foreach $key (sort keys %$message) {
+            my $ref = ref $message->{$key};
+            if (ref $message->{$key}) {
+                print STDOUT "        {'$key'}".
+                    (' ' x ($padkey-length($key))).
+                    " => ", D_("is a reference to a"), " $ref\n";
+            } elsif (defined $message->{$key}) {
+                print STDOUT "        {'$key'}".
+                    (' ' x ($padkey-length($key))).
+                    " => '$message->{$key}'\n";
+            } else {
+                print STDOUT "        {'$key'}\n";
             }
-
-        } elsif ($ref eq 'ARRAY') {
-            print STDOUT "$title $ref contains:\n";
-		    my $im_count = 0;
-	    	foreach $val (@$message) {
-				$key = sprintf "[%d]", $im_count;
-				$ref = ref $val;
-                if ($ref) {
-                    print STDOUT "        $key".(' ' x ($padkey-length($key))).
-                        " = is a reference to a $ref\n";
-                } elsif (defined $message->[$im_count]) {
-                    print STDOUT "        $key".(' ' x ($padkey-length($key))).
-                        " = '$message->[$im_count]'\n";
-                } else {
-                    print STDOUT "        $key\n";
-                }
-				$im_count++;
-	   		}
-
-        } else {
-            # Unknown ref type
-            print STDOUT wrap($time, $time.$indent.$indent, 
-                "Unknown reference type '$ref'\n");
+            $val = (ref ) || $message->{$key} || 'undef';
         }
-        
-#    } else {
-    # Nothing needs to be done
-    
+
+    } elsif ($ref eq 'ARRAY') {
+        print STDOUT "$title $ref ", D_("contains"), ":\n";
+		my $im_count = 0;
+	    foreach $val (@$message) {
+			$key = sprintf "[%d]", $im_count;
+			$ref = ref $val;
+            if ($ref) {
+                print STDOUT "        $key".(' ' x ($padkey-length($key))).
+                    " = ", D_("is a reference to a"), " $ref\n";
+            } elsif (defined $message->[$im_count]) {
+                print STDOUT "        $key".(' ' x ($padkey-length($key))).
+                    " = '$message->[$im_count]'\n";
+            } else {
+                print STDOUT "        $key\n";
+            }
+			$im_count++;
+	   	}
+
+    } else {
+        # Unknown ref type
+        print STDOUT wrap($time, $time.$indent.$indent, 
+            D_("Unknown reference type"), " '$ref'\n");
     }
 }
 
@@ -239,7 +259,7 @@ sub get_versions {
     my ($class, $options) = @_;
     # We use the CPAN release date (or CVS date) for version checking
     my $cpan_date = $Glade::PerlUI::perl_gtk_depends->{$Gtk::VERSION};
-    # If we don't recognise the version number we use the latest CVS 
+    # If we dont recognise the version number we use the latest CVS 
     # version that was available at our release date
     $cpan_date ||= $Glade::PerlUI::perl_gtk_depends->{'LATEST_CVS'};
     # If we have a version number rather than CVS date we look it up again
@@ -247,20 +267,27 @@ sub get_versions {
         if ($cpan_date < 19000000);
 #    $options->my_perl_gtk($cpan_date);# if $options->my_perl_gtk < 10000;
     if ($options->my_perl_gtk && ($options->my_perl_gtk > $cpan_date)) {
-        $options->diag_print (2, 
-            $options->indent."- Gtk-Perl reported version $Gtk::VERSION ".
-            "(CVS $cpan_date) but user overrode with version ".
+        $options->diag_print (2, "%s- %s reported version %s".
+            " but user overrode with version %s",
+            $indent, "Gtk-Perl", "$Gtk::VERSION (CVS $cpan_date)",
             $options->my_perl_gtk);
-#        $options->my_perl_gtk($cpan_date);
+#        $options->diag_print (2, 
+#            $options->indent."- Gtk-Perl ".
+#            D_("reported version").
+#            " $Gtk::VERSION (CVS $cpan_date) ".
+#            D_("but user overrode with version").
+#            " ".$options->my_perl_gtk);
+##        $options->my_perl_gtk($cpan_date);
 
     } else {
         $options->my_perl_gtk($cpan_date);
-        $options->diag_print (2, 
-            $options->indent."- Gtk-Perl reported version $Gtk::VERSION ".
-            "(CVS $cpan_date)");
+        $options->diag_print (2, "%s- %s reported version %s",
+            $indent, "Gtk-Perl", "$Gtk::VERSION (CVS $cpan_date)");
+#            $options->indent."- Gtk-Perl ".D_("reported version").
+#            " $Gtk::VERSION (CVS $cpan_date) ");
     }
     unless ($class->my_perl_gtk_can_do('MINIMUM REQUIREMENTS')) {
-        die "You need to upgrade your Gtk-Perl";
+        die D_("You need to upgrade your")." Gtk-Perl";
     }
 
     if ($options->allow_gnome) {
@@ -268,22 +295,28 @@ sub get_versions {
         chomp $gnome_libs_version;
         $gnome_libs_version =~ s/gnome-libs //;
         if ($options->my_gnome_libs && ($options->my_gnome_libs gt $gnome_libs_version)) {
-            $class->diag_print (2, 
-                $options->indent."- gnome_libs reported version $gnome_libs_version".
-                " but user overrode with version ".$options->my_gnome_libs);
+            $options->diag_print (2, "%s- %s reported version %s".
+                " but user overrode with version %s",
+                $indent, "gnome-libs", $gnome_libs_version,
+                $options->my_gnome_libs);
         } else {
             $options->my_gnome_libs($gnome_libs_version);
-            $class->diag_print (2, 
-                $options->indent."- gnome_libs reported version $gnome_libs_version");
+            $options->diag_print (2, "%s- %s reported version %s",
+                $indent, "gnome-libs", $gnome_libs_version);
+#            $class->diag_print (2, 
+#                $options->indent."- gnome_libs reported version $gnome_libs_version");
         }
 #        unless (Gnome::Stock->can('button')) {
         unless ($class->my_gnome_libs_can_do('MINIMUM REQUIREMENTS')) {
-            die "You need to upgrade your gnome-libs";
+            die D_("You need to upgrade your")." gnome-libs";
         }
     }
     return $options;
 }
 
+#===============================================================================
+#=========== Options utilities                                      ============
+#===============================================================================
 sub merge_options {
     my ($class, $filename, $base_options) = @_;
     my $me = "$class->merge_options";
@@ -309,28 +342,30 @@ sub merge_options {
 
 sub save_options {
     my ($class, $filename) = @_;
-#use Data::Dumper; print Dumper(\@_);
+#use Data::Dumper; print Dumper(\@_);print Dumper($Glade_Perl);
     my $me = __PACKAGE__."->save_options";
     my ($file_options, $key);
     # Take a copy of the options supplied and work on that (for deleting keys)
     my %options = %{$class};
     my $user_filename = $class->{'user_options'};
-    $class->diag_print(4, $class, 'Options to save');
+    $class->diag_print(4, $class, "Options to save");
     if ($user_filename && -f $user_filename) {
         # Only save options that are different to user_options in file
         $file_options = $class->Proto_from_File(
              $user_filename, 
              '  ', '');
-        $class->diag_print(4, $file_options, 'User options');
+        $class->diag_print(4, $file_options, "User options");
     }
     foreach $key (keys %options) {
         if (!defined $class->{$key}) {
-            $class->diag_print (6, "NOT saving option '$key' (no value)");
+            $class->diag_print (6, 
+                "%s- NOT saving option '%s' (no value)", $indent, $key);
             delete $options{$key};
 
         } elsif ($file_options->{$key} &&
             ($file_options->{$key} eq $options{$key})) {
-            $class->diag_print (6, "NOT saving option '$key' (eq user_option)");
+            $class->diag_print (6, 
+                "%s- NOT saving option '%s' (eq user_option)", $indent, $key);
             delete $options{$key};
 
         } elsif ($key eq '_permitted_fields') {
@@ -339,14 +374,19 @@ sub save_options {
         }
     }
     $options{'glade2perl_version'} = $VERSION;
-    $class->diag_print (2, "${indent}- Saving project options in file '$filename'");
+    $class->diag_print (2, 
+        "%s- Saving project options in file '%s'", 
+        $indent, $filename);
+#    $class->diag_print (2, "${indent}- Saving project options in file '$filename'");
     my $xml = $class->XML_from_Proto('', '  ', 'G2P-Options', \%options);
     $class->diag_print(6, $xml);
     open OPTIONS, ">".($filename) or 
-        die "error $me - can't open file '$filename' for output";
+        die sprintf(D_("error %s - can't open file '%s' for output"), 
+            $me, $filename);
     print OPTIONS $xml;
     close OPTIONS or
-        die "error $me - can't close file '$filename'";
+        die sprintf(D_("error %s - can't close file '%s'"), 
+            $me, $filename);
 }
 
 sub options {
@@ -381,16 +421,23 @@ sub options {
         # Override the defaults/file options with args
         $options->{$key} = $params{$key};
     }
+    if ($options->verbose == 0 ) { 
+        open STDOUT, ">/dev/null"; 
+    } else {
+        # Load the diagnostics gettext translations
+        $class->load_translations('Glade-Perl', $options->diag_LANG, undef, undef, '_D', undef);
+#        $class->load_translations('Glade-Perl', $options->diag_LANG, undef, 
+#            '/home/dermot/Devel/Glade-Perl/Glade/test.mo', '_D', undef);
+    }
     unless ($options->my_perl_gtk &&
             ($options->my_perl_gtk > $Gtk::VERSION)) {
         $options->my_perl_gtk($Gtk::VERSION);
     }
     if ( $options->dont_show_UI && !$options->write_source) {
-        die "$me - Much as I like an easy life, please alter options ".
-            "to, at least, show_UI or write_source\n    Run abandoned";
+        die "$me - ".D_("Much as I like an easy life, please alter options ".
+            "to, at least, show_UI or write_source\n    Run abandoned");
     }
 #    if ($options->{'debug'}) {$options->verbose(0);}
-    if ($options->verbose == 0 )    {         open STDOUT, ">/dev/null";    }
     $indent = $options->indent; 
     $tab = (' ' x $options->tabwidth);
     if ($options->diag_wrap == 0) {
@@ -411,18 +458,23 @@ sub options {
         my $log_file = $options->log_file;
         if ($log_file) {
             open STDOUT, ">$log_file" or
-                die "error $me - can't open file '$log_file' for diagnostics";
+                die sprintf(D_("error %s - can't open file '%s' for output"), 
+                    $me, $log_file);
             open STDERR, ">&1" or
-                die "error $me - can't redirect STDERR to file '$log_file'";
+                die sprintf(
+                    D_("error %s - can't redirect STDERR to file '%s'"),
+                    $me, $log_file);
         }
         if ($class->diagnostics(2)) {
             $class->diag_print (2, 
                 "--------------------------------------------------------");
-            $class->diag_print (2, 
-                $options->indent."  DIAGNOSTICS (verbosity ".$options->verbose.
-                ") started by $PACKAGE (version $VERSION) at ".$options->start_time);
+            $class->diag_print (2, $options->indent. 
+                "  DIAGNOSTICS (locale <%s> verbosity %s) ".
+                "started by %s (version %s) at %s", 
+                $options->diag_LANG, $options->verbose, 
+                $PACKAGE, $VERSION, $options->start_time);
             $class->Write_to_File;
-            $class->diag_print(6, $options, 'Options used for Generate run');    
+            $class->diag_print(6, $options, "Options used for Generate run");
         }
     }
     $options->options_set($params{'options_set'} || $me);
@@ -444,23 +496,27 @@ sub use_Glade_Project {
     bless $form, $PACKAGE;
     my $gnome_support = $glade_proto->{'project'}{'gnome_support'};
     $options->allow_gnome($glade_proto->{'project'}{'gnome_support'} eq 'True');
+    $options->gettext(
+        ($glade_proto->{'project'}{'output_translatable_strings'} || 'False') 
+            eq 'True');
     $class->get_versions($options);
 #    $options = $class->get_versions($options;
     # Glade assumes that all directories are named relative to the Glade 
     # project (.glade) file (not <directory>) !
-    my $glade_file_dirname = dirname($glade2perl->{'glade_filename'});
+    my $glade_file_dirname = dirname($Glade_Perl->{'glade_filename'});
     # Replace any spaces with underlines
     my $replaced = $glade_proto ->{'project'}{'name'} =~ s/[ -\.]//g;
     if ($replaced) {
-        $class->diag_print(2, "$indent- $replaced Space(s), minus(es) or dot(s) ".
-            "removed from project name - it is now '$glade_proto->{'project'}{'name'}'");
+        $class->diag_print(2, "%s- %s Space(s), minus(es) or dot(s) ".
+            "removed from project name - it is now '%s'",
+            $indent, $replaced, $glade_proto->{'project'}{'name'});
     }
     $form->{'name'}  = $glade_proto->{'project'}{'name'};
     $form->{'directory'} = $class->full_Path(
         $glade_proto->{'project'}{'directory'}, 
         $glade_file_dirname);
     $form->{'glade_filename'} = $class->full_Path(
-        $glade2perl->{'glade_filename'},
+        $Glade_Perl->{'glade_filename'},
         $form->{'directory'});
 
     $form->{'source_directory'} = $class->full_Path(
@@ -469,9 +525,9 @@ sub use_Glade_Project {
         $form->{'directory'} );
     if ($class->Writing_to_File && 
         !-d $form->{'source_directory'}) { 
-        # Source directory doesn't exist yet so create it
-        $class->diag_print (2, "$indent- Creating source_directory ".
-            "'$form->{'source_directory'}' in $me");
+        # Source directory does not exist yet so create it
+        $class->diag_print (2, "%s- Creating source_directory '%s' in %s", 
+            $indent, $form->{'source_directory'}, $me);
         mkpath($form->{'source_directory'} );
     }
 
@@ -481,9 +537,9 @@ sub use_Glade_Project {
         $form->{'directory'} );
     if ($class->Writing_to_File && 
         !-d $form->{'pixmaps_directory'}) { 
-        # Source directory doesn't exist yet so create it
-        $class->diag_print (2, "$indent- Creating pixmaps_directory ".
-            "'$form->{'pixmaps_directory'}' in $me");
+        # Source directory does not exist yet so create it
+        $class->diag_print (2, "%s- Creating pixmaps_directory '%s' in %s",
+            $indent, $form->{'pixmaps_directory'}, $me);
         mkpath($form->{'pixmaps_directory'} );
     }
 
@@ -495,7 +551,7 @@ sub use_Glade_Project {
         "$form->{'SIGS_class'}.pm",         
         $form->{'source_directory'} );
 #    print "use $form->{'source_directory'}\::$glade_proto->{'project'}{'name'}_SIGS\n";
-#    eval "use $form->{'source_directory'}\::$glade2perl->{'name'}_SIGS";
+#    eval "use $form->{'source_directory'}\::$Glade_Perl->{'name'}_SIGS";
 
     $form->{'UI_class'} = $form->{'name'}."UI";
     $form->{'UI_filename'} = $class->full_Path(
@@ -530,13 +586,15 @@ sub use_Glade_Project {
         '' );
 
     unless (-f $form->{'glade2perl_logo_filename'}) {             
-        $class->diag_print (2, "$indent- Writing our own logo to ".
-            "'$form->{'glade2perl_logo_filename'}' in $me");
+        $class->diag_print (2, "%s- Writing our own logo to '%s' in %s",
+            $indent, $form->{'glade2perl_logo_filename'}, $me);
         open LOGO, ">$form->{'glade2perl_logo_filename'}" or 
-            die "error $me - can't open file '$form->{'glade2perl_logo_filename'}' ".
-                "for output";
+            die sprintf(D_("error %s - can't open file '%s' for output"), 
+                $me, $form->{'glade2perl_logo_filename'});
         print LOGO $class->our_logo;
-        close LOGO;
+        close LOGO or
+        die sprintf(D_("error %s - can't close file '%s'"), 
+            $me, $form->{'glade2perl_logo_filename'});
     }
     
     unless ($form->{'logo_filename'} && -f $form->{'logo_filename'}) {

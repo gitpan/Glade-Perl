@@ -27,6 +27,7 @@ BEGIN {
                         $PACKAGE 
                         $VERSION $AUTHOR $DATE
                         @VARS @METHODS 
+                        $TRANS
                         $all_forms
                         $project
                         $widgets 
@@ -38,9 +39,9 @@ BEGIN {
     # Tell interpreter who we are inheriting from
     @ISA          = qw( Exporter );
     $PACKAGE      = __PACKAGE__;
-    $VERSION      = q(0.50);
+    $VERSION      = q(0.51);
     $AUTHOR       = q(Dermot Musgrove <dermot.musgrove\@virgin.net>);
-    $DATE         = q(Thu Feb 24 22:57:47 GMT 2000);
+    $DATE         = q(Thu Mar  2 04:30:08 GMT 2000);
     $widgets      = {};
     $all_forms    = {};
     $pixmaps_directory = "pixmaps";
@@ -50,8 +51,11 @@ BEGIN {
                         $VERSION
                         $AUTHOR
                         $DATE
+                        $TRANS
                     );
     @METHODS      = qw( 
+                        D_ 
+                        S_ 
                         full_Path 
                         create_image 
                         create_pixmap 
@@ -61,10 +65,11 @@ BEGIN {
                         message_box_close 
                         destroy_all_forms
                         show_skeleton_message 
-                        debug_print
                     );
     # These symbols (globals and functions) are always exported
-    @EXPORT       = qw(  );
+    @EXPORT       = qw( 
+                        _ 
+                    );
     # Optionally exported package symbols (globals and functions)
     @EXPORT_OK    = ( @METHODS, @VARS );
     # Tags (groups of symbols) to export		
@@ -85,6 +90,7 @@ BEGIN {
     AUTHOR   => $AUTHOR,
     DATE     => $DATE,
     LOGO     => undef,
+    DATA     => undef,
     LOOKUP   => 2,
     BOOL     => 4,
     DEFAULT  => 8,
@@ -98,7 +104,8 @@ BEGIN {
 sub AUTOLOAD {
   my $self = shift;
   my $type = ref($self)
-    or die "$self is not an object";
+      or die "$self "._("is not an object so we cannot")." '$AUTOLOAD'\n",
+          _("We were called from")." ".join(", ", caller),"\n\n";
   my $name = $AUTOLOAD;
   $name =~ s/.*://;       # strip fully-qualified portion
 
@@ -115,13 +122,14 @@ sub AUTOLOAD {
   } elsif (exists $stubs{$name} ) {
     # This shows dynamic signal handler stub message_box - see %stubs above
     __PACKAGE__->show_skeleton_message(
-      $AUTOLOAD."\n (AUTOLOADED by ".__PACKAGE__.")", 
+      $AUTOLOAD."\n ("._("AUTOLOADED by")." ".__PACKAGE__.")", 
       [$self, @_], 
       __PACKAGE__, 
       'pixmaps/Logo.xpm');
     
   } else {
-    die "Can't access method `$name' in class $type";
+    die _("Can't access method")." `$name' "._("in class")." $type\n",
+        _("We were called from")." ",join(", ", caller),"\n\n";
 
   }
 }
@@ -142,6 +150,140 @@ sub new {
     $class->PARTYPE->[$class->KEYSYM]         = "KeySym";
     $class->PARTYPE->[$class->LOOKUP_ARRAY]   = "Lookup Array";
 
+}
+
+#===============================================================================
+#=========== Gettext Utilities                                              ====
+#=========== 'borrowed' from the gettext dist and recoded to house style    ====
+#===============================================================================
+sub load_translations {
+    my ($class, $domain, $language, $locale_dir, $file, $key, $merge) = @_;
+    my ($reverse, $buffer, $catalog);
+    my ($magic, $revision, $nstrings);
+    my ($orig_tab_offset, $orig_length, $orig_pointer);
+    my ($trans_length, $trans_pointer, $trans_tab_offset);
+
+#    $key ||= $domain;
+    $key ||= '_';
+    $TRANS->{$key} = {} unless $merge and $merge eq "MERGE";;
+
+    $language ||= $ENV{"LANG"};
+    return unless $language;
+
+    $locale_dir ||= "/usr/local/share/locale";
+    $domain     ||= "glade2perl";
+    $catalog = $file || "$locale_dir/$language/LC_MESSAGES/$domain.mo";
+
+    return unless -f $catalog;
+#print "Reading catalog from '$catalog'\n";
+    # Slurp in the catalog
+    my $save = $/;
+    open CATALOG, $catalog or return;
+    undef $/;
+    $buffer = <CATALOG>;
+    close CATALOG;
+    $/ = $save;
+    
+    # Check magic and whether reverse
+    $magic = unpack ("I", $buffer);
+    if (sprintf ("%x", $magic) eq "de120495") {
+    	$reverse = 1;
+
+    } elsif (sprintf ("%x", $magic) ne "950412de") {
+    	print STDERR "'$catalog' "._("is not a catalog file")."\n";
+        return;
+    }
+
+    $revision = &mo_format_value (4, $reverse, $buffer);
+    $nstrings = &mo_format_value (8, $reverse, $buffer);
+    $orig_tab_offset = &mo_format_value (12, $reverse, $buffer);
+    $trans_tab_offset = &mo_format_value (16, $reverse, $buffer);
+
+    while ($nstrings-- > 0) {
+	    $orig_length = &mo_format_value ($orig_tab_offset, $reverse, $buffer);
+	    $orig_pointer = &mo_format_value ($orig_tab_offset + 4, $reverse, $buffer);
+	    $orig_tab_offset += 8;
+
+	    $trans_length = &mo_format_value ($trans_tab_offset, $reverse, $buffer);
+	    $trans_pointer = &mo_format_value ($trans_tab_offset + 4,$reverse, $buffer);
+	    $trans_tab_offset += 8;
+
+    	$TRANS->{$key}{substr ($buffer, $orig_pointer, $orig_length)}
+	        = substr ($buffer, $trans_pointer, $trans_length);
+    }
+#use Data::Dumper; print STDOUT Dumper($TRANS);
+    # Allow for real empty strings
+    $TRANS->{$key}{'__MO_HEADER_INFO'} = $TRANS->{$key}{''};
+    $TRANS->{$key}{''} = '';
+}
+
+sub mo_format_value {
+    my ($string, $reverse, $buffer) = @_;
+    unpack ("i",
+	    $reverse
+	    ? pack ("c4", reverse unpack ("c4", substr ($buffer, $string, 4)))
+	    : substr ($buffer, $string, 4));
+}
+
+sub _ {
+    defined $TRANS->{'_'}{$_[0]} ? $TRANS->{'_'}{$_[0]} : $_[0];
+}
+
+sub S_ {
+    defined $TRANS->{'_S'}{$_[0]} ? $TRANS->{'_S'}{$_[0]} : $_[0];
+}
+
+sub D_ {
+    defined $TRANS->{'_D'}{$_[0]} ? $TRANS->{'_D'}{$_[0]} : $_[0];
+}
+
+sub debugD_ {
+    if (defined $TRANS->{'_D'}{$_[0]}) {
+        print "Found value '", $TRANS->{'_D'}{$_[0]},"'\n";
+        return $TRANS->{'_D'}{$_[0]};
+    } else {
+#        print "No value found for $_[0]\n";
+        return $_[0];
+    }
+}
+
+#===============================================================================
+#=========== Hierarchy Utilities                                            ====
+#===============================================================================
+sub WH {
+    my ($class, $new) = @_;
+    if ($new) {
+      return $class->{'__WH'} = $new;
+    } else {
+      return $class->{'__WH'};
+    }
+}
+
+sub CH {
+    my ($class, $new) = @_;
+    if ($new) {
+      return $class->{'__CH'} = $new;
+    } else {
+      return $class->{'__CH'};
+    }
+}
+
+sub W {
+    my ($class, $proto, $new) = @_;
+    if ($new) {
+      return $proto->{'__W'} = $new;
+    } else {
+      return $proto->{'__W'};
+    }
+}
+
+sub C {
+    my ($class, $proto, @new) = @_;
+    if ($#new) {
+      return push @{$proto->{'__C'}}, @new;
+    } else {
+      return $proto->{'__C'};
+    }
 }
 
 #===============================================================================
@@ -202,7 +344,9 @@ sub create_pixmap {
 #            print STDERR "Pixmap file '$testfile' exists in $me\n";
             $found_filename = $filename;
     	} else {
-            print STDERR "error Pixmap file '$filename' does not exist in $me\n";
+            print STDERR sprintf(_(
+                "error Pixmap file '%s' does not exist in %s\n"),
+                $filename, $me);
             return undef;
     	}
     }
@@ -218,7 +362,9 @@ sub create_pixmap {
         $work->{'window'} 	    = $widget->get_toplevel->window	 ;
         $work->{'style'} = Gtk::Widget->get_default_style->bg('normal')	 ;
         unless ($work->{'window'}) {
-    	    print STDOUT "error Couldn't get_toplevel_window to construct pixmap from '$filename' in $me\n";
+    	    print STDOUT sprintf(_(
+                "error Couldn't get_toplevel_window to construct pixmap from '%s' in %s\n"),
+                $filename, $me);
         	$work->{'window'} = $widget->window	 ;
         }
         return new Gtk::Pixmap(
@@ -231,10 +377,10 @@ sub get_file  {
     my ($class, $filename) = @_;
     my $s;
     $filename or 
-        die "no filename for ".__PACKAGE__;         # we need a filename
+        die _("no filename for")." ".__PACKAGE__;         # we need a filename
     {   local $/;
         open CONFIG,"$filename" or
-            die "Can't open file name '$filename'";
+            die _("Can't open file name")." '$filename'";
         $s = <CONFIG>;
         close CONFIG;
     }
@@ -358,7 +504,7 @@ sub message_box_close {
     # Close this message_box and undef the $widget->{'MessageBox-$mbno'} structure
     $widgets->{"MessageBox-$mbno"}->get_toplevel->destroy;
     undef $widgets->{"MessageBox-$mbno"};
-    if ('*Quit Program*Quit PerlGenerate*Quit UI Build*Close Form*' =~ m/\*$data\*/) {
+    if (D_('*Quit Program*Quit PerlGenerate*Quit UI Build*Close Form*') =~ m/\*$data\*/) {
         Gtk->main_quit;
     }
     return $data;
@@ -368,22 +514,27 @@ sub create_image {
     my ($class, $filename, $pixmap_dirs) = @_;
     my $me = "$class->create_image";
     my ($work, $testfile, $found_filename, $dir);
-    # First look in specified $pixmap_dirs
-    foreach $dir (@{$pixmap_dirs}) {
-        # Make up full path name and test
-        $testfile = $class->full_Path($filename, $dir);
-#        print STDERR "Looking for ImlibImage file '$testfile' in $me\n";
-    	if (-f $testfile) {
-            $found_filename = $testfile;
-            last;
-    	}
+    if (-f $filename) {
+        $found_filename = $testfile;
+
+    } else {
+        foreach $dir (@{$pixmap_dirs}, $Glade::PerlRun::pixmaps_directory, cwd) {
+            # Make up full path name and test
+            $testfile = $class->full_Path($filename, $dir);
+        	if (-f $testfile) {
+                $found_filename = $testfile;
+                last;
+        	}
+        }
     }
     unless ($found_filename) {
     	if (-f $filename) {
             $found_filename = $filename;
 #            print STDERR "ImlibImage file '$testfile' exists in $me\n";
     	} else {
-            print STDERR "error ImlibImage file '$filename' does not exist in $me\n";
+            print STDERR sprintf(_(
+                "error ImlibImage file '%s' does not exist in %s\n"),
+                $filename, $me);
             return undef;
     	}
     }
@@ -405,21 +556,18 @@ sub destroy_all_forms {
 sub missing_handler {
     my ($class, $widgetname, $signal, $handler, $pixmap) = @_;
     my $me = "$PACKAGE->missing_handler";
-    print STDOUT "    - $me        - called with args ('".join("', '", @_)."')"."\n";
-#    my $message = "\n$me has been called because\n".
-#                    "a signal ($signal) was caused by widget ($widgetname).\n".
-#                    "When Perl::Generator writes the Perl source to a file a\n".
-#                    "skeleton signal handler sub called '$handler'\n".
-#                    "will be generated in the SUBS file. You can paste this sub into\n".
-#                    "another module and edit it so that it does something useful.\n" ;
-    my $message = "\n$me has been called because\n".
-                    "a signal ($signal) was caused by widget ($widgetname).\n".
+    print STDOUT sprintf(D_(" - %s - called with args ('%s')"),
+        $me, join("', '", @_)), "\n";
+    my $message = sprintf("\n".D_("%s has been called because\n".
+                    "a signal (%s) was caused by widget (%s).\n".
                     "When Perl::Generate writes the Perl source to a file \n".
-                    "an AUTOLOADed signal handler sub called '$handler'\n".
+                    "an AUTOLOADed signal handler sub called '%s'\n".
                     "will be specified in the ProjectSIGS class file. You can write a sub with\n".
-                    "the same name in another module and it will automatically be called instead.\n" ;
+                    "the same name in another module and it will automatically be called instead.\n"),
+                    $me, $signal, $widgetname, $handler) ;
     my $widget = $PACKAGE->message_box($message, 
-        "Missing handler '$handler' called", ['Dismiss', 'Quit PerlGenerate'], 1, $pixmap);
+        D_("Missing handler")." '$handler' ".D_("called"), 
+        [D_("Dismiss"), D_("Quit PerlGenerate")], 1, $pixmap);
     
     # Stop the signal before it triggers the missing one
     $class->signal_emit_stop($signal);
@@ -429,21 +577,15 @@ sub missing_handler {
 sub show_skeleton_message {
     # This proc pops up a message_box to prove that a stub has been called
     my ($class, $me, $data, $package, $pixmap) = @_;
-    $PACKAGE->message_box("
+    $PACKAGE->message_box(sprintf(D_("
 A signal handler has just been triggered.
 
-$me was
-called with parameters ('".join("', '", @$data)."')
+%s was
+called with parameters ('%s')
 
 Until the sub is fleshed out, I will show you 
 this box to prove that I have been called
-", $me, ['Dismiss', 'Quit Program'], 1, $pixmap);
-}
-
-sub debug_print {
-    # DON'T USE THIS - IT IS ONLY FOR MY DEBUGGING!!!
-    my ($class, $ref) = @_;
-    eval "use lib '/home/dermot/perl/Global'; use Init; Debug->Start(2); Debug->print(2, $ref)";
+"), $me, join("', '", @$data)), $me, [D_('Dismiss'), D_('Quit Program')], 1, $pixmap);
 }
 
 #===============================================================================

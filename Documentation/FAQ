@@ -1,5 +1,47 @@
 This is the Frequently Asked Question list for Glade-Perl source generator
 --------------------------------------------------------------------------
+Q   How can I generate i18n apps?
+
+A   0)  Make a directory (eg ppo) to keep all the i18n stuff together
+
+    1)  First of all, check (set ON) the project option
+        'Glade/User Option/LibGlade Options/Save Translatable Strings'
+        Enter a filename in the 'File' to something eg ppo/xgettext.in
+
+    2)  Use xgettext to generate a .pot (work) file for copying and editing
+        xgettext -LC -ao src/Project.pot xgettext.in
+    
+    3)  copy ppo/Project.pot to file (eg ppo/fr.pot) and edit the translations
+        Make sure that you have edited the all the strings in the header and 
+        when you are ready to try it out remove the msgfmt directive line
+          #, fuzzy
+        (it means ignore the next definition) from just above the header 
+        at the top of the ppo/fr.po file or the next step will fail.
+        
+    4)  When you want to try out the translations, copy ppo/fr.pot (temporary)
+        to ppo/fr.po (final file) and use msgfmt to create a ppo/fr.mo file 
+        for use by gettext by calling: msgfmt -o ppo/fr.mo ppo/fr.po
+    
+    5)  You can edit the ProjectUI->run() sub or wherever you call Gtk->init;
+        to specify your test src/fr.mo file with a line like:
+        $class->load_translations('Project', 'test', undef, '/path/to/your/fr.mo');
+       
+        Then run your program and see your UI in another language!
+        Repeat 3), 4) and 5) until you are happy with the translations.
+           
+    6)  Install /path/to/your/test/fr.mo to 
+        /usr/local/share/locale/LC_MESSAGES/fr/Project.mo (or wherever)
+    
+    7)  Set your $LANG env variable to a language that you have translated and
+        run your app (after removing the testing line from ProjectUI->run or
+        regenerating the UI and SIGS files).
+
+    NB  The only difference with Glade-Perl gettext is that the empty string ''
+        is returned as '' and to get the .mo file header information you must 
+        call _('__MO_HEADER_INFO'). This stops widgets set to the empty string
+        being translated to the .mo header info :)
+    
+--------------------------------------------------------------------------
 Q   Why do I get message 'Can't locate object method "allow_grow" via package 
     "Gtk::Window" at Project3.pm line 115 (or similar)
 

@@ -36,15 +36,15 @@ TODO
     
 *   Make dist files eg Makefile.PL, MANIFEST, Changelog etc etc
 
-*   Internationalise every stage but particularly the source code generation
-    of Gnome::App and Stock stuff
-    
 *   Rewrite GtkMenuItem and PixmapMenuItem constructors to simplify and reuse
     code and to handle underline accelerators properly.
     
 *   Sort out Gnome::App accelerators and signals properly Probably it
     would be best to implement the gnome-app-helper methods and use those when
     they are available.
+    
+*   Fix accel key handling so that parse_uline is in generated code so it works
+    after the string is found with gettext.
     
 *   Fix the signal handling for AccelLabels and pixmaps. Which widget should
     the signal be connected to?
@@ -109,6 +109,9 @@ TODO
 
 DONE
 ----
+*   Internationalise every stage but particularly the source code generation
+    of Gnome::App and Stock stuff
+    
 *   Change 'single' quoted strings to "double" wherever someone might 
     enter ' eg tooltips, labels, items, text etc. Perhaps decide at run-time so
     that q(), '', "" etc will always work. This was done by backslash escaping

@@ -205,6 +205,14 @@ but others can be set by the developer to customise the code that is generated.
 <tr><td colspan=2><h3>Source code</h3>
 <tr><td valign="top">
 </td></tr><tr><td valign="top">
+    <b>source_LANG</b>     
+        <td>Language to use for source code comments and docs
+        <br>Default - $ENV{'LANG'}
+        <ul>
+            <li>de
+        </ul>
+
+</td></tr><tr><td valign="top">
     <b>indent</b>     
         <td>Source code indent per Gtk 'nesting'
         <br>Default - '&nbsp;&nbsp;&nbsp;&nbsp;' (4 spaces)
@@ -268,9 +276,9 @@ but others can be set by the developer to customise the code that is generated.
             <li>0 - No diagnostics at all
             <li>1 - Main project messages and errors only
             <li>2 - also warnings
-            <li>4
-            <li>6
-            <li>8
+            <li>4 - also project options and more diagnostics
+            <li>6 - also source code as it is generated
+            <li>8 - also lookups and conversions
             <li>10 - Absolutely everything - more than you ever wanted :)
         </ul>
 
@@ -281,6 +289,14 @@ but others can be set by the developer to customise the code that is generated.
         <br>glade2perl sets this to /path/to/glade/file.glade2perl.log
         <ul>
             <li>/path/to/log/file
+        </ul>
+
+</td></tr><tr><td valign="top">
+    <b>diag_LANG</b>     
+        <td>Language to use for diagnostics and message boxes
+        <br>Default - $ENV{'LANG'}
+        <ul>
+            <li>fr
         </ul>
 
 </td></tr><tr><td valign="top">

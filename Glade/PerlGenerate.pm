@@ -26,7 +26,7 @@ BEGIN {
                             $PACKAGE 
                           );
     $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.50);
+    $VERSION        = q(0.51);
     # Tell interpreter who we are inheriting from
     @ISA            = qw(
                             Glade::PerlProject
@@ -45,14 +45,15 @@ sub about_Form {
     my $name = $0;
     my $message = 
         "$PACKAGE (".
-        "version: $VERSION - $DATE)\n".
-        "Written by: $AUTHOR\n\n".
-        "Gtk version: $gtkversion\n".
-        "Gtk-Perl version:    $Gtk::VERSION\n\n".
-        "run from file:        $name";
+        D_("version").      ": $VERSION - $DATE)\n".
+        D_("Written by").   ": $AUTHOR\n\n".
+        "Gtk ".D_("version").": $gtkversion\n".
+        "Gtk-Perl ".D_("version").":    $Gtk::VERSION\n\n".
+        D_("run from file").":        $name";
     my $widget = $PACKAGE->message_box($message, 
-        "About \u$PACKAGE", 
-        ['Dismiss', 'Quit Program'], 1, $glade2perl->{'glade2perl_logo_filename'}, 'left' );
+        D_("About")." \u$PACKAGE", 
+        [D_('Dismiss'), D_('Quit Program')], 1, 
+        $Glade_Perl->{'glade2perl_logo_filename'}, 'left' );
 }
 
 sub destroy_Form {
@@ -71,14 +72,14 @@ sub Form_from_Glade_File {
         ' project child accelerator ', ' signal widget ' );
     $params{'use_modules'} ||= 
         [split (/\n/, ($main::Glade_Perl_Generate_options->use_modules || '' ))];
-    $glade2perl->{'glade_filename'} = $params{'glade_filename'};    
-    $glade2perl = $class->use_Glade_Project($glade_proto );
-    $glade2perl->{'name'} = $glade_proto->{'project'}{'name'};
-#    $glade2perl->glade_proto($glade_proto->{'project'});
+    $Glade_Perl->{'glade_filename'} = $params{'glade_filename'};    
+    $Glade_Perl = $class->use_Glade_Project($glade_proto );
+    $Glade_Perl->{'name'} = $glade_proto->{'project'}{'name'};
+#    $Glade_Perl->glade_proto($glade_proto->{'project'});
     $current_form && eval "$current_form = {};";
     my $window = $class->Form_from_Proto(
-        $glade2perl, \%params );
-#    $class->diag_print(2, $glade2perl);
+        $Glade_Perl, \%params );
+#    $class->diag_print(2, $Glade_Perl);
     return $window;
 }
 
@@ -94,9 +95,11 @@ sub Form_from_XML {
     my $form;
     $indent = ' ';
     $form->{'glade_proto'} = $glade_proto->{'project'};
-    $glade2perl = $form;
+    $Glade_Perl = $form;
     if ($main::Glade_Perl_Generate_options->allow_gnome) {
-        $class->diag_print (6, "$indent- Use()ing Gnome in $me");
+        $class->diag_print (6, 
+            "%s- Use()ing Gnome in %s",
+            $indent, $me);
         Gnome->init('Form_from_XML', '0.0.0');
     } else {
         Gtk->init;
@@ -123,9 +126,11 @@ sub Form_from_XML_Stream {
     $proto->{'class'} = 'Application';    
     my $form = $class->use_Glade_Project($proto );
     $form->{'glade_proto'} = $proto->{'project'};
-    $glade2perl = $form;
+    $Glade_Perl = $form;
     if ($main::Glade_Perl_Generate_options->allow_gnome) {
-        $class->diag_print (6, "$indent- Use()ing Gnome in $me");
+        $class->diag_print (6, 
+            "%s- Use()ing Gnome in %s",
+            $indent, $me);
         Gnome->init('Form_from_XML', '0.0.0');
     } else {
         Gtk->init;
@@ -152,23 +157,28 @@ sub Form_from_Proto {
         if ($module && $module ne '') {
             eval "use $module;" or
                 ($@ && 
-                    die  "\n\nin $me\n\twhile trying to eval 'use $module'".
-                         "\n\tFAILED with Eval error '$@'\n" );
+                    die  "\n\nin $me\n\t".D_("while trying to eval").
+                        " 'use $module'".
+                         "\n\t".D_("FAILED with Eval error")." '$@'\n" );
             push @use_modules, $module;
-            $class->diag_print (2, "$indent- Use()ing existing module '$module' in $me");
+            $class->diag_print (6, 
+                "%s- Use()ing existing module '%s' in %s",
+                $indent, $module, $me);
         }
     }
     if ($options->allow_gnome) {
-        $class->diag_print (6, "$indent- Use()ing Gnome in $me");
+        $class->diag_print (6, "%s- Use()ing Gnome in %s", $indent, $me);
         eval "use Gnome;";
         unless (Gnome::Stock->can('pixmap_widget')) {
             $class->diag_print (1, 
-                $options->indent."- You need either to build the Gtk-Perl Gnome ".
-                "module or uncheck the Glade 'Enable Gnome Support' project option");
+                "%s- You need either to build the Gtk-Perl Gnome module or ".
+                "uncheck the Glade 'Enable Gnome Support' project option",
+                $options->indent);
             $class->diag_print (1, 
-                $options->indent."- Continuing without Gnome for now although ".
+                "%s- Continuing without Gnome for now although ".
                 "the generate run will fail if there are any Gnome widgets".
-                "specified in your project");
+                "specified in your project",
+                $options->indent);
             $options->allow_gnome(0);
         }
         Gnome->init(__PACKAGE__, $VERSION);
@@ -180,37 +190,49 @@ sub Form_from_Proto {
     my $app = "\$forms->{'test'}{'__HIERARCHY'}";
     my $window = $class->Widget_from_Proto( $glade_proto->{'name'}, 
         $glade_proto, $depth, $app );
-#    eval "\$window->{'__HIERARCHY'} = $app";
+
 #$class->diag_print($window);
+
     # Now write the disk files
     if ($class->Writing_to_File) {
+        # Load the source code gettext translations
+        unless ($options->source_LANG) {
+            $options->source_LANG($options->diag_LANG);
+        }
+        $class->load_translations('Glade-Perl', $options->source_LANG, 
+            undef, undef, '_S', undef);
+#        $class->load_translations('Glade-Perl', $options->source_LANG, undef, 
+#            '/home/dermot/Devel/Glade-Perl/Glade/de.mo', '_S', undef);
+        $class->diag_print (2, "%s- Source code will be generated for locale <%s>", 
+            $indent, $options->source_LANG);
+
         $module = $glade_proto->{'project'}{'source_directory'};
         $module =~ s/.*\/(.*)$/$1/;
         $module .= "::" if $module;
         if ($options->style && $options->style eq "Libglade") {
             # Write source that will use libglade to show the UI
-            $class->diag_print (2, "$indent  Generating libglade type code");
+            $class->diag_print (2, "%s  Generating libglade type code", $indent);
             $class->write_LIBGLADE($proto, $glade_proto);
             $options->dont_show_UI(1);
             $class->diag_print (2, 
-                "$indent- One way to run the generated source from dir '$glade2perl->{'directory'}/':\n".
-                "${indent}${indent}${indent}perl -e 'use $module".
-                    "$proto->{'LIBGLADE_class'}; ".
-                    "$proto->{'LIBGLADE_class'}\->run'");
+                "%s- One way to run the generated source from dir '%s/':\n".
+                "%sperl -e 'use %s%s; %s->run'",
+                    $indent, $Glade_Perl->{'directory'}, ($indent x 3), $module,
+                    $proto->{'LIBGLADE_class'}, $proto->{'LIBGLADE_class'});
         } else {
-            $class->diag_print (4, "$indent  Generating UI construction code");
+            $class->diag_print (4, "%s- Generating UI construction code", $indent);
             $class->write_UI($proto, $glade_proto);
 
-            $class->diag_print (4, "$indent  Generating signal handler code");
+            $class->diag_print (4, "%s- Generating signal handler code", $indent);
             $class->write_SIGS($proto, $glade_proto);
 
-            $class->diag_print (4, "$indent  Generating OO subclass code");
+            $class->diag_print (4, "%s- Generating OO subclass code", $indent);
             $class->write_SUBCLASS($proto, $glade_proto);
             $class->diag_print (2, 
-                "${indent}- Some of the ways to run the generated source:");
+                "%s- Some of the ways to run the generated source", $indent);
             $class->diag_print (2, 
-                "${indent}  ${indent}Change directory to ".
-                "'$glade2perl->{'directory'}/' and then enter one of :");
+                "%s  Change directory to '%s' and then enter one of :",
+                "$indent$indent", $Glade_Perl->{'directory'});
 #            $class->diag_print (2, 
 #                "${indent}- ${indent}perl -e 'use $module".
 #                    "$proto->{'UI_class'}; ".
@@ -220,11 +242,11 @@ sub Form_from_Proto {
 #                    "$proto->{'SIGS_class'}; ".
 #                    "${first_form}->run'");
             $class->diag_print (2, 
-                "${indent}  ${indent}perl -e 'use $module".
+                "$indent$indent  perl -e 'use $module".
                     "$proto->{'APP_class'}; ".
                     "${first_form}->run'");
             $class->diag_print (2, 
-                "${indent}  ${indent}perl -e 'use $module".
+                "$indent$indent  perl -e 'use $module".
                     "$proto->{'SUBAPP_class'}; ".
                     "Sub${first_form}->run'");
         }
@@ -234,20 +256,24 @@ sub Form_from_Proto {
     # Look through $proto and report any unused attributes (still defined)
     if ($class->diagnostics(2)) {
         $class->diag_print (2, "-----------------------------------------------------------------------------");
-        $class->diag_print (2, "$indent  CONSISTENCY CHECKS");
-        $class->diag_print (2, "$indent- $missing_widgets unused widget properties");
-        $class->diag_print (2, "$indent- $ignored_widgets widgets were ignored (one or more of '$ignore_widgets')");
-        $class->diag_print (2, "$indent- ".$class->unpacked_widgets." unpacked widgets");
+        $class->diag_print (2, "%s  CONSISTENCY CHECKS", $indent);
+        $class->diag_print (2, "%s- %s unused widget properties", $indent, $missing_widgets);
+        $class->diag_print (2, "%s- %s widgets were ignored (one or more of '%s')", 
+            $indent, $ignored_widgets, $ignore_widgets);
+        $class->diag_print (2, "%s- %s unpacked widgets",
+            $indent, $class->unpacked_widgets);
 #        $class->diag_print (2, "$indent- ".$class->unhandled_signals." unhandled signals");
         $class->diag_print (2, "-----------------------------------------------------------------------------");
-        $class->diag_print (2, "$indent  UI MESSAGES - showing missing_handler calls that you triggered, ".
-                "don't worry, $PACKAGE will generate dynamic stubs for them all");
+        $class->diag_print (2, "%s  UI MESSAGES - showing missing_handler calls that you triggered, ".
+            "don't worry, %s will generate dynamic stubs for them all",
+            $indent, $PACKAGE);
     }
 
     my $endtime = `date`;
     chomp $endtime;
     $class->diag_print (2, 
-        $indent."  GENERATION RUN COMPLETED by $PACKAGE (version $VERSION) at $endtime");
+        "%s  GENERATION RUN COMPLETED by %s (version %s) at %s",
+        $indent, $PACKAGE, $VERSION, $endtime);
     $class->diag_print (2, 
         "-----------------------------------------------------------------------------");
     $class->diag_print (2, 
@@ -278,9 +304,9 @@ sub unused_elements {
                     unless ($proto->{$typekey} eq 'project') {
                     $object = $proto->{'class'} || '';
                         $name = $proto->{'name'} || '(no name)';
-                        $class->diag_print (1, "error Unused widget property for ".
-                            "$proto->{$typekey} $object ".
-                            "{'$name'}{'$key'} => '$proto->{$key}' seen by $me");
+                        $class->diag_print (1, 
+                            "error Unused widget property for %s %s {'%s'}{'%s'} => '%s' seen by %s",
+                            $proto->{$typekey}, $object, $name, $key, $proto->{$key}, $me);
                         $missing_widgets++;
                     }
                 }
@@ -299,8 +325,10 @@ sub unpacked_widgets {
         if (defined $widgets->{$key}) {
             # We have found an unpacked widget
             $count++;
-            $class->diag_print (1, "error Unpacked widget '$key' has not been packed ".
-                "(nor correctly added to the UI file) from $me");
+            $class->diag_print (1, 
+                "error Unpacked widget '%s' has not been packed ".
+                "(nor correctly added to the UI file) from %s", 
+                $key, $me);
         }
     }
     return $count;
@@ -319,9 +347,10 @@ sub unhandled_signals {
             foreach $signal (sort keys %{$need_handlers->{$widget}}) {
                 # We have found an unhandled signal (eg from accelerator)
                 $count++;
-                $class->diag_print (1, "error Widget '$widget' emits a ".
-                    "signal '$need_handlers->{$widget}{$signal}' that ".
-                    "does not have a handler specified - in $me");
+                $class->diag_print (1, "error Widget '%s' emits a ".
+                    "signal '%s' that ".
+                    "does not have a handler specified - in %s",
+                    $widget, $need_handlers->{$widget}{$signal}, $me);
                     
             }
 #        } else {

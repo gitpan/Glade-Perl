@@ -13,6 +13,7 @@
   <use_widget_names>True</use_widget_names>
   <output_main_file>False</output_main_file>
   <main_header_file>gladesrc.h</main_header_file>
+  <translatable_strings_file>ppo/xgettext.in</translatable_strings_file>
 </project>
 
 <widget>
@@ -470,16 +471,15 @@
 		<label>Now you can try out some of the signal handlers
 
 Ctrl+C  Shows a skeleton signal handler message (in Generated::Bus)
+Ctrl+N  Opens a fileselection (in Bus_mySUBS)
 Ctrl+O  opens a Fileselection (in Bus_mySUBS)
 Ctrl+P  Shows a skeleton signal handler message (in Bus_mySUBS)
 
 ------------------------------------------------------------------------------
 If you're running the base application eg BusFrame-&gt;run()
-Ctrl+N  Opens a fileselection (in Bus_mySUBS)
 Ctrl+F1 About box (in Generated::Bus)
 ------------------------------------------------------------------------------
 If you\'re running the application subclass eg SubBusFrame-&gt;run()
-Ctrl+N  Opens a fileselection (in Generated::SubBus (edited) overloads the handler in Bus_mySUBS)
 Ctrl+F1 About box (in Generated::SubBus overloads Generated::Bus)
 ------------------------------------------------------------------------------
 

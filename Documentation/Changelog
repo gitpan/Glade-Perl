@@ -1,4 +1,32 @@
 Revision history for Perl module Glade::PerlGenerate development branch.
+Thu Mar  2 04:30:08 GMT 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
+  - Version 0.51
+  - PerlUI testing source comments removed from generated code
+  - PerlRun->create_image() pixmaps made relative to usual global.
+  - PerlUIExtra->new_GnomeAbout() pixmaps made relative to usual global.
+  - PerlUIExtra->new_GnomePixmap() pixmaps made relative to usual global.
+    so now there should be no hard-coded paths in the generated code :)
+  - PerlUI->internal_pack_widget() fixed to add() Gtk::Text objects to a
+    Gtk::ScrolledWindow correctly (like Gtk::CTree or Gtk::CList).
+    Thanks to Frank de Lange for an excellent report and suggestions.
+  - PerlUI->new_from_child_name() amended to deal with Gnome::Dialogs
+  - PerlUIExtra->frig_Gnome_Dialog_buttons() to add Gnome::Dialog buttons
+    and accelerators in a better way (unstandard in Glade-Perl though :( )
+    This works for all Gnome Dialogs (MessageBox, PropertyBox, Dialog)
+    but only with gnome-perl CVS after 20000301.
+  - PerlRun->load_translations() and mo_format_value() _(), S_() and D_() 
+    new subs to implement gettext support for apps, source and diagnostics. 
+  - PerlUI* generate gettext code for all text fields in widgets.
+  - PerlSource->perl_AUTOLOAD_top() now generates load_translation() call 
+  - All modules diagnostics messages converted to sprintf-like format so
+    that diag_print can translate them.
+  - PerlProject->diag_print() became diag_ref_print() and new diag_print()
+    written for i18n of Glade-Perl. You can now specify the language for
+    diagnostics, the language for the source (comments) and the generated 
+    apps can use their own languages! 
+    All defaults are $ENV{'LANG'} but diagnostics and source languages can 
+    be overridden in the site, user or Project.glade2perl.xml options files
+    
 Thu Feb 24 22:57:47 GMT 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
   - Version 0.50 embarassment release
   - PerlUiExtra->new_GtkPixMeneuItem() fixes to string quoting

@@ -24,7 +24,7 @@ BEGIN {
                             $PACKAGE $VERSION $AUTHOR $DATE
                        );
     $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.40);
+    $VERSION        = q(0.51);
     $AUTHOR         = q(Dermot Musgrove <dermot.musgrove\@virgin.net>);
     $DATE           = q(30 June 1999);
     # Tell interpreter who we are inheriting from
@@ -71,8 +71,8 @@ sub XmlUtf8Encode {
                      ((($n >> 6) & 0x3f) | 0x80), 
                       (($n & 0x3f) | 0x80));
     }
-    __PACKAGE__->diag_print(1, "error Number is too large for Unicode ".
-        "[$n] in $me");
+    __PACKAGE__->diag_print(1, 
+        "error Number is too large for Unicode [%s] in %s ", $n, $me);
     return "#";
 }
 

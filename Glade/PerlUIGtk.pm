@@ -17,7 +17,7 @@ require 5.000; use strict 'vars', 'refs', 'subs';
 # author, who can be contacted at dermot.musgrove@virgin.net
 
 BEGIN {
-    use Glade::PerlSource qw( :VARS );
+    use Glade::PerlSource qw( :VARS :METHODS);
     use vars              qw( 
                             @ISA 
                             $PACKAGE
@@ -33,7 +33,7 @@ BEGIN {
                             $enums
                           );
     $PACKAGE =          __PACKAGE__;
-    $VERSION        = q(0.50);
+    $VERSION        = q(0.51);
     @VARS           = qw( 
                             $VERSION
                             $AUTHOR
@@ -119,11 +119,10 @@ sub new_GtkAccelLabel {
     my $wrap    = $class->use_par($proto, 'wrap', $BOOL, 'False' );
     my $pattern = $label;
 
-#    $class->escape_text($label);
     # The line below replaces Gtk+ function gtk_label_parse_uline
     $label =~ s/_(.)/$1/;
     $class->add_to_UI( $depth, "\$widgets->{'$name'} = new Gtk::AccelLabel(".
-        "'$label' );" );
+        "_('$label') );" );
     if ($1) {
         # We have an accelerator key indicated by $1
         my $accel_key = $1;
@@ -225,9 +224,8 @@ sub new_GtkAspectFrame {
     my $label_yalign = $class->use_par($proto, 'label_xalign', $DEFAULT,    0.5    );
     my $shadow_type  = $class->use_par($proto, 'shadow_type',  $LOOKUP,    'right' );
 
-#    $class->escape_text($label);
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::AspectFrame(".
-        "'$label', $xalign, $yalign, $ratio, $obey_child );" );
+        "_('$label'), $xalign, $yalign, $ratio, $obey_child );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_label_align(".
         "$label_xalign, $label_yalign );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_shadow_type(".
@@ -245,23 +243,19 @@ sub new_GtkButton {
 #   but can have a sub-widget. allow this
     unless ($class->new_from_child_name($parent, $name, $proto, $depth )) {
         my $label = $class->use_par($proto, 'label', $DEFAULT,  '' );
-#        $class->escape_text($label);
         my $stock_button = $class->use_par($proto, 'stock_button',  $LOOKUP, '');
         if ($label) {
 # FIXME This should probably be split into GnomeStock(Button) and GtkButton
-            if ($class->my_perl_gtk_can_do('GnomeStock')) {
-                if ($stock_button) {
+            if ($stock_button && $class->my_perl_gtk_can_do('GnomeStock')) {
                     $class->diag_print(2, $proto);
                     $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
                     "new Gnome::Stock->button('$stock_button' );" );
-                } else {
-                    $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
-                        "new Gtk::Button('$label' );" );
-                }
+
             } else {
                 $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
-                    "new Gtk::Button('$label' );");
+                    "new Gtk::Button(_('$label'));");
             }
+
         } else {
             if ($class->my_perl_gtk_can_do('GnomeStock')) {
                 if ($stock_button) {
@@ -271,6 +265,7 @@ sub new_GtkButton {
                     $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
                         "new Gtk::Button;" );
                 }
+
             } else {
                 if ($stock_button) {
                     $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
@@ -330,9 +325,8 @@ sub new_GtkCheckButton {
     my $draw_indicator = $class->use_par($proto, 'draw_indicator', $BOOL, 'False' );
     my $active  = $class->use_par($proto, 'active', $BOOL,    'False' );
 
-#    $class->escape_text($label);
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::CheckButton(".
-        "'$label' );" );
+        "_('$label'));" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_mode($draw_indicator );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_state($active );" );
 
@@ -348,8 +342,8 @@ sub new_GtkCheckMenuItem {
     my $active = $class->use_par($proto, 'active', $BOOL,    'False' );
     my $always_show_toggle= $class->use_par($proto, 'always_show_toggle',    $BOOL,        'False' );
 
-#    $class->escape_text($label);
-    $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new_with_label Gtk::CheckMenuItem('$label' );" );
+    $class->add_to_UI( $depth,  "\$widgets->{'$name'} = ".
+        "new_with_label Gtk::CheckMenuItem(_('$label'));" );
     if ($class->use_par($proto, 'right_justify',        $BOOL,        'False'                )) {
         $class->add_to_UI( $depth, "\$widgets->{'$name'}->right_justify;" );
     }
@@ -382,8 +376,9 @@ sub new_GtkCList {
     $CList_column = 0;
     my $i = 0;
     while ($i < scalar(@column_widths)) { 
-        $class->diag_print (8, "Setting column $i to width ".
-            "$column_widths[$i]"." in $me");
+        $class->diag_print(8, 
+            "%s- Setting column %s to width %s in %s",
+            $indent, $i, $column_widths[$i], $me);
         $class->add_to_UI( $depth,  "\$widgets->{'$name'}->set_column_width(".
             "$i, $column_widths[$i] );" );
         $i++;
@@ -415,7 +410,9 @@ sub new_GtkCTree {
     $CTree_column = 0;
     my $i = 0;
     while ($i < scalar(@column_widths)) { 
-        $class->diag_print (8, "Setting column $i to width $column_widths[$i]"." in $me");
+        $class->diag_print(8, 
+            "%s- Setting column %s to width %s in %s",
+            $indent, $i, $column_widths[$i], $me);
         $class->add_to_UI( $depth,  "\$widgets->{'$name'}->set_column_width(".
             "$i, $column_widths[$i] );" );
         $i++;
@@ -445,14 +442,13 @@ sub new_GtkColorSelectionDialog {
     my $title  = $class->use_par($proto,'title',  $DEFAULT, 'File Selection' );
     my $policy = $class->use_par($proto,'policy', $LOOKUP, );
     
-#    $class->escape_text($title);
     unless ($class->my_perl_gtk_can_do('gtk_colorselectiondialog_ok_button->child')) {
         $class->diag_print(1, "warn  We are generating code to construct a ".
             "Gtk::ColorSelectionDialog but if you have set the OK button's ".
             "label the app will crash when you show the dialog");
     }
     $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
-        "new Gtk::ColorSelectionDialog('$title' );" );
+        "new Gtk::ColorSelectionDialog(_('$title') );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->colorsel->".
         "set_update_policy( '$policy' );" );
 
@@ -472,8 +468,8 @@ sub new_GtkCombo {
     my $value_in_list  = $class->use_par($proto, 'value_in_list',  $BOOL,   'False' );
     unless ($ok_if_empty) {
         if ($items eq '') {
-            $class->diag_print (1, "warn  Widget '$name' does not have any ".
-                "items specified in $me");
+            $class->diag_print (1, "warn  Widget '%s' does not have any ".
+                "items specified in %s", $name, $me);
         }
     }
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::Combo;" );
@@ -524,9 +520,8 @@ sub new_GtkDialog {
     my $name = $proto->{'name'};
     my $title        = $class->use_par($proto, 'title',        $DEFAULT, 'UTIL' );
 
-#    $class->escape_text($title);
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::Dialog;" );
-    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_title('$title' );" );
+    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_title(_('$title') );" );
 
     $class->set_window_properties($parent, $name, $proto, $depth );
     return $widgets->{$name};
@@ -552,7 +547,6 @@ sub new_GtkEntry {
     my $editable     = $class->use_par($proto, 'editable',        $BOOL,    'True' );
     my $max_length   = $class->use_par($proto, 'text_max_length', $DEFAULT, 0 );
 
-#    $class->escape_text($text);
     unless ($class->new_from_child_name($parent, $name, $proto, $depth )) {
         if ($max_length) {
             $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
@@ -562,7 +556,7 @@ sub new_GtkEntry {
         }
         $class->pack_widget($parent, $name, $proto, $depth );
     }
-    $class->add_to_UI( $depth, "$current_form\{'$name'}->set_text('$text' );" );
+    $class->add_to_UI( $depth, "$current_form\{'$name'}->set_text(_('$text') );" );
     $class->add_to_UI( $depth, "$current_form\{'$name'}->set_max_length(".
         "$text_max_length );" );
     $class->add_to_UI( $depth, "$current_form\{'$name'}->set_visibility(".
@@ -589,8 +583,7 @@ sub new_GtkFileSelection {
     my $title = $class->use_par($proto,'title', $DEFAULT, 'File Selection' );
     my $show_file_op_buttons    = $class->use_par($proto,'show_file_op_buttons',    $BOOL,    'True' );
 
-#    $class->escape_text($title);
-    $class->add_to_UI($depth, "\$widgets->{'$name'} = new Gtk::FileSelection('$title' );" );
+    $class->add_to_UI($depth, "\$widgets->{'$name'} = new Gtk::FileSelection(_('$title') );" );
     if ($show_file_op_buttons) {
         $class->add_to_UI( $depth, "\$widgets->{'$name'}->show_fileop_buttons;" );
     } else {
@@ -626,9 +619,8 @@ sub new_GtkFontSelectionDialog {
     my $name = $proto->{'name'};
     my $title = $class->use_par($proto,'title', $DEFAULT, 'Font Selection' );
 
-#    $class->escape_text($title);
     $class->add_to_UI($depth, "\$widgets->{'$name'} = ".
-        "new Gtk::FontSelectionDialog('$title' );" );
+        "new Gtk::FontSelectionDialog(_('$title') );" );
 
     $class->set_window_properties($parent, $name, $proto, $depth );
     return $widgets->{$name};
@@ -643,8 +635,8 @@ sub new_GtkFrame {
     my $label_xalign = $class->use_par($proto, 'label_xalign', $DEFAULT, 0 );
     my $label_yalign = $class->use_par($proto, 'label_yalign', $DEFAULT, 0 );
 
-#    $class->escape_text($label);
-    $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::Frame('$label' );" );
+    $class->add_to_UI( $depth,  "\$widgets->{'$name'} = ".
+        "new Gtk::Frame(_('$label'));" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_label_align(".
         "$label_xalign, $label_yalign );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_shadow_type(".
@@ -703,7 +695,6 @@ sub new_GtkHBox {
     unless ($class->new_from_child_name($parent, $name, $proto, $depth )) {
         $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::HBox(".
             "$homogeneous, $spacing );" );
-    
         $class->pack_widget($parent, $name, $proto, $depth );
     }
     
@@ -876,9 +867,8 @@ sub new_GtkInputDialog {
     my $name = $proto->{'name'};
     my $title        = $class->use_par($proto, 'title',        $DEFAULT, 'UTIL' );
 
-#    $class->escape_text($title);
     $class->add_to_UI($depth, "\$widgets->{'$name'} = new Gtk::InputDialog;" );
-    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_title('$title' );" );
+    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_title(_('$title') );" );
 
     $class->set_window_properties($parent, $name, $proto, $depth );
     return $widgets->{$name};
@@ -892,9 +882,8 @@ sub new_GtkLabel {
     my $justify = $class->use_par($proto, 'justify', $LOOKUP,  'center' );
     my $wrap    = $class->use_par($proto, 'wrap', $BOOL, 'False' );
 
-#    $class->escape_text($label);
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::Label(".
-        "'$label' );" );
+        "_('$label'));" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_justify('$justify' );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_line_wrap($wrap );" );
 
@@ -1005,7 +994,6 @@ sub new_GtkMenuItem {
 #            "Gnome::Stock->menu_item('$stock_item', '$stock_item');" );
     } 
     if ($label) {
-#        $class->escape_text($label);
         my $pattern = $label;
         # The line below replaces Gtk+ function gtk_label_parse_uline
 # FIXME this only does uline for first char
@@ -1020,7 +1008,7 @@ sub new_GtkMenuItem {
                 $class->add_to_UI( $depth, "\$widgets->{'$name'}->right_justify;" );
             }
             $class->add_to_UI( $depth, "\$widgets->{'$name-accel'} = ".
-                "new Gtk::AccelLabel( '$label' );" );
+                "new Gtk::AccelLabel( _('$label'));" );
             $class->add_to_UI( $depth, "\$widgets->{'$name-accel'}->show;");
             $class->add_to_UI( $depth, "\$widgets->{'$name'}->add(".
                 "\$widgets->{'$name-accel'});" );
@@ -1037,7 +1025,7 @@ sub new_GtkMenuItem {
         } else {
             # There is no '_' underline accelerator
             $class->add_to_UI($depth, "\$widgets->{'$name'} = new Gtk::MenuItem(".
-                "'$label');" );
+                "_('$label'));" );
             if ($right_justify) { 
                 $class->add_to_UI( $depth, "\$widgets->{'$name'}->right_justify;" );
             }
@@ -1161,17 +1149,18 @@ sub new_GtkPixmap {
     my $build_insensitive = $class->use_par($proto, 'build_insensitive', $BOOL, 'False' );
     unless ($filename) {
         $class->diag_print(2, "warn  No pixmap file specified for GtkPixmap ".
-            "'$name' so we are using the project logo instead");
-        $filename = $glade2perl->logo;
+            "'%s' so we are using the project logo instead", $name);
+        $filename = $Glade_Perl->logo;
     }
 #    $filename = $class->full_Path(
 #        $filename, 
-#        $glade2perl->pixmaps_directory );
+#        $Glade_Perl->pixmaps_directory );
     $filename = "${Glade::PerlRun::pixmaps_directory}/$filename";
     $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
         "\$class->create_pixmap($current_window, '$filename' );" );
     unless (defined $widgets->{$name}) { 
-        die "\nerror $me failed to create pixmap from file '$filename' \n";
+        die sprintf(D_("\nerror %s failed to create pixmap from file '%s'"),
+            $me, $filename), "\n";
     }
     unless ($build_insensitive) {
         if ($class->my_perl_gtk_can_do('gtk_pixmap_set_build_insensitive')) {
@@ -1233,7 +1222,7 @@ sub new_GtkProgressBar {
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_text_alignment(".
         "$text_xalign, $text_yalign );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_format_string(".
-        "'$format' );" );
+        "_('$format' ));" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->configure(".
         "$value, $lower, $upper );" );
 
@@ -1249,7 +1238,6 @@ sub new_GtkRadioButton {
     my $draw_indicator = $class->use_par($proto, 'draw_indicator', $BOOL, 'False' );
     my $active = $class->use_par($proto, 'active',     $BOOL,    'False' );
 
-#    $class->escape_text($label);
     unless ($class->new_from_child_name($parent, $name, $proto, $depth )) {
         my $group  = $class->use_par($proto, 'group'    ,  $DEFAULT, '' );
         my $rb_group = "$current_form\{'rb-group-$group'}";
@@ -1257,16 +1245,16 @@ sub new_GtkRadioButton {
         if ($group) {
             if (eval "defined $rb_group") {
                 $class->add_to_UI( $depth,  "\$widgets->{'$name'} = ".
-                    "new Gtk::RadioButton('$label', $rb_group );" );
+                    "new Gtk::RadioButton(_('$label'), $rb_group );" );
             } else {
                 $class->add_to_UI( $depth,  "\$widgets->{'$name'} = ".
-                    "new Gtk::RadioButton('$label' );" );
+                    "new Gtk::RadioButton(_('$label') );" );
                 $class->add_to_UI( $depth,  "$rb_group = \$widgets->{'$name'};" );
 
             }
         } else {
             $class->add_to_UI( $depth,  "\$widgets->{'$name'} = ".
-                "new Gtk::RadioButton('$label' );" );
+                "new Gtk::RadioButton(_('$label') );" );
         }
         $class->pack_widget($parent, $name, $proto, $depth );
     }
@@ -1290,19 +1278,18 @@ sub new_GtkRadioMenuItem {
     my $group  = $class->use_par($proto, 'group',  $DEFAULT, '' );
     my $rmi_group = "$current_form\{'rmi-group-$group'}";
 
-#    $class->escape_text($label);
     if ($group) {
         if (eval "defined $rmi_group") {
             $class->add_to_UI( $depth,  "\$widgets->{'$name'} = ".
-                "new Gtk::RadioMenuItem('$label', $rmi_group );" );
+                "new Gtk::RadioMenuItem(_('$label'), $rmi_group );" );
         } else {
             $class->add_to_UI( $depth,  "\$widgets->{'$name'} = ".
-                "new Gtk::RadioMenuItem('$label' );" );
+                "new Gtk::RadioMenuItem(_('$label') );" );
         }
         $class->add_to_UI( $depth,  "$rmi_group = \$widgets->{'$name'};" );
     } else {
         $class->add_to_UI( $depth,  "\$widgets->{'$name'} = ".
-            "new Gtk::RadioMenuItem('$label' );" );
+            "new Gtk::RadioMenuItem(_('$label') );" );
     }
 
     if ($right_justify) {
@@ -1433,14 +1420,14 @@ sub new_GtkText {
     my $name = $proto->{'name'};
     my $text      = $class->use_par($proto, 'text'    ,  $DEFAULT, '' );
     my $editable  = $class->use_par($proto, 'editable',  $BOOL,    'False' );
-#    $class->escape_text($text);
+
     $text =~ s/\n/\\n/g;
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::Text(".
         " undef, undef );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_editable(".
         "$editable );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->insert(".
-        "undef, \$widgets->{'$name'}->style->text('normal'), undef, \"$text\" );" );
+        "undef, \$widgets->{'$name'}->style->text('normal'), undef, _(\"$text\"));" );
 
     $class->pack_widget($parent, $name, $proto, $depth );
     return $widgets->{$name};
@@ -1466,9 +1453,8 @@ sub new_GtkToggleButton {
 
     unless ($class->new_from_child_name($parent, $name, $proto, $depth )) {
         my $label        = $class->use_par($proto, 'label'    ,    $DEFAULT, '' );
-#        $class->escape_text($label);
         $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::ToggleButton(".
-            "'$label' );" );
+            "_('$label') );" );
         $class->pack_widget($parent, $name, $proto, $depth );
     }
     $class->add_to_UI( $depth, "$current_form\{'$name'}->active(".
@@ -1709,9 +1695,8 @@ sub new_GtkWindow {
     my $name = $proto->{'name'};
     my $title        = $class->use_par($proto, 'title',        $DEFAULT, 'UTIL' );
 
-#    $class->escape_text($title);
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::Window;" );
-    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_title('$title' );" );
+    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_title(_('$title') );" );
 
     $class->set_window_properties($parent, $name, $proto, $depth );
     return $widgets->{$name};

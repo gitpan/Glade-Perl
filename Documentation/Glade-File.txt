@@ -24,7 +24,7 @@ elements that it uses from the GTK-Interface XML file:
   <gnome_support>True</gnome_support>
 # From version 0.41 this property is now respected.
 
-# All other project properties are ignored
+# All other project properties are ignored by Glade-Perl
 
 </project>
 

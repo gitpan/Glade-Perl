@@ -24,7 +24,7 @@ Glade/PerlXML.pm                    # XML load/save module
 Glade/PerlRun.pm                    # Run time module
 Example/Bus/Bus.glade               # A test Glade project file
 Example/Bus/Bus.glade2perl.xml      # User options file
-Example/Bus/README                  # A README file for te example
+Example/Bus/README                  # A README file for the example
 Example/Bus/Bus_mySUBS.pm           # A module containg some signal handlers
 Example/Bus/Generated/Bus.pm        # An edited version of the generated APP class
 Example/Bus/Generated/SubBus.pm     # One way to subclass a generated APP class
@@ -32,4 +32,5 @@ Example/Bus/pixmaps/new.xpm         # Some toolbar icons
 Example/Bus/pixmaps/open.xpm        #   "
 Example/Bus/pixmaps/save.xpm        #   "
 Example/glade2perl                  # Script to generate source code from Glade
+ppo/Glade-Perl.pot                  # An untranslated .pot file
 test.pl                             # A test script to generate Bus etc

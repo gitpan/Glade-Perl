@@ -39,7 +39,7 @@ BEGIN {
         $missing_widgets
         );
     $PACKAGE =          __PACKAGE__;
-    $VERSION        = q(0.50);
+    $VERSION        = q(0.51);
 
     $ignored_widgets = 0;
     $missing_widgets = 0;
@@ -119,9 +119,11 @@ $perl_gtk_depends       = {
 #    'MINIMUM REQUIREMENTS'  => '0.7000',
     'MINIMUM REQUIREMENTS'  => '0.6123',
     'LATEST_CPAN'           => '0.7002',
-    'LATEST_CVS'            => '20000129',
+    'LATEST_CVS'            => '20000301',
     # Those below don't work yet even in the latest CVS version
 
+    # Those below work in the CVS version after 20000301
+    'gnome_dialog_append_button' => '20000301',
     # Those below work in the CPAN version after 0.7002 (CVS after 20000129)
     'Gnome::UIInfo'     => '0.7002',
     # Those below work in the CPAN version after 0.7000 (CVS after 20000102)
@@ -214,26 +216,25 @@ sub my_perl_gtk_can_do {
             # We need a CVS version
             if ($check > $perl_gtk_depends->{'LATEST_CVS'}) {
                 # The CVS version can't even do it yet
-                $class->diag_print(1, "warn  Gtk-Perl dated ".
-                    $options->my_perl_gtk.
-                    " cannot do '$action' (properly) and neither can".
-                    " the CVS version !!!");
+                $class->diag_print(1, 
+                    "warn  Gtk-Perl dated %s cannot do '%s' (properly)".
+                    " and neither can the CVS version !!!",
+                $options->my_perl_gtk, $action);
                     
             } else {
                 # We need a new CVS version
-                $class->diag_print(1, "warn  Gtk-Perl dated ".
-                    $options->my_perl_gtk.
-                    " cannot do '$action' (properly) we need".
-                    " CVS module 'gnome-perl' after $check");
+                $class->diag_print(1, 
+                    "warn  Gtk-Perl dated %s cannot do '%s' (properly)".
+                    " we need CVS module 'gnome-perl' after %s",
+                    $options->my_perl_gtk, $action, $check);
             }
 
         } else {
             # We need a new CPAN version
-            $class->diag_print(1, "warn  Gtk-Perl version ".
-                $options->my_perl_gtk.
-                " cannot do '$action' (properly) we need".
-                " CPAN version $perl_gtk_depends->{$action}".
-                " or CVS module 'gnome-perl' after $check");
+            $class->diag_print(1, 
+                "warn  Gtk-Perl version %s cannot do '%s' (properly)".
+                " we need CPAN version %s or CVS module 'gnome-perl' after %s",
+                $options->my_perl_gtk, $action, $perl_gtk_depends->{$action}, $check);
         }
         return undef;
     }
@@ -250,23 +251,25 @@ sub my_gnome_libs_can_do {
             # We need a CVS version
             if ($gnome_libs_depends->{$action} gt 29990000) {
                 # The CVS version can't even do it yet
-                $class->diag_print(1, "warn  gnome_libs version ".
-                    $main::Glade_Perl_Generate_options->my_gnome_libs.
-                    " cannot do '$action' (properly) and neither can".
-                    " the CVS version !!!");
+                $class->diag_print(1, 
+                    "warn  gnome_libs version %s cannot do '%s' (properly)".
+                    " and neither can the CVS version !!!",
+                    $main::Glade_Perl_Generate_options->my_gnome_libs, $action);
             } else {
                 # We need a new CVS version
-                $class->diag_print(1, "warn  gnome_libs version ".
-                    $main::Glade_Perl_Generate_options->my_gnome_libs.
-                    " cannot do '$action' (properly) we need".
-                    " CVS module 'gnome-libs' after $gnome_libs_depends->{$action}");
+                $class->diag_print(1, 
+                    "warn  gnome_libs version %s cannot do '%s' (properly)".
+                    " we need CVS module 'gnome-libs' after %s",
+                    $main::Glade_Perl_Generate_options->my_gnome_libs, 
+                    $action, $gnome_libs_depends->{$action});
             }
         } else {
             # We need a new CPAN version
-            $class->diag_print(1, "warn  gnome_libs version ".
-                $main::Glade_Perl_Generate_options->my_gnome_libs.
-                " cannot do '$action' (properly) we need".
-                " version $gnome_libs_depends->{$action}");
+            $class->diag_print(1, 
+                "warn  gnome_libs version %s cannot do '%s' (properly)".
+                " we need version %s",
+                $main::Glade_Perl_Generate_options->my_gnome_libs, 
+                $action, $gnome_libs_depends->{$action});
         }
         return undef;
     }
@@ -289,8 +292,9 @@ sub use_par {
         } else {
             # We have no value and no default to use so bale out here
             $class->diag_print (1, "error No value in supplied ".
-                "$proto->{name}\->{'$key'} and NO default was supplied in ".
-                "$me called from ".(caller)[0]." line ".(caller)[2]);
+                "%s and NO default was supplied in ".
+                "%s called from %s line %s",
+                $proto->{'name'}->{'$key'}, $me, (caller)[0], (caller)[2] );
             return undef;
         }
     } else {
@@ -324,11 +328,13 @@ sub use_par {
         unless ($lookup) {
             if (defined $default) {
                 $class->diag_print(2, 
-                    "warn  Unable to lookup '$self' using default of '$default'");
+                    "warn  Unable to lookup '%s' using default of '%s'",
+                    $self, $default);
                 $self = $default;
             } else {
                 $class->diag_print(1, 
-                    "error Unable to lookup '$self' and no default");
+                    "error Unable to lookup '%s' and no default",
+                    $self);
             }
         } else {
             $self = $lookup;
@@ -372,7 +378,8 @@ sub Widget_from_Proto {
     if ($depth) {
         # We are a widget of some sort (toplevel window or child)
         unless ($proto->{name}) {
-            $class->diag_print (2, "You have supplied a proto without a name to $me");
+            $class->diag_print (2, 
+                "You have supplied a proto without a name to %s", $me);
             $class->diag_print (2, $proto);
         } else {
             $name = $proto->{name};
@@ -389,40 +396,44 @@ sub Widget_from_Proto {
             $current_name = $name;
             $current_window = "\$forms->{'$name'}\{'$name'}";
             unless ($first_form) {$first_form = $name};
+#            $class->add_to_UI( $depth,  "bless \\\${forms->{'$name'}}, \$class;" );
 
             if ($main::Glade_Perl_Generate_options->hierarchy =~ /^(widget|both)/) {
-#                $widget_hierarchy = "\$forms->{'$name'}{__WIDGET_HIERARCHY}";
                 $widget_hierarchy = "\$forms->{'$name'}{__WH}";
+#                $widget_hierarchy = "\$forms->{'$name'}->WH";
             }
             if ($main::Glade_Perl_Generate_options->hierarchy =~ /^(class|both)/) {
-#                $class_hierarchy = "\$forms->{'$name'}{__CLASS_HIERARCHY}";
                 $class_hierarchy = "\$forms->{'$name'}{__CH}";
+#                $class_hierarchy = "\$forms->{'$name'}->CH";
             }
 
         } else {
             $widget_hierarchy = "$wh\{'$name'}" if $wh;
-            $class_hierarchy  = "$ch\{$proto->{class}}{'$name'}" if $ch; 
+            $class_hierarchy  = "$ch\{'$proto->{class}'}{'$name'}" if $ch; 
+#            $widget_hierarchy = "$wh\->{'$name'}" if $wh;
+#            $class_hierarchy  = "$ch\->{'$proto->{class}'}{'$name'}" if $ch; 
         }
         $class->add_to_UI( $depth,  "#" );
-        $class->add_to_UI( $depth,  "# Construct a $proto->{class} '$name'" );
+        $class->add_to_UI( $depth,  "# ".S_("Construct a").
+            " $proto->{class} '$name'");
         $constructor = "new_$proto->{class}";
         if ($class->can($constructor)) {
             # Construct the widget
             $expr =  "\$widgets->{'$name'} = ".
                 "$class->$constructor('$parentname', \$proto, $depth );";
             eval $expr or 
-                ($@ && die  "\nin $me\n\twhile trying to eval ".
-                    "'$expr'\n\tFAILED with Eval error '$@'\n" );
+                ($@ && die  "\nin $me\n\t".D_("while trying to eval").
+                    " '$expr'\n\t".D_("FAILED with Eval error")." '$@'\n" );
             if ($widget_hierarchy) {
                 # Add to form widget hierarchy
                 $class->add_to_UI( $depth,  
                     "$widget_hierarchy\{__W} = $current_form\{'$name'};" );
+#                    "\$class->W($widget_hierarchy, $current_form\{'$name'});" );
                 if ($main::Glade_Perl_Generate_options->hierarchy =~ /order/) {
                     if ($depth > 1) {
                         $class->add_to_UI( $depth,  
                             "push \@{$wh\{__C}}, $current_form\{'$name'};" );
-#                        $class->add_to_UI( $depth,  
-#                            "$widget_hierarchy\{__ORDER} = $wh\{__C}++;" );
+#                            "\$class->C($wh, $current_form\{'$name'});" );
                     }
                 }
             }
@@ -430,18 +441,20 @@ sub Widget_from_Proto {
                 # Add to form class hierarchy
                 $class->add_to_UI( $depth,  
                     "$class_hierarchy\{__W} = $current_form\{'$name'};" );
+#                    "\$class->W($class_hierarchy, $current_form\{'$name'});" );
                 if ($main::Glade_Perl_Generate_options->hierarchy =~ /order/) {
                     if ($depth > 1) {
                         $class->add_to_UI( $depth,  
                             "push \@{$ch\{__C}}, $current_form\{'$name'};" );
-#                        $class->add_to_UI( $depth,  
-#                            "$class_hierarchy\{__ORDER} = $ch\{__C}++;" );
+#                            "\$class->C($ch, $current_form\{'$name'});" );
                     }
                 }
             }
         } else {
-            die "error $me\n\tI don't have a constructor called ".
-                "'$class->$constructor' - I guess that it isn't written yet :-)\n";
+            die D_("error")." $me\n\t".sprintf(
+                D_("I don't have a constructor called '%s'".
+                "- I guess that it isn't written yet :-)\n"),
+                "$class->$constructor");
         }
     } else {
         # We are a complete GTK-Interface - ie we are the application
@@ -472,11 +485,12 @@ sub Widget_from_Proto {
 
                         } else {
                             unless (" $gnome_widgets " =~ / $proto->{$key}{'class'} /) {
-                                $class->diag_print(4, "warn ".
-                                    "$proto->{$key}{'class'} widget ignored in $me");
+                                $class->diag_print(4, 
+                                    "warn  %s widget ignored in %s", 
+                                    $proto->{$key}{'class'}, $me);
                             } else {
-                                $class->diag_print(1, "error ".
-                                    "$proto->{$key}{'class'} widget ignored in $me");
+                                $class->diag_print(1, "error %s widget ignored in %s", 
+                                $proto->{$key}{'class'}, $me);
                             }
                             $ignored_widgets++;
                         }
@@ -509,16 +523,16 @@ sub Widget_from_Proto {
 
                 } else {
                     # I don't recognise it so do nothing but report it
-                    $class->diag_print (1, "error Object '$object' not recognised ".
-                        "or processed for ".
-                        "$proto->{'class'} '$proto->{name}' by $me");
+                    $class->diag_print (1, "error Object '%s' not recognised ".
+                        "or processed for %s '%s' by %s",
+                        $object, $proto->{'class'}, $proto->{name}, $me);
                     $class->diag_print(1, $proto);
                 }
 
 #            } else {
 #                # I don't recognise it so do nothing but report it
-#                $class->diag_print (1, "error Undefined object for ".
-#                    "$proto->{'class'} '$proto->{name}' by $me");
+#                $class->diag_print (1, "error Undefined object for %s '%s' by $s".
+#                    $proto->{'class'}, '$proto->{name}', $me );
 #                $class->diag_print(1, $proto);
             }
         }
@@ -529,7 +543,8 @@ sub Widget_from_Proto {
         if (eval "scalar(\@{${current_form}\{Signal_Strings}})") {
             # We have some signals to connect
             $class->add_to_UI( $depth,  "#" );
-            $class->add_to_UI( $depth,  "# Connect all signals now that widgets are constructed" );
+            $class->add_to_UI( $depth,  
+                "# ".S_("Connect all signals now that widgets are constructed" ));
             $expr = "foreach \$sig (\@{${current_form}\{Signal_Strings}}) {
                 eval \$sig;
             }";
@@ -565,22 +580,23 @@ sub internal_pack_widget {
     my $child_type;
     my $postpone_show;
     if ($current_form && eval "exists ${current_form}\{'$childname'}") {
-        die "\nerror $me - There is already a widget called ".
-            "'$childname' constructed and packed - I will not overwrite it !";
+        die sprintf(D_("\nerror %s - There is already a widget called ".
+            "'%s' constructed and packed - I will not overwrite it !"),
+            $me, $childname);
     }
     if (" $dialogs $toplevel_widgets " =~ m/ $refwid /) {
         # We are a window so don't have a parent to pack into
-        $class->diag_print (4, "$indent- Constructing a component ".
-            "(window/dialog) '$childname'");
+        $class->diag_print (4, "%s- Constructing a toplevel component ".
+            "(window/dialog) '%s'", $indent, $childname);
 #        $child_type = $widgets->{$childname}->type;
 #        if (' toplevel dialog '=~ m/ $child_type /) {
             # Add a default delete_event signal connection
             $class->add_to_UI($depth,   
-                "${current_form}\{tooltips} = new Gtk::Tooltips;" );
+                "${current_form}\{'tooltips'} = new Gtk::Tooltips;" );
             $class->add_to_UI($depth,   
-                "${current_form}\{accelgroup} = new Gtk::AccelGroup;" );
+                "${current_form}\{'accelgroup'} = new Gtk::AccelGroup;" );
             $class->add_to_UI( $depth, 
-                "${current_form}\{accelgroup}->attach(\$widgets->{$childname} );" );
+                "${current_form}\{'accelgroup'}->attach(\$widgets->{'$childname'} );" );
 #        } else {
 #            die "\nerror F$me   $indent- This is a $child_type type Window".
 #                " - what should I do?";
@@ -596,8 +612,9 @@ sub internal_pack_widget {
 #            $class->add_to_UI( $depth, "${first_form}->popup_enable;" );
                 $postpone_show = 1;
             } else {
-                die "\nerror $me - Unable to find a widget called '$parentname' - ".
-                    "I can not pack widget '$childname' into a non-existant widget!";
+                die sprintf(D_("\nerror %s - Unable to find a widget called '%s' - ".
+                    "I can not pack widget '%s' into a non-existant widget!"),
+                    $me, $parentname, $childname);
             }
         }
         if ($postpone_show) {
@@ -623,11 +640,12 @@ sub internal_pack_widget {
                 # We are a CList column widget (title widget)
                 $class->add_to_UI( $depth, 
                     "${current_form}\{'$parentname'}->set_column_widget(".
-                        "$CList_column, \$widgets->{$childname} );" );
+                        "$CList_column, \$widgets->{'$childname'} );" );
                 $CList_column++;
             } else {
-                $class->diag_print (1, "error I don't know what to do with ".
-                    "$refpar element $child_type");
+                $class->diag_print (1, 
+                    "error I don't know what to do with %s element %s",
+                    $refpar, $child_type);
             }
 
 #---------------------------------------
@@ -640,8 +658,9 @@ sub internal_pack_widget {
                         "$CTree_column, \$widgets->{'$childname'} );" );
                 $CTree_column++;
             } else {
-                $class->diag_print (1, "error I don't know what to do with ".
-                    "$refpar element $child_type");
+                $class->diag_print (1, 
+                    "error I don't know what to do with %s element %s".
+                    $refpar, $child_type);
             }
 
 #---------------------------------------
@@ -686,14 +705,17 @@ sub internal_pack_widget {
                 # previous notebook page with ourself as the  label
                 unless ($nb->{$parentname}{'panes'}[$nb->{$parentname}{'tab'}]) {
                     $class->diag_print (1, "warn  There is no widget on the ".
-                        "notebook page linked to notebook tab '$childname' - ".
-                        "a Placeholder label was used instead");
-                    $class->add_to_UI( $depth, 
-                        "${current_form}\{Placeholder_label} = ".
-                            "new Gtk::Label('This is a message generated by $PACKAGE\n\n".
+                        "notebook page linked to notebook tab '%s' - ".
+                        "a Placeholder label was used instead",
+                        $childname);
+                    my $message = sprintf(S_("This is a message generated by %s\n\n".
                                 "No widget was specified for the page linked to\n".
-                                "notebook tab \"$childname\"\n\n".
-                                "You should probably use Glade to create one');");
+                                "notebook tab \"%s\"\n\n".
+                                "You should probably use Glade to create one"),
+                                $PACKAGE, $childname);
+                    $class->add_to_UI( $depth, 
+                        "${current_form}\{'Placeholder_label'} = ".
+                            "new Gtk::Label('$message');");
                     $class->add_to_UI( $depth, 
                         "${current_form}\{'Placeholder_label'}->show;");
                     $nb->{$parentname}{'panes'}[$nb->{$parentname}{'tab'}] = 'Placeholder_label';
@@ -754,11 +776,13 @@ sub internal_pack_widget {
                       
 #---------------------------------------
         } elsif (' Gtk::ScrolledWindow ' =~ m/ $refpar /) {
-            if (' Gtk::CList Gtk::CTree ' =~ m/ $refwid /) {
-                # These handle their own scrolling and column labels are fixed
+            if (' Gtk::CList Gtk::CTree Gtk::Text ' =~ m/ $refwid /) {
+                # These handle their own scrolling and
+                # Ctree/CList column labels stay fixed
                 $class->add_to_UI( $depth, 
                     "${current_form}\{'$parentname'}->add(".
                         "\$widgets->{'$childname'} );" );
+
             } else {
                 $class->add_to_UI( $depth, 
                     "${current_form}\{'$parentname'}->add_with_viewport(".
@@ -801,12 +825,13 @@ sub internal_pack_widget {
             # Untested possibilities
             # 4 Other type of widget
             my $tooltip =  $class->use_par($proto, 'tooltip',  $DEFAULT, '' );
-#            $class->escape_text($tooltip);
-            if (eval "$current_form\{'$parentname'}{tooltips}" && 
+            if (eval "$current_form\{'$parentname'}{'tooltips'}" && 
                 !$tooltip &&
                 (' Gtk::VSeparator Gtk::HSeparator Gtk::Combo Gtk::Label ' !~ / $refwid /)) {
-                $class->diag_print (1, "warn  Toolbar '$parentname' is expecting ".
-                    "a tooltip but you have not set one for $refwid '$childname'");
+                $class->diag_print (1, 
+                    "warn  Toolbar '%s' is expecting ".
+                    "a tooltip but you have not set one for %s '%s'",
+                    $parentname, $refwid, $childname);
             }            
 #use Data::Dumper;print Dumper($proto);
              if ($proto->{'child'}{'new_group'} && $proto->{'child'}{'new_group'} eq 'True') {
@@ -816,7 +841,7 @@ sub internal_pack_widget {
             # We must have a widget already constructed
             $class->add_to_UI( $depth, 
                 "${current_form}\{'$parentname'}->append_widget(".
-                    "\$widgets->{'$childname'}, '$tooltip', '' );" );
+                    "\$widgets->{'$childname'}, _('$tooltip'), '' );" );
             
 #---------------------------------------
         } elsif (" Gnome::App "=~ m/ $refpar /) {
@@ -832,7 +857,9 @@ sub internal_pack_widget {
                         "\$widgets->{'$childname'} );" );
             
             } elsif (' Gnome::Dock ' =~ m/ $refwid /) {
-# FIXME why have I commented this out?
+# FIXME why have I commented this out? Is it because Gnome::Dock should not
+# be constructed within a Gnome::App - add Gnome::DockItems by using method
+# Gnome::App::add_docked() or Gnome::App::add_dock_item() instead?
 #                $class->add_to_UI( $depth, 
 #                    "${current_form}\{'$parentname'}->set_contents(".
 #                        "\$widgets->{'$childname'} );" );
@@ -843,9 +870,9 @@ sub internal_pack_widget {
                         "\$widgets->{'$childname'} );" );
 
             } else {
-                $class->diag_print (1, "error Don't know how to pack $refwid ".
-                    "${current_form}\{'${childname}'}{'child_name'} ".
-                    "(type '$type') - what should I do?");
+                $class->diag_print (1, 
+                    "error Don't know how to pack %s %s (type '%s') - what should I do?",
+                    $refwid, "${current_form}\{'${childname}'}{'child_name'}", $type);
             }
                         
 #---------------------------------------
@@ -858,6 +885,20 @@ sub internal_pack_widget {
             my $in_new_band = $class->use_par($proto, 'in_new_band', $DEFAULT, 0 );
 
             # 'Usage: Gnome::Dock::add_item(dock, item, placement, band_num, position, offset, in_new_band)
+            # Actually should be Gnome::App->add_docked() or
+            # Gnome::App->add_dock_item() if this widget is in a Gnome::App
+# I quote Damon 20000301 on glade-devel list
+# I think it was OK to treat dock items as children of the dock.
+# A GnomeDock could be used in other places besides a GnomeApp (though
+# I don't think Glade supports that completely at the moment).
+# I also had to think about GnomeDockBands, but I decided to skip those
+# in the output since they are created and destroyed automatically
+# and can't be manipulated independantly.
+# 
+# I think you're right in that libglade shouldn't create a GnomeDock inside
+# a GnomeApp, and should be adding the dock items via the GnomeApp's
+# GnomeDockLayout, e.g. using gnome_app_add_docked() or gnome_app_add_dock_item().
+
 # FIXME Above is how it should be done, adding to App's contents for now
             if (" Gnome::DockItem " =~/ $refwid /) {
                 $class->add_to_UI( $depth, 
@@ -865,6 +906,7 @@ sub internal_pack_widget {
                         "\$widgets->{'$childname'}, '$placement', $band, ".
                         "$position, $offset, $in_new_band );" );
             } else {
+                my $class_name = $class->use_par($proto, 'child_name');
                 $class->add_to_UI( $depth, 
                     "${current_window}->set_contents(".
                         "\$widgets->{'$childname'} );" );
@@ -894,15 +936,16 @@ sub internal_pack_widget {
         } else {
             # We are not a special case
             $class->add_to_UI( $depth, "${current_form}\{'$parentname'}->add(".
-                "\$widgets->{$childname} );" );
+                "\$widgets->{'$childname'} );" );
         }
     }
     unless ($postpone_show || !$class->use_par($proto, 'visible', $BOOL, 'True') ) {
 #        $class->add_to_UI($depth, "\$widgets->{'$childname'}->realize( );" );
         $class->add_to_UI($depth, "\$widgets->{'$childname'}->show;" );
     }
+# FINDME This is to remove
     $class->add_to_UI( $depth, 
-        "${current_form}\{'$childname'} = \$widgets->{'$childname'}; #========================" );
+        "${current_form}\{'$childname'} = \$widgets->{'$childname'};" );
 
     # Delete the $widget to show that it has been packed
     delete $widgets->{$childname};
@@ -941,17 +984,17 @@ sub set_tooltip {
     my $tooltip = $class->use_par($proto, 'tooltip', $DEFAULT, '');
     
 # FIXME What do we do if tooltip is '' - set or not ?
-#    $class->escape_text($tooltip);
     if ($tooltip ne '') {
-        $class->add_to_UI( $depth, "${current_form}\{tooltips}->set_tip(".
-            "${current_form}\{'$parentname'}, '$tooltip' );" );
+        $class->add_to_UI( $depth, "${current_form}\{'tooltips'}->set_tip(".
+            "${current_form}\{'$parentname'}, _('$tooltip' ));" );
 
     } elsif (!defined $proto->{name}) {
-        my $message = "Could not set tooltip for unnamed $proto->{'class'}";
-        $class->diag_print (1, "error $message");
+        $class->diag_print (1, 
+            "error Could not set tooltip for unnamed %s", $proto->{'class'});
 
     } else {
-        $class->diag_print(6, "warn  No tooltip specified for widget '$proto->{name}'");
+        $class->diag_print(6, 
+            "warn  No tooltip specified for widget '%s'", $proto->{name});
     }    
 }
 
@@ -1071,7 +1114,6 @@ sub set_window_properties {
     my $wmclass_name  = $class->use_par($proto, 'wmclass_name',  $DEFAULT, '' );
     my $wmclass_class = $class->use_par($proto, 'wmclass_class', $DEFAULT, '' );
 
-#    $class->escape_text($title);
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->position('$position' );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_policy(".
         "$allow_shrink, $allow_grow, $auto_shrink );" );
@@ -1095,8 +1137,8 @@ sub set_window_properties {
         my $x = $class->use_par($proto, 'x',  $DEFAULT, 0 );
         my $y = $class->use_par($proto, 'y',  $DEFAULT, 0 );
         $class->diag_print(1, "warn  Toplevel window uposition has been set ".
-            "but breaks the window manager's placement policy, and is almost "."
-            certainly a bad idea. (Havoc Pennington)");
+            "but breaks the window manager's placement policy, and is almost ".
+            "certainly a bad idea. (Havoc Pennington)");
         $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_uposition(".
             "$x, $y );" );
     }
@@ -1123,12 +1165,10 @@ sub pack_widget {
 }
 
 sub new_accelerator {
-    my ($class, $parentname, $proto, $depth) = @_;
+    my ($class, $parentname, $proto, $depth, $gnome_frig) = @_;
     my $me = "$class->new_accelerator";
-#$class->diag_print(2, $proto);
     my $mods = '[]';
     my $accel_flags = "['visible', 'locked']";
-#    my $key      = ucfirst($class->use_par($proto, 'key', $LOOKUP ));
     my $key       = $class->use_par($proto, 'key',          $KEYSYM );
     my $modifiers = $class->use_par($proto, 'modifiers',    $DEFAULT, 0);
     my $signal    = $class->use_par($proto, 'signal');
@@ -1150,15 +1190,21 @@ sub new_accelerator {
 #                              GDK_L, GDK_MOD1_MASK,
 #                              GTK_ACCEL_VISIBLE);
 #    $class->add_to_UI( $depth, "${current_form}\{'$parentname'}->add_accelerator(".
-#        "'$signal', ${current_form}\{accelgroup}, '$key', $mods, $accel_flags);");
+#        "'$signal', ${current_form}\{'accelgroup'}, '$key', $mods, $accel_flags);");
 
-    if (eval "${current_form}\{'$parentname'}->can('$signal')") {
-        $class->add_to_UI( $depth, "${current_form}\{accelgroup}->add(".
+    if ($gnome_frig) {
+        $class->add_to_UI( $depth, 
+            "${current_window}\->set_accelerator(".
+                "$gnome_frig, $key, $mods);");
+    
+    } elsif (eval "${current_form}\{'$parentname'}->can('$signal')") {
+        $class->add_to_UI( $depth, "${current_form}\{'accelgroup'}->add(".
             "$key, $mods, $accel_flags, ".
             "${current_form}\{'$parentname'}, '$signal');");
     } else {
-        $class->diag_print (1, "error Widget '$parentname' can't emit signal ".
-            "'$signal' as requested - what's wrong?");
+        $class->diag_print (1, "error Widget '%s' can't emit signal ".
+            "'%s' as requested - what's wrong?",
+            $parentname, $signal);
     }
 }
 
@@ -1183,8 +1229,8 @@ sub new_style {
             $element = "$color-$state";
             if ($proto->{$element}) {
                 $value = $class->use_par($proto, $element, $DEFAULT, '');
-                $class->diag_print(6, "$indent- We have a style element ".
-                    "'$element' which is '$value'");
+                $class->diag_print(6, "%s- We have a style element ".
+                    "'%s' which is '%s'", $indent, $element, $value);
                 ($red, $green, $blue) = split(',', $value);
                 # Yes I really mean multiply by 257 (0x101)
                 # We scale these so that 0x00 -> 0x0000
@@ -1237,7 +1283,7 @@ sub new_from_child_name {
     } elsif ($type eq 'GnomePixmapEntry:file-entry') {
         $type = 'gnome_file_entry';
 
-    } elsif (' Toolbar:button GnomeDock:contents GnomeDruidPageStandard:vbox ' =~ m/ $type /) {
+    } elsif (' Toolbar:button GnomeDock:contents GnomeDruidPageStandard:vbox Dialog:action_area Dialog:vbox ' =~ m/ $type /) {
         # Keep the full child_name for later use
 
     } else {
@@ -1249,12 +1295,35 @@ sub new_from_child_name {
     if ($type eq 'action_area') {
         # Gtk|Gnome::Dialog have widget tree that is not reflected by
         # the methods that access them. $dialog->action_area() points to
-        # a child of $dialog->vbox() and not of $dialog. In any case, they
-        # cannot be used/accessed until something is added to them.
-        return undef;
-#        $class->add_to_UI( $depth, 
-#            "\$widgets->{'$name'} = ".
-#                "${current_window}->$type;" );
+        # a child of $dialog->vbox() and not of $dialog. 
+        # In any case, they cannot be used/accessed until something is 
+        # added to them by the automagic ->new('title', 'Button_Ok',...).
+        #
+        # For Gnome::Dialog and derivatives we can use ->append_button() 
+        # (which calls gnome_dialog_init_action_area)
+        if (!$class->my_perl_gtk_can_do('gnome_dialog_append_button')) {
+            # Force HButtonbox to construct its widget and add it to the VBox 
+            # This will look wrong (above the separator)
+            return undef;
+        
+        } else {
+            # Append the buttons by name
+#                            $childname = $class->Widget_from_Proto( $proto->{name}, 
+#                                $proto->{$key}, $depth + 1, 
+#                                $widget_hierarchy, $class_hierarchy );
+            my $number_of_buttons = 
+                $class->frig_Gnome_Dialog_buttons($parent, $proto, $depth);
+            # Return the action_area now it exists
+            $class->add_to_UI( $depth, 
+                "\$widgets->{'$name'} = ${current_window}->$type;" );
+        }
+        
+#---------------------------------------
+    } elsif (' Dialog:action_area Dialog:vbox ' =~ / $type /) {
+        $type =~ s/.*:(.*)/$1/;
+        # Return the action_area now it exists
+        $class->add_to_UI( $depth, 
+            "\$widgets->{'$name'} = ${current_window}->$type;" );
 
 #---------------------------------------
     } elsif ($type eq 'Toolbar:button') {
@@ -1265,9 +1334,10 @@ sub new_from_child_name {
 #        my $stock_button = $class->use_par($proto, 'stock_button',  $LOOKUP, '' );
 
         my $tooltip = $class->use_par($proto, 'tooltip',       $DEFAULT, '' );
-        if (eval "$current_form\{'$parent'}{tooltips}" && !$tooltip) {
-            $class->diag_print (1, "warn  Toolbar '$parent' is expecting ".
-                "a tooltip but you have not set one for $proto->{'class'} '$name'");
+        if (eval "$current_form\{'$parent'}{'tooltips'}" && !$tooltip) {
+            $class->diag_print (1, "warn  Toolbar '%s' is expecting ".
+                "a tooltip but you have not set one for %s '%s'",
+                $parent, $proto->{'class'}, $name);
         }            
 
         my $new_group = $class->use_par($proto->{'child'}, 'new_group', $BOOL, 0 );
@@ -1279,7 +1349,7 @@ sub new_from_child_name {
         if ($icon) {
             $pixmap_widget_name = "${current_form}\{'${name}-pixmap'}";
 #            $icon = $class->full_Path( 
-#                $icon, $glade2perl->pixmaps_directory );
+#                $icon, $Glade_Perl->pixmaps_directory );
             $class->add_to_UI( $depth, 
                 "$pixmap_widget_name = \$class->create_pixmap(".
                     "${current_window}, \"\$Glade::PerlRun::pixmaps_directory/$icon\" );" ); 
@@ -1328,8 +1398,8 @@ sub new_from_child_name {
         $class->add_to_UI( $depth, 
             "\$widgets->{'$name'} = ".
                 "${current_form}\{'$parent'}->append_element(".
-                    "'$type', $use_group, '$label', ".
-                    "'$tooltip', '', $pixmap_widget_name );" );
+                    "'$type', $use_group, _('$label'), ".
+                    "_('$tooltip'), '', $pixmap_widget_name );" );
 
         unless (!$rb_group || eval "defined $rb_group") {
             $class->add_to_UI( $depth,  
@@ -1360,7 +1430,6 @@ sub new_from_child_name {
 #---------------------------------------
     } elsif (eval "${current_form}\{'$parent'}->can('$type')") {
         my $label   = $class->use_par($proto, 'label', $DEFAULT, '');
-#        $class->escape_text($label);
         $class->add_to_UI( $depth, 
             "\$widgets->{'$name'} = ".
                 "${current_form}\{'$parent'}->$type;" );
@@ -1370,30 +1439,32 @@ sub new_from_child_name {
                 my $childref = ref $widgets->{$name}->child;
                 if ($childref eq 'Gtk::Label') {
                     $class->add_to_UI( $depth, 
-                        "\$widgets->{'$name'}->child->set_text('$label');", 
+                        "\$widgets->{'$name'}->child->set_text(_('$label'));", 
                         'TO_FILE_ONLY' );
                 } else {
                     $class->diag_print (1, "error We have a label ".
-                        "('$label') to set but the child of ${current_form}\{'$name'} ".
-                        "isn't a label (actually it's a $childref)");
+                        "('%s') to set but the child of %s ".
+                        "isn't a label (actually it's a %s)",
+                        $label, "${current_form}\{'$name'}", $childref);
                 }
             } else {
-                $class->diag_print (1, "error We have a label ('$label') to ".
-                    "set but ${current_form}\{'${name}'} doesn't have a ".
-                    "->child() accessor");
+                $class->diag_print (1, "error We have a label ('%s') to ".
+                    "set but %s doesn't have a ->child() accessor",
+                    $label, "${current_form}\{'${name}'}");
             }
         }
 
 #---------------------------------------
     } else {
-        $class->diag_print (1, "error Don't know how to get a ref to  ".
-            "${current_form}\{'${name}'}{'child_name'} (type '$type')");
+        $class->diag_print (1, "error Don't know how to get a ref to %s (type '%s')",
+            "${current_form}\{'${name}'}{'child_name'}", $type);
         return undef;
     }
 
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->show;" );
+# FINDME This is to remove
     $class->add_to_UI( $depth, 
-        "${current_form}\{'$name'} = \$widgets->{'$name'}; #======================================" );
+        "${current_form}\{'$name'} = \$widgets->{'$name'};" );
     # Delete the $widget to show that it has been packed
     delete $widgets->{$name};
 
@@ -1464,14 +1535,15 @@ sub new_signal {
         } else {
             # First we'll connect a default handler to hijack the signal 
             # for us to use during the Build run
-            $class->diag_print (2, "warn  Missing signal handler '$handler' ".
-                "connected to widget '$object' needs to be written");
+            $class->diag_print (2, "warn  Missing signal handler '%s' ".
+                "connected to widget '%s' needs to be written",
+                $handler, $object);
             unless ($class->Writing_Source_only) {
             $expr = "push \@{${current_form}\{Signal_Strings}}, ".
                 "\"\\${current_form}\{'$object'}->$call(".
                 "'$signal', \\\"\$class\\\::missing_handler\\\", ".
                 "'$parentname', '$signal', '$handler', '".
-                $glade2perl->{logo_filename}."' )\"";
+                $Glade_Perl->{logo_filename}."' )\"";
                 eval $expr
             }
             # Now write a signal_connect for generated code
