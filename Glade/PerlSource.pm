@@ -51,7 +51,7 @@ BEGIN {
                         $first_form
                       );
     $PACKAGE      = __PACKAGE__;
-    $VERSION        = q(0.44);
+    $VERSION        = q(0.46);
     @VARS         = qw( 
                         $VERSION
                         $AUTHOR
@@ -132,7 +132,7 @@ sub new {
 sub Stop_Writing_to_File { shift->Write_to_File('-1') }
 
 sub Write_to_File {
-    my ($class) = @ARG;
+    my ($class) = @_;
     my $me = "$class->Write_to_File";
     my $filename = $main::Glade_Perl_Generate_options->write_source;
     if (fileno UI or fileno SUBS or fileno SUBCLASS or $class->Building_UI_only) {
@@ -177,7 +177,7 @@ sub Write_to_File {
 }
 
 sub add_to_UI {
-    my ($class, $depth, $expr, $tofileonly, $notabs) = @ARG;
+    my ($class, $depth, $expr, $tofileonly, $notabs) = @_;
     my $me = "$class->add_to_UI";
     my $mydebug = ($class->verbosity >= 6);
     if ($depth < 0) {
@@ -204,7 +204,7 @@ sub add_to_UI {
 #=========== Source code templates                                  ============
 #===============================================================================
 sub write_UI {
-    my ($class, $proto, $glade_proto) = @ARG;
+    my ($class, $proto, $glade_proto) = @_;
     my $me = "$class->write_UI";
     my ($permitted_stubs, $UI_String);
     my ($handler, $module, $form );
@@ -250,7 +250,7 @@ sub write_UI {
 }
 
 sub write_SUBCLASS {
-    my ($class, $proto, $glade_proto) = @ARG;
+    my ($class, $proto, $glade_proto) = @_;
     my $me = "$class->write_SUBCLASS";
     my ($permitted_stubs);
     my ($handler, $module, $form );
@@ -286,13 +286,13 @@ sub write_SUBCLASS {
             unless ($autosubs =~ / $handler /) {
                 print SUBCLASS "
 sub $handler {
-${indent}my (\$class, \$data, \$object, \$instance, \$event) = \@ARG;
+${indent}my (\$class, \$data, \$object, \$instance, \$event) = \@_;
 ${indent}my \$me = __PACKAGE__.\"->$handler\";
 ${indent}# Get ref to hash of all widgets on our form
 ${indent}my \$form = \$__PACKAGE__::all_forms->{\$instance};
 ${indent}# REPLACE the line below with the actions to be taken when ".
     "__PACKAGE__.\"->$handler.\" is called
-${indent}__PACKAGE__->show_skeleton_message(\$me, \\\@ARG, ".
+${indent}__PACKAGE__->show_skeleton_message(\$me, \\\@_, ".
     "__PACKAGE__, '$project->{'logo'}');
 }
 ";
@@ -305,7 +305,7 @@ ${indent}__PACKAGE__->show_skeleton_message(\$me, \\\@ARG, ".
 }
 
 sub write_LIBGLADE {
-    my ($class, $proto, $glade_proto) = @ARG;
+    my ($class, $proto, $glade_proto) = @_;
     my $me = "$class->write_SUBCLASS";
     my ($permitted_stubs);
     my ($handler, $module, $form );
@@ -341,11 +341,11 @@ sub write_LIBGLADE {
             unless ($autosubs =~ / $handler /) {
                 print LIBGLADE "
 sub $handler {
-${indent}my (\$class, \$data, \$event) = \@ARG;
+${indent}my (\$class, \$data, \$event) = \@_;
 ${indent}my \$me = __PACKAGE__.\"->$handler\";
 ${indent}# REPLACE the line below with the actions to be taken when ".
     "__PACKAGE__.\"->$handler.\" is called
-${indent}__PACKAGE__->show_skeleton_message(\$me, \\\@ARG, ".
+${indent}__PACKAGE__->show_skeleton_message(\$me, \\\@_, ".
     "__PACKAGE__, '$project->{'logo'}');
 }
 ";
@@ -358,7 +358,7 @@ ${indent}__PACKAGE__->show_skeleton_message(\$me, \\\@ARG, ".
 }
 
 sub perl_preamble {
-    my ($class, $package, $project, $proto, $name) = @ARG;
+    my ($class, $package, $project, $proto, $name) = @_;
     my $localtime = localtime;
     return 
 "#==============================================================================
@@ -390,9 +390,9 @@ $project->{'copying'} $project->{'author'}
 }
 
 sub perl_LIBGLADE_header {
-    my ($class, $project, $proto, $name, $permitted_stubs) = @ARG;
+    my ($class, $project, $proto, $name, $permitted_stubs) = @_;
     my $me = "$class->perl_LIBGLADE_Header";
-#use Data::Dumper; print Dumper(\@ARG); exit
+#use Data::Dumper; print Dumper(\@_;); exit
     my ($module, $super);
     my $about_string = $class->perl_about($project, $name);
     my $init_string = '';
@@ -459,7 +459,7 @@ ${indent}return \$self;
 }
 
 sub run {
-${indent}my (\$class) = \@ARG;
+${indent}my (\$class) = \@_;
 $init_string
 ${indent}my \$window = \$class->new;
 ${indent}\$window->signal_autoconnect_from_package('Libglade_$name');
@@ -473,7 +473,7 @@ ${indent}return \$window;
 $about_string
 
 sub destroy_Form {
-${indent}my (\$class, \$data, \$object, \$instance) = \@ARG;
+${indent}my (\$class, \$data, \$object, \$instance) = \@_;
 #${indent}__PACKAGE__->destroy_all_forms(\$__PACKAGE__::all_forms); 
 ${indent}Gtk->main_quit; 
 }
@@ -485,9 +485,9 @@ sub toplevel_destroy                { shift->get_toplevel->destroy      }
 }
 
 sub perl_SUBCLASS_header {
-    my ($class, $project, $proto, $name, $permitted_stubs) = @ARG;
+    my ($class, $project, $proto, $name, $permitted_stubs) = @_;
     my $me = "$class->perl_UI_Header";
-#use Data::Dumper; print Dumper(\@ARG); exit
+#use Data::Dumper; print Dumper(\@_;); exit
     my ($module, $super);
     my $about_string = $class->perl_about($project, $name);
     my $init_string = '';
@@ -553,7 +553,7 @@ ${indent}return \$self;
 }
 
 sub run {
-${indent}my (\$class) = \@ARG;
+${indent}my (\$class) = \@_;
 $init_string
 ${indent}my \$window = \$class->new;
 ${indent}# Insert your subclass user data key/value pairs 
@@ -574,7 +574,7 @@ ${indent}return \$window;
 $about_string
 
 sub destroy_Form {
-${indent}my (\$class, \$data, \$object, \$instance) = \@ARG;
+${indent}my (\$class, \$data, \$object, \$instance) = \@_;
 #${indent}__PACKAGE__->destroy_all_forms(\$__PACKAGE__::all_forms); 
 ${indent}Gtk->main_quit; 
 }
@@ -586,7 +586,7 @@ sub toplevel_destroy                { shift->get_toplevel->destroy      }
 }
 
 sub perl_UI_AUTOLOAD_header {
-    my ($class, $project, $proto, $name, $permitted_stubs) = @ARG;
+    my ($class, $project, $proto, $name, $permitted_stubs) = @_;
     my $me = "$class->perl_UI_Header";
     my $module;
     my $init_string = '';
@@ -659,7 +659,7 @@ ${indent}} elsif (exists \$stubs{\$name} ) {
 ${indent}${indent}# This shows dynamic signal handler stub message_box - see \%stubs above
 ${indent}${indent}__PACKAGE__->show_skeleton_message(
 ${indent}${indent}${indent}\$AUTOLOAD.\"\\n (AUTOLOADED by \".__PACKAGE__.\")\", 
-${indent}${indent}${indent}\[\$self, \@ARG], 
+${indent}${indent}${indent}\[\$self, \@_], 
 ${indent}${indent}${indent}__PACKAGE__, 
 ${indent}${indent}${indent}'pixmaps/Logo.xpm');
 ${indent}${indent}
@@ -670,7 +670,7 @@ ${indent}}
 }
 
 sub run {
-${indent}my (\$class) = \@ARG;
+${indent}my (\$class) = \@_;
 $init_string
 ${indent}my \$window = \$class->new;
 ${indent}\$window->TOPLEVEL->show;
@@ -694,23 +694,23 @@ ${indent}while (defined \$__PACKAGE__::all_forms->{\"$name-\$instance\"}) {\$ins
 }
 
 sub perl_new_window {
-my ($class, $name) = @ARG;
+my ($class, $name) = @_;
 my $me = "$class->perl_form";
 return "
 sub new_${name}_Window {
 #
 # This sub will create the UI window $name
-${indent}my (\$class) = \@ARG;
+${indent}my (\$class) = \@_;
 
 ";
 }
 
 sub perl_about {
-    my ($class, $project, $name) = @ARG;
+    my ($class, $project, $name) = @_;
     if ($main::Glade_Perl_Generate_options->{'allow_gnome'}) {
         return
 "sub about_Form {
-${indent}my (\$class) = \@ARG;
+${indent}my (\$class) = \@_;
 ${indent}my \$gtkversion = 
 ${indent}${indent}Gtk->major_version.\".\".
 ${indent}${indent}Gtk->minor_version.\".\".
@@ -741,7 +741,7 @@ ${indent}\$ab->show;
     } else {
        return
 "sub about_Form {
-${indent}my (\$class) = \@ARG;
+${indent}my (\$class) = \@_;
 ${indent}my \$gtkversion = 
 ${indent}${indent}Gtk->major_version.\".\".
 ${indent}${indent}Gtk->minor_version.\".\".
@@ -761,7 +761,7 @@ ${indent}${indent}'$project->{'logo'}', 'left' );
 }
 
 sub perl_UI_AUTOLOAD_new_bottom {
-    my ($class, $project, $name) = @ARG;
+    my ($class, $project, $name) = @_;
     my $about_string = $class->perl_about($project, $name);
     return "
 
@@ -783,7 +783,7 @@ ${indent}return \$self;
 $about_string
 
 sub destroy_Form {
-#${indent}my (\$class, \$data, \$object, \$form_name) = \@ARG;
+#${indent}my (\$class, \$data, \$object, \$form_name) = \@_;
 #${indent}__PACKAGE__->destroy_all_forms(\$__PACKAGE__::all_forms); 
 ${indent}Gtk->main_quit; 
 }
@@ -792,7 +792,7 @@ ${indent}Gtk->main_quit;
 }
 
 sub perl_UI_Closure_header {
-    my ($class, $project, $proto, $name, $permitted_stubs) = @ARG;
+    my ($class, $project, $proto, $name, $permitted_stubs) = @_;
     my $me = "$class->perl_UI_Header";
     my $module;
     my $init_string = '';
@@ -865,7 +865,7 @@ ${indent}} elsif (exists \$stubs{\$name} ) {
 ${indent}${indent}# This shows dynamic signal handler stub message_box - see \%stubs above
 ${indent}${indent}__PACKAGE__->show_skeleton_message(
 ${indent}${indent}${indent}\$AUTOLOAD.\"\\n (AUTOLOADED by \".__PACKAGE__.\")\", 
-${indent}${indent}${indent}\[\$self, \@ARG], 
+${indent}${indent}${indent}\[\$self, \@_], 
 ${indent}${indent}${indent}__PACKAGE__, 
 ${indent}${indent}${indent}'pixmaps/Logo.xpm');
 ${indent}${indent}
@@ -876,7 +876,7 @@ ${indent}}
 }
 
 sub run {
-${indent}my (\$class) = \@ARG;
+${indent}my (\$class) = \@_;
 $init_string
 ${indent}my \$window = \$class->new;
 ${indent}\$window->TOPLEVEL->show;
@@ -900,12 +900,12 @@ ${indent}while (defined \$__PACKAGE__::all_forms->{\"$name-\$instance\"}) {\$ins
 }
 
 sub perl_UI_Closure_new_bottom {
-    my ($class, $project, $name) = @ARG;
+    my ($class, $project, $name) = @_;
     my $about_string;
     if ($main::Glade_Perl_Generate_options->{'allow_gnome'}) {
         $about_string = 
 "sub about_Form {
-${indent}my (\$class) = \@ARG;
+${indent}my (\$class) = \@_;
 ${indent}my \$gtkversion = 
 ${indent}${indent}Gtk->major_version.\".\".
 ${indent}${indent}Gtk->minor_version.\".\".
@@ -936,7 +936,7 @@ ${indent}\$ab->show;
     } else {
        $about_string = 
 "sub about_Form {
-${indent}my (\$class) = \@ARG;
+${indent}my (\$class) = \@_;
 ${indent}my \$gtkversion = 
 ${indent}${indent}Gtk->major_version.\".\".
 ${indent}${indent}Gtk->minor_version.\".\".
@@ -974,7 +974,7 @@ ${indent}return \$self;
 $about_string
 
 sub destroy_Form {
-#${indent}my (\$class, \$data, \$object, \$form_name) = \@ARG;
+#${indent}my (\$class, \$data, \$object, \$form_name) = \@_;
 #${indent}__PACKAGE__->destroy_all_forms(\$__PACKAGE__::all_forms); 
 ${indent}Gtk->main_quit; 
 }
@@ -983,7 +983,7 @@ ${indent}Gtk->main_quit;
 }
 
 sub perl_UI_footer {
-    my ($class, $project, $name, $first_form) = @ARG;
+    my ($class, $project, $name, $first_form) = @_;
 return 
 "1;
 

@@ -31,7 +31,7 @@ BEGIN {
                             $VERSION
                        );
     $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.44);
+    $VERSION        = q(0.46);
     # Tell interpreter who we are inheriting from
     @ISA            = qw( 
                             Glade::PerlXML 
@@ -143,7 +143,7 @@ sub diagnostics {
 }
 
 sub diag_print {
-    my ($class, $level, $message, $desc, $pad) = @ARG;
+    my ($class, $level, $message, $desc, $pad) = @_;
     my $options = $main::Glade_Perl_Generate_options;
 #    if ($options->{'debug'}) {$level = 12;}
     my ($key, $val, $ref);
@@ -212,26 +212,38 @@ sub diag_print {
 #=========== Project utilities                                      ============
 #===============================================================================
 sub get_versions {
-    my ($class, $options) = @ARG;
-    if ($options->my_perl_gtk &&
-            ($options->my_perl_gtk > $Gtk::VERSION)) {
-        $class->diag_print (2, 
-            $options->indent."- Gtk-Perl reported version $Gtk::VERSION".
-            " but user overrode with version ".$options->my_perl_gtk);
+    my ($class, $options) = @_;
+    # We use the CPAN release date (or CVS date) for version checking
+    my $cpan_date = $Glade::PerlUI::perl_gtk_depends->{$Gtk::VERSION};
+    # If we don't recognise the version number we use the latest CVS 
+    # version that was available at our release date
+    $cpan_date ||= $Glade::PerlUI::perl_gtk_depends->{'LATEST_CVS'};
+    # If we have a version number rather than CVS date we look it up again
+    $cpan_date = $Glade::PerlUI::perl_gtk_depends->{$cpan_date}
+        if ($cpan_date < 19000000);
+#    $options->my_perl_gtk($cpan_date);# if $options->my_perl_gtk < 10000;
+    if ($options->my_perl_gtk && ($options->my_perl_gtk > $cpan_date)) {
+        $options->diag_print (2, 
+            $options->indent."- Gtk-Perl reported version $Gtk::VERSION ".
+            "(CVS $cpan_date) but user overrode with version ".
+            $options->my_perl_gtk);
+#        $options->my_perl_gtk($cpan_date);
+
     } else {
-        $options->my_perl_gtk($Gtk::VERSION);
-        $class->diag_print (2, 
-            $options->indent."- Gtk-Perl reported version $Gtk::VERSION");
+        $options->my_perl_gtk($cpan_date);
+        $options->diag_print (2, 
+            $options->indent."- Gtk-Perl reported version $Gtk::VERSION ".
+            "(CVS $cpan_date)");
     }
     unless ($class->my_perl_gtk_can_do('MINIMUM REQUIREMENTS')) {
         die "You need to upgrade your Gtk-Perl";
     }
+
     if ($options->allow_gnome) {
         my $gnome_libs_version = `gnome-config --version`;
         chomp $gnome_libs_version;
         $gnome_libs_version =~ s/gnome-libs //;
-        if ($options->my_gnome_libs &&
-                ($options->my_gnome_libs gt $gnome_libs_version)) {
+        if ($options->my_gnome_libs && ($options->my_gnome_libs gt $gnome_libs_version)) {
             $class->diag_print (2, 
                 $options->indent."- gnome_libs reported version $gnome_libs_version".
                 " but user overrode with version ".$options->my_gnome_libs);
@@ -240,22 +252,22 @@ sub get_versions {
             $class->diag_print (2, 
                 $options->indent."- gnome_libs reported version $gnome_libs_version");
         }
+#        unless (Gnome::Stock->can('button')) {
         unless ($class->my_gnome_libs_can_do('MINIMUM REQUIREMENTS')) {
             die "You need to upgrade your gnome-libs";
         }
     }
+    return $options;
 }
 
 sub merge_options {
-    my ($class, $filename, $base_options) = @ARG;
+    my ($class, $filename, $base_options) = @_;
     my $me = "$class->merge_options";
     my $options = $base_options;
     my ($file_options, $key);
     if ($filename && -f $filename) {
         # Override the defaults with values from the options file
-        $file_options = $class->Proto_from_File(
-             $filename, '  ', '');
-#             $filename, ' project file helper source diag dist ', '');
+        $file_options = $class->Proto_from_File($filename, '  ', '');
         foreach $key (keys %$file_options) {
             if ($file_options->{$key}) {
                 if ($file_options->{$key} eq 'True') {
@@ -272,7 +284,7 @@ sub merge_options {
 }
 
 sub save_options {
-    my ($class, $filename) = @ARG;
+    my ($class, $filename) = @_;
     my $me = __PACKAGE__."->save_options";
     my ($file_options, $key);
     my %project_options = %{$class};
@@ -313,7 +325,7 @@ sub save_options {
 }
 
 sub options {
-    my ($class, %params) = @ARG;
+    my ($class, %params) = @_;
     my $me = (ref $class || $class)."->options";
     my ($key, $first_time, $file);
     my $options;
@@ -396,7 +408,7 @@ sub options {
 }
 
 sub use_Glade_Project {
-    my ($class, $proto) = @ARG;
+    my ($class, $proto) = @_;
     my $me = "$class->use_Glade_Project";
     $class->diag_print(6, $proto->{'project'}, 'Input Proto project');
     my $options = $main::Glade_Perl_Generate_options;
@@ -407,6 +419,7 @@ sub use_Glade_Project {
     my $gnome_support = $proto->{'project'}{'gnome_support'};
     $options->allow_gnome($proto->{'project'}{'gnome_support'} eq 'True');
     $class->get_versions($options);
+#    $options = $class->get_versions($options;
     # Glade assumes that all directories are named relative to the Glade 
     # project (.glade) file (not <directory>) !
     my $glade_file_dirname = dirname($proto->{'glade_filename'});

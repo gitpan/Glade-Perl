@@ -39,7 +39,7 @@ BEGIN {
         $missing_widgets
         );
     $PACKAGE =          __PACKAGE__;
-    $VERSION        = q(0.44);
+    $VERSION        = q(0.46);
 
     $ignored_widgets = 0;
     $missing_widgets = 0;
@@ -111,8 +111,18 @@ $gnome_libs_depends     = {
     'GnomeDruidPageStart'   => '1.0.50',
     };
 $perl_gtk_depends       = { 
-    'MINIMUM REQUIREMENTS' => '0.6123',
+    '0.6123'                => '19990818',
+    '0.7000'                => '20000102',
+    '0.7001'                => '920000102',
+#    'MINIMUM REQUIREMENTS'  => '0.7000',
+    'MINIMUM REQUIREMENTS'  => '0.6123',
+    'LATEST_CPAN'           => '0.7000',
+    'LATEST_CVS'            => '20000102',
     # Those below don't work yet even in the latest CVS version
+
+    # Those below work in the CPAN version after 0.7000 (CVS after 20000102)
+    'Gtk::Packer->expand'=> '0.7000',
+    # Those below work in the CVS version after 19991107
     'GnomeDruidPageStandard::vbox'
                         => '19991107',
     # Those below work in the CVS version after 19991025
@@ -178,40 +188,55 @@ my $toplevel_widgets    = join(' ',
 #=========== Version utilities                                      ============
 #===============================================================================
 sub my_perl_gtk_can_do {
-    my ($class, $action) = @ARG;
-    unless ($perl_gtk_depends->{$action}) { return 1;}
-    if ($perl_gtk_depends->{$action} <= 
-        $main::Glade_Perl_Generate_options->my_perl_gtk) {
+    my ($class, $action) = @_;
+    unless ($perl_gtk_depends->{$action}) { 
+        # There is no required version for $action
         return 1;
+    }
+    my ($cpan, $cvs);
+    my $options = $main::Glade_Perl_Generate_options;
+    my $check = $action;
+    $check = $perl_gtk_depends->{$action};
+    $check = $perl_gtk_depends->{$check} if $perl_gtk_depends->{$check};
+
+    if ($check <= $options->my_perl_gtk) {
+        # We can do required $action in our version
+        return 1;
+
     } else {
-        if ($perl_gtk_depends->{$action} >= 19990914) {
+        $cpan = $perl_gtk_depends->{'LATEST_CPAN'};
+        $cpan = $perl_gtk_depends->{$cpan} if $perl_gtk_depends->{$cpan};
+        if ($check > $cpan) {
             # We need a CVS version
-            if ($perl_gtk_depends->{$action} > 29990000) {
+            if ($check > $perl_gtk_depends->{'LATEST_CVS'}) {
                 # The CVS version can't even do it yet
-                $class->diag_print(1, "warn  Gtk-Perl version ".
-                    $main::Glade_Perl_Generate_options->my_perl_gtk.
+                $class->diag_print(1, "warn  Gtk-Perl dated ".
+                    $options->my_perl_gtk.
                     " cannot do '$action' (properly) and neither can".
                     " the CVS version !!!");
+                    
             } else {
                 # We need a new CVS version
-                $class->diag_print(1, "warn  Gtk-Perl version ".
-                    $main::Glade_Perl_Generate_options->my_perl_gtk.
+                $class->diag_print(1, "warn  Gtk-Perl dated ".
+                    $options->my_perl_gtk.
                     " cannot do '$action' (properly) we need".
-                    " CVS module 'gnome-perl' after $perl_gtk_depends->{$action}");
+                    " CVS module 'gnome-perl' after $check");
             }
+
         } else {
             # We need a new CPAN version
             $class->diag_print(1, "warn  Gtk-Perl version ".
-                $main::Glade_Perl_Generate_options->my_perl_gtk.
+                $options->my_perl_gtk.
                 " cannot do '$action' (properly) we need".
-                " CPAN version $perl_gtk_depends->{$action}");
+                " CPAN version $perl_gtk_depends->{$action}".
+                " or CVS module 'gnome-perl' after $check");
         }
         return undef;
     }
 }
 
 sub my_gnome_libs_can_do {
-    my ($class, $action) = @ARG;
+    my ($class, $action) = @_;
     unless ($gnome_libs_depends->{$action}) { return 1;}
     if ($gnome_libs_depends->{$action} le 
         $main::Glade_Perl_Generate_options->my_gnome_libs) {
@@ -247,7 +272,7 @@ sub my_gnome_libs_can_do {
 #=========== Utilities to construct UI                              ============
 #===============================================================================
 sub use_par {
-    my ($class, $proto, $key, $request, $default, $dont_undef) = @ARG;
+    my ($class, $proto, $key, $request, $default, $dont_undef) = @_;
     my $me = "$class->use_par";
     my $options = $main::Glade_Perl_Generate_options;
     my $type;
@@ -389,7 +414,7 @@ sub use_par {
 }
 
 sub Widget_from_Proto {
-    my ($class, $parentname, $proto, $depth, $app) = @ARG;
+    my ($class, $parentname, $proto, $depth, $app) = @_;
     my $me = "$class->Widget_from_Proto";
     my $typekey = $class->typeKey;
     my ($name, $childname, $constructor, $window, $sig );
@@ -531,7 +556,7 @@ sub Widget_from_Proto {
 #=========== Utilities to build UI                                    ============
 #===============================================================================
 sub internal_pack_widget {
-    my ($class, $parentname, $childname, $proto, $depth) = @ARG;
+    my ($class, $parentname, $childname, $proto, $depth) = @_;
     my $me = "$class->internal_pack_widget";
     my $refpar;
     # When we add/pack/append we do it to ${current_form}->{$parentname} 
@@ -548,8 +573,8 @@ sub internal_pack_widget {
         # We are a window so don't have a parent to pack into
         $class->diag_print (4, "$indent- Constructing a component ".
             "(window/dialog) '$childname'");
-        $child_type = $widgets->{$childname}->type;
-        if (' toplevel dialog '=~ m/ $child_type /) {
+#        $child_type = $widgets->{$childname}->type;
+#        if (' toplevel dialog '=~ m/ $child_type /) {
             # Add a default delete_event signal connection
             $class->add_to_UI($depth,   
                 "${current_form}\{'tooltips'} = new Gtk::Tooltips;" );
@@ -557,10 +582,10 @@ sub internal_pack_widget {
                 "${current_form}\{'accelgroup'} = new Gtk::AccelGroup;" );
             $class->add_to_UI( $depth, 
                 "${current_form}\{'accelgroup'}->attach(\$widgets->{'$childname'} );" );
-        } else {
-            die "\nerror F$me   $indent- This is a $child_type type Window".
-                " - what should I do?";
-        }
+#        } else {
+#            die "\nerror F$me   $indent- This is a $child_type type Window".
+#                " - what should I do?";
+#        }
         $postpone_show = 1;
 
     } else {
@@ -700,7 +725,13 @@ sub internal_pack_widget {
             my $yfill   = $class->use_par($proto->{'child'}, 'yfill',  $BOOL,   'False', 'DONT_UNDEF');
             my $use_default = $class->use_par($proto->{'child'}, 'use_default',  $BOOL,'True', 'DONT_UNDEF');
             my $options = "";
-            $expand && ($options .= "'pack_expand', ");
+            if ($expand) {
+                if ($class->my_perl_gtk_can_do('Gtk::Packer->expand')) {
+                    $options .= "'expand', ";
+                } else {
+                    $options .= "'pack_expand', ";
+                }
+            }
             $xfill  && ($options .= "'fill_x', ");
             $yfill  && ($options .= "'fill_y', ");
             $options =~ s/, $//;
@@ -876,7 +907,7 @@ sub internal_pack_widget {
 }
 
 sub set_child_packing {
-    my ($class, $parentname, $childname, $proto, $depth) = @ARG;
+    my ($class, $parentname, $childname, $proto, $depth) = @_;
     my $me = "$class->set_child_packing";
     if ($proto->{'child'} && eval "${current_form}\{'$parentname'}->can("."
         'set_child_packing')") {
@@ -901,7 +932,7 @@ sub set_child_packing {
 }
 
 sub set_tooltip {
-    my ($class, $parentname, $proto, $depth) = @ARG;
+    my ($class, $parentname, $proto, $depth) = @_;
     my $me = "$class->set_tooltip";
     my $tooltip = $class->use_par($proto, 'tooltip', $DEFAULT, '');
     
@@ -920,7 +951,7 @@ sub set_tooltip {
 }
 
 sub set_container_properties {
-    my ($class, $parent, $name, $proto, $depth) = @ARG;
+    my ($class, $parent, $name, $proto, $depth) = @_;
     my $me = "$class->set_container_properties";
     if ($proto->{'border_width'}) {
         if (eval "$current_form\{'$name'}->can('border_width')") {
@@ -932,7 +963,7 @@ sub set_container_properties {
 }
 
 sub set_range_properties {
-    my ($class, $parent, $name, $proto, $depth) = @ARG;
+    my ($class, $parent, $name, $proto, $depth) = @_;
     my $me = "$class->set_range_properties";
 # FIXME - call this from range type widgets
 # For use by HScale, VScale, HScrollbar, VScrollbar
@@ -950,7 +981,7 @@ sub set_range_properties {
 }
 
 sub set_misc_properties {
-    my ($class, $parent, $name, $proto, $depth) = @ARG;
+    my ($class, $parent, $name, $proto, $depth) = @_;
     my $me = "$class->set_alignment";
     # For use by Arrow, Image, Label, (TipsQuery), Pixmap
 #    $class->diag_print(8, "Setting misc properties for '$name'");
@@ -972,7 +1003,7 @@ sub set_misc_properties {
 }
 
 sub set_widget_properties {
-    my ($class, $parent, $name, $proto, $depth) = @ARG;
+    my ($class, $parent, $name, $proto, $depth) = @_;
     my $me = "$class->set_widget_properties";
     # For use by all widgets
     # Cater for all the usual properties (defaults not stored in XML file)
@@ -1022,7 +1053,7 @@ sub set_widget_properties {
 }
 
 sub set_window_properties {
-    my ($class, $parent, $name, $proto, $depth) = @ARG;
+    my ($class, $parent, $name, $proto, $depth) = @_;
     my $me = "$class->set_window_properties";
 # For use by Window, (ColorSelectionDialog, Dialog (InputDialog), FileSelection)
     my $title        = $class->use_par($proto,'title',        $DEFAULT, '' );
@@ -1035,10 +1066,29 @@ sub set_window_properties {
     my $wmclass_class = $class->use_par($proto, 'wmclass_class', $DEFAULT, '' );
 
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->position('$position' );" );
-    $class->add_to_UI( $depth, "\$widgets->{'$name'}->allow_grow('$allow_grow' );" );
-    $class->add_to_UI( $depth, "\$widgets->{'$name'}->allow_shrink('$allow_shrink' );" );
-    $class->add_to_UI( $depth, "\$widgets->{'$name'}->auto_shrink('$auto_shrink' );" );
+    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_policy(".
+        "'$allow_shrink', '$allow_grow', '$auto_shrink' );" );
+#    $class->add_to_UI( $depth, "\$widgets->{'$name'}->allow_shrink('$allow_shrink' );" );
+#    $class->add_to_UI( $depth, "\$widgets->{'$name'}->allow_grow('$allow_grow' );" );
+#    $class->add_to_UI( $depth, "\$widgets->{'$name'}->auto_shrink('$auto_shrink' );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_modal('$modal' );" );
+    if ( (defined $proto->{'width'}) || (defined $proto->{'height'}) ) {
+        my $width  = $class->use_par($proto, 'width',  $DEFAULT, 0 );
+        my $height = $class->use_par($proto, 'height', $DEFAULT, 0 );
+        $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_usize(".
+            "'$width', '$height' );" );
+#        $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_default_size(".
+#            "'$width', '$height' );" );
+    }
+    if ( (defined $proto->{'x'}) || (defined $proto->{'y'}) ) {
+        my $x = $class->use_par($proto, 'x',  $DEFAULT, 0 );
+        my $y = $class->use_par($proto, 'y',  $DEFAULT, 0 );
+        $class->diag_print(1, "warn  Toplevel window uposition has been set ".
+            "but breaks the window manager's placement policy, and is almost "."
+            certainly a bad idea. (Havoc Pennington)");
+        $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_uposition(".
+            "'$x', '$y' );" );
+    }
     if ($wmclass_name && $wmclass_class) {
         $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_wmclass(".
             "'$wmclass_name', '$wmclass_class' );" );
@@ -1047,19 +1097,12 @@ sub set_window_properties {
 
 	$widgets->{$name}->signal_connect("destroy" => \&Gtk::main_quit);
 	$widgets->{$name}->signal_connect("delete_event" => \&Gtk::main_exit);
-# FIXME we don't want to shut the app when someone closes a dialog with the wm
-# What is the right thing to do for every window - perhaps nothing and let the
-# user do it themselves.
-#    $class->add_to_UI( $depth, "\$widgets->{'$name'}->signal_connect(".
-#        "'destroy', \\\&Gtk::main_quit );" );
-#    $class->add_to_UI( $depth, "\$widgets->{'$name'}->signal_connect(".
-#        "'delete_event', \\\&Gtk::exit );" );
 
     $class->pack_widget($parent, $name, $proto, $depth );
 }
 
 sub pack_widget {
-    my ($class, $parent, $name, $proto, $depth) = @ARG;
+    my ($class, $parent, $name, $proto, $depth) = @_;
     my $me = "$class->pack_widget";
 
     $class->internal_pack_widget($parent, $name, $proto, $depth );
@@ -1069,7 +1112,7 @@ sub pack_widget {
 }
 
 sub new_accelerator {
-    my ($class, $parentname, $proto, $depth) = @ARG;
+    my ($class, $parentname, $proto, $depth) = @_;
     my $me = "$class->new_accelerator";
 #$class->diag_print(2, $proto);
     my $mods = '[]';
@@ -1109,7 +1152,7 @@ sub new_accelerator {
 }
 
 sub new_style {
-    my ($class, $parentname, $proto, $depth) = @ARG;
+    my ($class, $parentname, $proto, $depth) = @_;
     my $me = "$class->new_style";
 #    $class->diag_print(2, $proto);
     my ($state, $color, $value, $element, $lc_state);
@@ -1172,7 +1215,7 @@ sub new_style {
 }
 
 sub new_signal {
-    my ($class, $parentname, $proto, $depth) = @ARG;
+    my ($class, $parentname, $proto, $depth) = @_;
     my $me = "$class->new_signal";
     my $signal  = $proto->{'name'};
     my ($call, $expr);
@@ -1254,7 +1297,7 @@ sub new_signal {
 }
 
 sub new_from_child_name {
-    my ($class, $parent, $name, $proto, $depth) = @ARG;
+    my ($class, $parent, $name, $proto, $depth) = @_;
     return undef unless $proto->{'child_name'};
 
     my $type = $class->use_par($proto, 'child_name' );

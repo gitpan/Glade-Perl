@@ -32,7 +32,7 @@ BEGIN {
                             $gtk_enums
                           );
     $PACKAGE =          __PACKAGE__;
-    $VERSION        = q(0.44);
+    $VERSION        = q(0.46);
     @VARS           = qw( 
                             $VERSION
                             $AUTHOR
@@ -66,7 +66,7 @@ $Notebook_tab    = 0;
 #=========== Gtk widget constructors                                ============
 #===============================================================================
 sub new_GtkAccelGroup {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkAccelGroup";
     my $name = $proto->{'name'};
 
@@ -77,7 +77,7 @@ sub new_GtkAccelGroup {
 }
 
 sub new_GtkAccelLabel {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkAccelLabel";
     my $name = $proto->{'name'};
     my $label   = $class->use_par($proto,'label',   $DEFAULT,    ''     );
@@ -127,7 +127,7 @@ sub new_GtkAccelLabel {
 }
 
 sub new_GtkAdjustment {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkAdjustment";
     my $name = $proto->{'name'};
 # These are Range
@@ -147,7 +147,7 @@ sub new_GtkAdjustment {
 }
 
 sub new_GtkAlignment {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkAlignment";
     my $name = $proto->{'name'};
     my $xalign    = $class->use_par($proto, 'xalign',    $DEFAULT,    0.5 );
@@ -163,7 +163,7 @@ sub new_GtkAlignment {
 }
 
 sub new_GtkArrow {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkArrow";
     my $name = $proto->{'name'};
     my $arrow_type  = $class->use_par($proto, 'arrow_type',  $LOOKUP,    'right' );
@@ -178,7 +178,7 @@ sub new_GtkArrow {
 }
 
 sub new_GtkAspectFrame {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkAspectFrame";
     my $name = $proto->{'name'};
     my $label        = $class->use_par($proto, 'label',        $DEFAULT,    ''     );
@@ -202,7 +202,7 @@ sub new_GtkAspectFrame {
 }
 
 sub new_GtkButton {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkButton";
     my $name = $proto->{'name'};
 # FIXME - toolbar buttons with a removed label don't have a child_name
@@ -251,7 +251,7 @@ sub new_GtkButton {
 }
 
 sub new_GtkCalendar {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkCalendar";
     my $name = $proto->{'name'};
     my @options;
@@ -286,7 +286,7 @@ sub new_GtkCalendar {
 }
 
 sub new_GtkCheckButton {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkCheckButton";
     my $name = $proto->{'name'};
     my $label   = $class->use_par($proto, 'label',  $DEFAULT, '' );
@@ -303,7 +303,7 @@ sub new_GtkCheckButton {
 }
 
 sub new_GtkCheckMenuItem {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkCheckMenuItem";
     my $name = $proto->{'name'};
     my $label  = $class->use_par($proto, 'label',  $DEFAULT, '' );
@@ -323,7 +323,7 @@ sub new_GtkCheckMenuItem {
 
 
 sub new_GtkCList {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkCList";
     my $name = $proto->{'name'};
     my $columns        = $class->use_par($proto, 'columns' );
@@ -355,7 +355,7 @@ sub new_GtkCList {
 }
 
 sub new_GtkCTree {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkCTree";
     my $name = $proto->{'name'};
     my $columns        = $class->use_par($proto, 'columns' );
@@ -386,7 +386,7 @@ sub new_GtkCTree {
 }
 
 sub new_GtkColorSelection {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkColorSelection";
     my $name = $proto->{'name'};
     my $policy  = $class->use_par($proto,'policy',  $LOOKUP, );
@@ -400,7 +400,7 @@ sub new_GtkColorSelection {
 }
 
 sub new_GtkColorSelectionDialog {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkColorSelectionDialog";
     my $name = $proto->{'name'};
     my $title  = $class->use_par($proto,'title',  $DEFAULT, 'File Selection' );
@@ -421,7 +421,7 @@ sub new_GtkColorSelectionDialog {
 }
 
 sub new_GtkCombo {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkCombo";
     my $name = $proto->{'name'};
     my $case_sensitive = $class->use_par($proto, 'case_sensitive', $BOOL,   'False' );
@@ -461,7 +461,7 @@ sub new_GtkCombo {
 }
 
 sub new_GtkCurve {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkCurve";
     my $name = $proto->{'name'};
     my $min_x      = $class->use_par($proto, 'min_x',      $DEFAULT,    0 );
@@ -478,7 +478,7 @@ sub new_GtkCurve {
 }
 
 sub new_GtkDialog {
-    my ($class, $parent, $proto, $depth, $mainmenu) = @ARG;
+    my ($class, $parent, $proto, $depth, $mainmenu) = @_;
     my $me = "$class->new_GtkDialog";
     my $name = $proto->{'name'};
     my $title        = $class->use_par($proto, 'title',        $DEFAULT, 'UTIL' );
@@ -491,7 +491,7 @@ sub new_GtkDialog {
 }
 
 sub new_GtkDrawingArea {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkDrawingArea";
     my $name = $proto->{'name'};
 
@@ -501,7 +501,7 @@ sub new_GtkDrawingArea {
 }
 
 sub new_GtkEntry {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkEntry";
     my $name = $proto->{'name'};
     my $text         = $class->use_par($proto, 'text',            $DEFAULT, '' );
@@ -528,7 +528,7 @@ sub new_GtkEntry {
 }
 
 sub new_GtkEventBox {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkEventBox";
     my $name = $proto->{'name'};
     $class->add_to_UI( $depth, "\$widgets->{'$name'} = new Gtk::EventBox;" );
@@ -538,7 +538,7 @@ sub new_GtkEventBox {
 }
 
 sub new_GtkFileSelection {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkFileSelection";
     my $name = $proto->{'name'};
     my $title = $class->use_par($proto,'title', $DEFAULT, 'File Selection' );
@@ -555,7 +555,7 @@ sub new_GtkFileSelection {
 }
 
 sub new_GtkFixed {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkFixed";
     my $name = $proto->{'name'};
 
@@ -565,7 +565,7 @@ sub new_GtkFixed {
 }
 
 sub new_GtkFontSelection {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkFontSelection";
     my $name = $proto->{'name'};
 
@@ -575,7 +575,7 @@ sub new_GtkFontSelection {
 }
 
 sub new_GtkFontSelectionDialog {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkFontSelectionDialog";
     my $name = $proto->{'name'};
     my $title = $class->use_par($proto,'title', $DEFAULT, 'Font Selection' );
@@ -587,7 +587,7 @@ sub new_GtkFontSelectionDialog {
 }
 
 sub new_GtkFrame {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkFrame";
     my $name = $proto->{'name'};
     my $label        = $class->use_par($proto, 'label'    ,    $DEFAULT, '');
@@ -603,7 +603,7 @@ sub new_GtkFrame {
 }
 
 sub new_GtkGammaCurve {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkGammaCurve";
     my $name = $proto->{'name'};
     my $min_x      = $class->use_par($proto, 'min_x',        $DEFAULT,    0 );
@@ -623,7 +623,7 @@ sub new_GtkGammaCurve {
 
 
 sub new_GtkHandleBox {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkHandleBox";
     my $name = $proto->{'name'};
     my $handle_position = $class->use_par($proto, 'handle_position', $LOOKUP, 'left' );
@@ -643,7 +643,7 @@ sub new_GtkHandleBox {
 }
 
 sub new_GtkHBox {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkHBox";
     my $name = $proto->{'name'};
     my $homogeneous = $class->use_par($proto, 'homogeneous', $BOOL,    'False' );
@@ -660,7 +660,7 @@ sub new_GtkHBox {
 }
 
 sub new_GtkHButtonBox {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkHButtonBox";
     my $name = $proto->{'name'};
     my $layout_style    = $class->use_par($proto, 'layout_style',    $LOOKUP );
@@ -685,7 +685,7 @@ sub new_GtkHButtonBox {
 }
 
 sub new_GtkHPaned {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkHPaned";
     my $name = $proto->{'name'};
     my $handle_size = $class->use_par($proto, 'handle_size', $DEFAULT, 0 );
@@ -702,7 +702,7 @@ sub new_GtkHPaned {
 }
 
 sub new_GtkHRuler {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkHRuler";
     my $name = $proto->{'name'};
     my $lower    = $class->use_par($proto, 'lower',    $DEFAULT, 0 );
@@ -722,7 +722,7 @@ sub new_GtkHRuler {
 }
 
 sub new_GtkHScale {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkHScale";
     my $name = $proto->{'name'};
 # These are Range
@@ -758,7 +758,7 @@ sub new_GtkHScale {
 }
 
 sub new_GtkHScrollbar {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkHScrollbar";
     my $name = $proto->{'name'};
 # These are Range
@@ -785,7 +785,7 @@ sub new_GtkHScrollbar {
 }
 
 sub new_GtkHSeparator {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkHSeparatorDrawingArea";
     my $name = $proto->{'name'};
 
@@ -796,7 +796,7 @@ sub new_GtkHSeparator {
 }
 
 sub new_GtkImage {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkImage";
     my $name = $proto->{'name'};
     my $image_width  = $class->use_par($proto, 'image_width',  $DEFAULT, 100 );
@@ -815,7 +815,7 @@ sub new_GtkImage {
 }
 
 sub new_GtkInputDialog {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkHInputDialog";
     my $name = $proto->{'name'};
     my $title        = $class->use_par($proto, 'title',        $DEFAULT, 'UTIL' );
@@ -828,7 +828,7 @@ sub new_GtkInputDialog {
 }
 
 sub new_GtkLabel {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkLabel";
     my $name = $proto->{'name'};
     my $label   = $class->use_par($proto, 'label',   $DEFAULT, '' );
@@ -846,7 +846,7 @@ sub new_GtkLabel {
 }
 
 sub new_GtkLayout {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkLayout";
     my $name = $proto->{'name'};
     my $hstep = $class->use_par($proto, 'hstep', $DEFAULT, 10 );
@@ -874,7 +874,7 @@ sub new_GtkLayout {
 }
 
 sub new_GtkList {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkList";
     my $name = $proto->{'name'};
     my $selection_mode = $class->use_par($proto, 'selection_mode', $LOOKUP );
@@ -889,7 +889,7 @@ sub new_GtkList {
 }
 
 sub new_GtkMenu {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkMenu";
     my $name = $proto->{'name'};
 
@@ -900,7 +900,7 @@ sub new_GtkMenu {
 }
 
 sub new_GtkMenuBar {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkMenuBar";
     my $name = $proto->{'name'};
     my $shadow_type = $class->use_par($proto, 'shadow_type', $LOOKUP );
@@ -915,7 +915,7 @@ sub new_GtkMenuBar {
 }
 
 sub new_GtkMenuFactory {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkMenuFactory";
     my $name = $proto->{'name'};
 
@@ -926,7 +926,7 @@ sub new_GtkMenuFactory {
 }
 
 sub new_GtkMenuItem {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkMenuItem";
     my $name = $proto->{'name'};
     my $label = $class->use_par($proto, 'label', $DEFAULT, '' );
@@ -987,7 +987,7 @@ sub new_GtkMenuItem {
 }
 
 sub new_GtkNotebook {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkNotebook";
     my $name = $proto->{'name'};
     my $tab_pos     = $class->use_par($proto, 'tab_pos'    , $LOOKUP, 'top' );
@@ -1020,7 +1020,7 @@ sub new_GtkNotebook {
 }
 
 sub new_GtkObject {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkObject";
     my $name = $proto->{'name'};
 
@@ -1031,7 +1031,7 @@ sub new_GtkObject {
 }
 
 sub new_GtkOptionMenu {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkOptionMenu";
     my $name = $proto->{'name'};
     my $item;
@@ -1067,7 +1067,7 @@ sub new_GtkOptionMenu {
 }
 
 sub new_GtkPacker {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkPacker";
     my $name = $proto->{'name'};
     my $default_border_width = $class->use_par($proto, 'default_border_width', $DEFAULT, 0 );
@@ -1090,7 +1090,7 @@ sub new_GtkPacker {
 }
 
 sub new_GtkPixmap {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkPixmap";
     my $name = $proto->{'name'};
     my $filename = $class->use_par($proto, 'filename', $DEFAULT, '' );
@@ -1124,7 +1124,7 @@ sub new_GtkPixmap {
 }
 
 sub new_GtkPreview {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkPreview";
     my $name = $proto->{'name'};
     my $type;
@@ -1142,7 +1142,7 @@ sub new_GtkPreview {
 }
 
 sub new_GtkProgressBar {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkProgressBar";
     my $name = $proto->{'name'};
     my $bar_style     = $class->use_par($proto, 'bar_style',   $LOOKUP, 'continuous' );
@@ -1177,7 +1177,7 @@ sub new_GtkProgressBar {
 }
 
 sub new_GtkRadioButton {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkRadioButton";
     my $name = $proto->{'name'};
     my $label  = $class->use_par($proto, 'label'    ,  $DEFAULT, '' );
@@ -1208,7 +1208,7 @@ sub new_GtkRadioButton {
 }
 
 sub new_GtkRadioMenuItem {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkRadioMenuItem";
     my $name = $proto->{'name'};
     my $label  = $class->use_par($proto, 'label',  $DEFAULT, '' );
@@ -1245,7 +1245,7 @@ sub new_GtkRadioMenuItem {
 }
 
 sub new_GtkScrolledWindow {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkScrolledWindow";
     my $name = $proto->{'name'};
     my $hscrollbar_policy = $class->use_par($proto, 'hscrollbar_policy', $LOOKUP );
@@ -1270,7 +1270,7 @@ sub new_GtkScrolledWindow {
 }
 
 sub new_GtkSpinButton {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkSpinButton";
     my $name = $proto->{'name'};
     my $pre = '';
@@ -1310,7 +1310,7 @@ sub new_GtkSpinButton {
 }
 
 sub new_GtkStatusbar {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkStatusbar";
     my $name = $proto->{'name'};
 
@@ -1321,7 +1321,7 @@ sub new_GtkStatusbar {
 }
 
 sub new_GtkStyle {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkStyle";
     my $name = $proto->{'name'};
 
@@ -1332,7 +1332,7 @@ sub new_GtkStyle {
 }
 
 sub new_GtkTable {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkTable";
     my $name = $proto->{'name'};
     my $rows            = $class->use_par($proto, 'rows' );
@@ -1355,7 +1355,7 @@ sub new_GtkTable {
 }
 
 sub new_GtkText {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkText";
     my $name = $proto->{'name'};
     my $text      = $class->use_par($proto, 'text'    ,  $DEFAULT, '' );
@@ -1373,7 +1373,7 @@ sub new_GtkText {
 }
 
 sub new_GtkTipsQuery {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkTipsQuery";
     my $name = $proto->{'name'};
 
@@ -1385,7 +1385,7 @@ sub new_GtkTipsQuery {
 
 
 sub new_GtkToggleButton {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkToggleButton";
     my $name = $proto->{'name'};
     my $label        = $class->use_par($proto, 'label'    ,    $DEFAULT, '' );
@@ -1400,7 +1400,7 @@ sub new_GtkToggleButton {
 }
 
 sub new_GtkToolbar {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkTabbar";
     my $name = $proto->{'name'};
     my $orientation = $class->use_par($proto, 'orientation', $LOOKUP,  'horizontal' );
@@ -1428,7 +1428,7 @@ sub new_GtkToolbar {
 }
 
 sub new_GtkTree {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkTree";
     my $name = $proto->{'name'};
     my $selection_mode = $class->use_par($proto, 'selection_mode', $LOOKUP );
@@ -1448,7 +1448,7 @@ sub new_GtkTree {
 }
 
 sub new_GtkVBox {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkVBox";
     my $name = $proto->{'name'};
     my $homogeneous  = $class->use_par($proto, 'homogeneous',  $BOOL,   'False' );
@@ -1464,7 +1464,7 @@ sub new_GtkVBox {
 }
 
 sub new_GtkVButtonBox {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkVButtonBox";
     my $name = $proto->{'name'};
     my $layout_style     = $class->use_par($proto, 'layout_style',     $LOOKUP );
@@ -1489,7 +1489,7 @@ sub new_GtkVButtonBox {
 }
 
 sub new_GtkViewport {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkViewport";
     my $name = $proto->{'name'};
     my $shadow_type  = $class->use_par($proto, 'shadow_type',  $LOOKUP, '' );
@@ -1507,7 +1507,7 @@ sub new_GtkViewport {
 
 
 sub new_GtkVPaned {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkVPaned";
     my $name = $proto->{'name'};
     my $handle_size = $class->use_par($proto, 'handle_size', $DEFAULT, 0 );
@@ -1524,7 +1524,7 @@ sub new_GtkVPaned {
 }
 
 sub new_GtkVRuler {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkVRuler";
     my $name = $proto->{'name'};
     my $lower    = $class->use_par($proto, 'lower',      $DEFAULT, 0 );
@@ -1545,7 +1545,7 @@ sub new_GtkVRuler {
 }
 
 sub new_GtkVScale {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkVScale";
     my $name = $proto->{'name'};
     my $pre = '';
@@ -1581,7 +1581,7 @@ sub new_GtkVScale {
 }
 
 sub new_GtkVScrollbar {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkVScrollbar";
     my $name = $proto->{'name'};
     my $pre = '';
@@ -1607,7 +1607,7 @@ sub new_GtkVScrollbar {
 }
 
 sub new_GtkVSeparator {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_VSeparator";
     my $name = $proto->{'name'};
 
@@ -1618,7 +1618,7 @@ sub new_GtkVSeparator {
 }
 
 sub new_GtkWindow {
-    my ($class, $parent, $proto, $depth, $mainmenu) = @ARG;
+    my ($class, $parent, $proto, $depth, $mainmenu) = @_;
     my $me = "$class->new_GtkWindow";
     my $name = $proto->{'name'};
     my $title        = $class->use_par($proto, 'title',        $DEFAULT, 'UTIL' );

@@ -1,10 +1,34 @@
 Revision history for Perl module Glade::PerlGenerate development branch.
+Tue Jan  4 03:38:01 GMT 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
+  - Version 0.46
+  - Added check for Gnome::Stock if allow_gnome is set
+  - PerlUI->get_versions() now caters for CPAN versions interspersed with CVS
+    dates so that versioning works correctly.
+  - PerlUI->internal_pack_widget() will generate 'pack_expand' for Gtk-Perl
+    versions before CPAN 0.7000 (CVS 20000102) as before.
+      
+Thu Dec 30 00:55:33 GMT 1999 - Dermot Musgrove <dermot.musgrove@virgin.net>
+  - Version 0.45
+  - All uses of @ARG replaced by the short form @_ to allow perl 5.005 to 
+    work in all cases (was a problem for perl installations in $HOME)
+    Thanks to  Eric Richardson <eric@gospelcom.net> for this solution.
+  - PerlUI->set_window_properties changed to generate set_default_size()
+    instead of set_usize() following Havoc's comments on gtk-list. Also a 
+    new warning if a toplevel window x, y (uposition) are specified in 
+    Glade file.
+  - PerlUI->set_window_properties() changed to use set_policy instead of
+    allow_shrink(), allow_grow(), auto_shrink() setters.
+  - PerlRun->message_box() changed for same reasons.
+  - PerlUI->internal_pack_widget doesn't check the Gtk::Window->type() now
+  - PerlUI->internal_pack_widget changed for Gtk::Packer->add_defaults() to 
+    supply 'expand' and not 'pack_expand' as before.
+    
 Fri Dec 12 16:36:36 GMT 1999 - Dermot Musgrove <dermot.musgrove@virgin.net>
   - Version 0.44
   - PerlUI->internal_pack_widget() now doesn't warn about missing tooltips 
     for GtkLabel or GtkCombo in toolbars
-  - PerlSource->write_SUBCLASS() now creates skeleton signal handlers for every
-    missing handler in every form.
+  - PerlSource->write_SUBCLASS() now creates skeleton signal handlers for 
+    every missing handler in every form.
   - Some efficiency improvements
   - PerlSource skeleton signal handlers generated with extra argument $event.
   - PerlSource a new module is now generated to use libglade to construct the 

@@ -3,6 +3,8 @@ NEWS of Glade::PerlGenerate (GPG) Gtk-Perl-Glade UI builder and source generator
 
 NEW 'FEATURES'
 --------------
+version 0.45 Has fixes for Gtk-Perl-0.7000 and recent CVS (29 Dec 1999)
+
 version 0.44 Can generate a module that uses libglade to show the UI
 
 version 0.42 implements Gnome::Animator and makes change necessary for

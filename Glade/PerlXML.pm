@@ -77,7 +77,7 @@ sub XmlUtf8Encode {
 }
 
 sub Proto_from_File {
-    my ($class, $filename, $special, $repeated) = @ARG;
+    my ($class, $filename, $special, $repeated) = @_;
     my $me = "$class->Proto_from_File";
     my $tree = new XML::Parser(
         Style =>'Tree', ErrorContext => 2)->parsefile($filename );
@@ -86,7 +86,7 @@ sub Proto_from_File {
 }
 
 sub Proto_from_XML {
-    my ($class, $xml, $special, $repeated) = @ARG;
+    my ($class, $xml, $special, $repeated) = @_;
     my $me = "$class->Proto_from_XML";
     my $tree = new XML::Parser(Style =>'Tree', ErrorContext => 2)->parse($xml );
     return $class->Proto_from_XML_Parser_Tree($tree->[1], 
@@ -94,7 +94,7 @@ sub Proto_from_XML {
 }
 
 sub Proto_from_XML_Parser_Tree {
-    my ($class, $self, $depth, $special, $repeated) = @ARG;
+    my ($class, $self, $depth, $special, $repeated) = @_;
     my $me = "$class->Proto_from_XML_Parser_Tree";
     # Tree[0]      contains fileelement name
     # Tree[1]      contains fileelement contents
@@ -172,7 +172,7 @@ sub XML_from_Proto {
     #   XML::UTIL->XML_from_Proto($prefix, '  ', $tag, $protohashref);
     # This proc will compose XML from a proto hash in 
     #   Proto_from_XML's return format
-    my ($class, $prefix, $tab, $tag, $proto) = @ARG;
+    my ($class, $prefix, $tab, $tag, $proto) = @_;
 	my $me = "$class->XML_from_Proto";
 	my ($key, $val, $xml, $limit);
 	my $typekey = &typeKey;

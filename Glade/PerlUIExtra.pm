@@ -26,7 +26,7 @@ BEGIN {
                             $gnome_enums
                           );
     $PACKAGE =          __PACKAGE__;
-    $VERSION            = q(0.44);
+    $VERSION            = q(0.46);
     # These cannot be looked up in the include files
     $gnome_enums =      {
         'GNOME_ANIMATOR_LOOP_NONE'      => 'none',
@@ -41,7 +41,7 @@ BEGIN {
 #=========== Gnome widget constructors                              ============
 #===============================================================================
 sub new_GnomeAbout {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeAbout";
     my $name = $proto->{'name'};
     my $title     = $class->use_par($proto, 'title',     $DEFAULT, $project->{'name'} );
@@ -64,7 +64,7 @@ sub new_GnomeAbout {
 }
 
 sub new_GnomeAnimator {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeAnimator";
     my $name = $proto->{'name'};
     my $playback_direction = 
@@ -86,7 +86,7 @@ sub new_GnomeAnimator {
 }
 
 sub new_GnomeApp {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeApp";
     my $name = $proto->{'name'};
     my $appname   = $class->use_par($proto, 'title',  $DEFAULT,  $project->{'name'}  );
@@ -105,7 +105,7 @@ sub new_GnomeApp {
 }
 
 sub new_GnomeAppBar {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeAppBar";
     my $name = $proto->{'name'};
     my $has_progress  = $class->use_par($proto, 'has_progress',  $BOOL, 'True'  );
@@ -120,7 +120,7 @@ sub new_GnomeAppBar {
 }
 
 sub new_GnomeCalculator {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeCalculator";
     my $name = $proto->{'name'};
 
@@ -139,7 +139,7 @@ sub new_GnomeCalculator {
 }
 
 sub new_GnomeCanvas {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeCanvas";
     my $name = $proto->{'name'};
     my $pixels_per_unit = $class->use_par($proto, 'pixels_per_unit', $DEFAULT, 1 );
@@ -166,7 +166,7 @@ sub new_GnomeCanvas {
 }
 
 sub new_GnomeColorPicker {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeColorPicker";
     my $name = $proto->{'name'};
     my $dither    = $class->use_par($proto, 'dither',   $BOOL, 'True' );
@@ -187,7 +187,7 @@ sub new_GnomeColorPicker {
 }
 
 sub new_GnomeDateEdit {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeDateEdit";
     my $name = $proto->{'name'};
     my $show_time     = $class->use_par($proto, 'show_time', $BOOL, 'True' );
@@ -206,7 +206,7 @@ sub new_GnomeDateEdit {
 }
 
 sub new_GnomeDialog {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeDialog";
     my $name = $proto->{'name'};
     my $title         = $class->use_par($proto, 'title' );
@@ -225,7 +225,7 @@ sub new_GnomeDialog {
 }
 
 sub new_GnomeDock {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeDock";
     my $name = $proto->{'name'};
     my $allow_floating = $class->use_par($proto, 'allow_floating', $BOOL, 'True' );
@@ -245,7 +245,7 @@ sub new_GnomeDock {
 }
 
 sub new_GnomeDockItem {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeDockItem";
     my $name = $proto->{'name'};
     my $shadow_type      = $class->use_par($proto, 'shadow_type',      $LOOKUP, 'out'  );
@@ -281,7 +281,7 @@ sub new_GnomeDockItem {
 }
 
 sub new_GnomeDruid {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeDruid";
     my $name = $proto->{'name'};
 
@@ -292,7 +292,7 @@ sub new_GnomeDruid {
 }
 
 sub new_GnomeDruidPageStart {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeDruidPageStart";
     my ($type, $value, $command, $color_string, $red, $blue, $green);
     my $name = $proto->{'name'};
@@ -329,7 +329,7 @@ sub new_GnomeDruidPageStart {
 }
 
 sub new_GnomeDruidPageStandard {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeDruidPageStandard";
     my ($type, $value, $command, $color_string, $red, $blue, $green);
     my $name = $proto->{'name'};
@@ -364,7 +364,7 @@ sub new_GnomeDruidPageStandard {
 }
 
 sub new_GnomeDruidPageFinish {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeDruidPageFinish";
     my ($type, $value, $command, $color_string, $red, $blue, $green);
     my $name = $proto->{'name'};
@@ -401,7 +401,7 @@ sub new_GnomeDruidPageFinish {
 }
 
 sub new_GnomeEntry {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeEntry";
     my $name = $proto->{'name'};
     my $max_saved = $class->use_par($proto, 'max_saved', $DEFAULT, 10 );
@@ -414,7 +414,7 @@ sub new_GnomeEntry {
 }
 
 sub new_GnomeFileEntry {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeFileEntry";
     my $name = $proto->{'name'};
     my $history_id = $class->use_par($proto, 'history_id',  $DEFAULT, '' );
@@ -448,7 +448,7 @@ sub new_GnomeFileEntry {
 }
 
 sub new_GnomeFontPicker {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeFontPicker";
     my $name = $proto->{'name'};
     my $the_time  = localtime;
@@ -477,7 +477,7 @@ sub new_GnomeFontPicker {
 }
 
 sub new_GnomeHRef {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeHRef";
     my $name = $proto->{'name'};
     my $url = $class->use_par($proto, 'url', $DEFAULT, '' );
@@ -491,7 +491,7 @@ sub new_GnomeHRef {
 }
 
 sub new_GnomeIconEntry {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeIconEntry";
     my $name = $proto->{'name'};
     my $history_id = $class->use_par($proto, 'history_id',  $DEFAULT, '' );
@@ -508,7 +508,7 @@ sub new_GnomeIconEntry {
 }
 
 sub new_GnomeIconList {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeIconList";
     my $name = $proto->{'name'};
     my $text_editable  = $class->use_par($proto, 'text_editable', $BOOL, 'False' );
@@ -543,7 +543,7 @@ sub new_GnomeIconList {
 }
 
 sub new_GnomeIconSelection {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeIconSelection";
     my $name = $proto->{'name'};
 
@@ -555,7 +555,7 @@ sub new_GnomeIconSelection {
 
 
 sub new_GnomeLess {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeLess";
     my $name = $proto->{'name'};
 
@@ -566,7 +566,7 @@ sub new_GnomeLess {
 }
 
 sub new_GnomeMessageBox {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeMessageBox";
     my $name = $proto->{'name'};
     my $type    = $class->use_par($proto, 'type',    $LOOKUP );
@@ -587,7 +587,7 @@ sub new_GnomeMessageBox {
 }
 
 sub new_GnomeNumberEntry {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeNumberEntry";
     my $name = $proto->{'name'};
     my $history_id = $class->use_par($proto, 'history_id',  $DEFAULT, '' );
@@ -604,7 +604,7 @@ sub new_GnomeNumberEntry {
 }
 
 sub new_GnomePixmap {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomePixmap";
     my $name = $proto->{'name'};
     my $filename = $class->use_par($proto, 'filename',  $DEFAULT, '' );
@@ -634,7 +634,7 @@ sub new_GnomePixmap {
 }
 
 sub new_GnomePixmapEntry {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomePixmapEntry";
     my $name = $proto->{'name'};
     my $history_id = $class->use_par($proto, 'history_id',  $DEFAULT, '' );
@@ -652,7 +652,7 @@ sub new_GnomePixmapEntry {
 }
 
 sub new_GnomePaperSelector {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomePaperSelector";
     my $name = $proto->{'name'};
 
@@ -663,7 +663,7 @@ sub new_GnomePaperSelector {
 }
 
 sub new_GnomePropertyBox {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomePropertyBox";
     my $name = $proto->{'name'};
 
@@ -681,7 +681,7 @@ sub new_GnomePropertyBox {
 
 
 sub new_GnomeSpell {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeSpell";
     my $name = $proto->{'name'};
 
@@ -692,7 +692,7 @@ sub new_GnomeSpell {
 }
 
 sub new_GtkClock {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkClock";
     my $name = $proto->{'name'};
     my $type     = $class->use_par($proto, 'type',     $LOOKUP,  'realtime' );
@@ -715,7 +715,7 @@ sub new_GtkClock {
 }
 
 sub new_GtkDial {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkDial";
     my $name = $proto->{'name'};
     my $view_only    = $class->use_par($proto, 'view_only',    $BOOL, 'False' );
@@ -740,7 +740,7 @@ sub new_GtkDial {
 }
 
 sub new_GtkPixmapMenuItem {
-    my ($class, $parent, $proto, $depth) = @ARG;
+    my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkPixmapMenuItem";
     my $name = $proto->{'name'};
 #    $class->diag_print(2, $proto);

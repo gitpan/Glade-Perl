@@ -44,7 +44,7 @@ sub new {
 }
 
 sub run {
-    my ($class) = @ARG;
+    my ($class) = @_;
     Gtk->init;
     my $window = $class->new;
     $window->USERDATA({
@@ -62,7 +62,7 @@ sub run {
 #==== Below are overloaded signal handlers                                  ====
 #===============================================================================
 sub about_Form {
-    my ($class) = @ARG;
+    my ($class) = @_;
     my $gtkversion = 
         Gtk->major_version.".".
         Gtk->minor_version.".".
@@ -83,35 +83,35 @@ sub about_Form {
 }
 
 sub destroy_Form {
-#    my ($class, $data, $object, $form) = @ARG;
+#    my ($class, $data, $object, $form) = @_;
 #    $form->TOPLEVEL->get_toplevel->destroy;
 #    __PACKAGE__->destroy_all_forms;
     Gtk->main_quit; 
 }
 
 sub Skeleton_Handler {
-	my ($class, $data) = @ARG;
+	my ($class, $data) = @_;
     my $me = __PACKAGE__."->Skeleton_Handler";
     # REPLACE the line below with the actions to be taken when $me is called
     __PACKAGE__->show_skeleton_message($me, \@ARG, __PACKAGE__, 'pixmaps/Logo.xpm');
 }
 
 sub on_Contents_activate {
-	my ($class, $data) = @ARG;
+	my ($class, $data) = @_;
     my $me = __PACKAGE__."->on_Contents_activate";
     # REPLACE the line below with the actions to be taken when $me is called
     __PACKAGE__->show_skeleton_message($me, \@ARG, __PACKAGE__, 'pixmaps/Logo.xpm');
 }
 
 sub on_Index_activate {
-#	my ($class, $data) = @ARG;
+#	my ($class, $data) = @_;
     my $me = __PACKAGE__."->on_Index_activate";
     # REPLACE the line below with the actions to be taken when $me is called
     __PACKAGE__->show_skeleton_message($me, \@ARG, __PACKAGE__, 'pixmaps/Logo.xpm');
 }
 
 sub on_New_activate {
-	my ($class, $data) = @ARG;
+	my ($class, $data) = @_;
     my $me = __PACKAGE__."->on_New_activate";
     my $filesel = fileselection1->new->TOPLEVEL;
     $filesel->set_title("New file selection triggered in $me");
@@ -119,7 +119,7 @@ sub on_New_activate {
 }
 
 sub on_Search_activate {
-	my ($class, $data) = @ARG;
+	my ($class, $data) = @_;
     my $me = __PACKAGE__."->on_Search_activate";
     # REPLACE the line below with the actions to be taken when $me is called
     __PACKAGE__->show_skeleton_message($me, \@ARG, __PACKAGE__, 'pixmaps/Logo.xpm');

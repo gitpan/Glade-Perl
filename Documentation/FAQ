@@ -1,5 +1,15 @@
 This is the Frequently Asked Question list for Glade-Perl source generator
 --------------------------------------------------------------------------
+Q   Why do I get message 'Can't locate object method "allow_grow" via package 
+    "Gtk::Window" at Project3.pm line 115 (or similar)
+
+A   This is caused by changes made to the CVS version of Gtk-Perl. Version
+    0.45 will deal with this and other changes that have been made although
+    there may be problems with earlier versions of Gtk-Perl :(
+    The solution is to download and install Glade-Perl-0.45 (if you haven't
+    already done so :)
+        
+--------------------------------------------------------------------------
 Q   How do I set fonts, colours and bg-pixmaps of widgets at run time?
 
 A   To change the fonts, colours and bg-pixmaps of widgets at run-time you can
@@ -132,6 +142,9 @@ A   Two people have reported this error, they use perl version 5.005_x with
     The error shown means that Glade::PerlGenerate->options has been called 
     without any arguments, not even a class name. 
 
-    If you know what causes this please let me know.
+    Eric Richardson <eric@gospelcom.net> found the problem! Thanks.
+    It was caused by the use of @ARG to get at sub args. I still don't know 
+    why this doesn't work with 5.005 but I have changed them all to the short 
+    form of @_ in version 0.45 so this problem should not reappear.
 
 --------------------------------------------------------------------------

@@ -37,9 +37,9 @@ BEGIN {
     # Tell interpreter who we are inheriting from
     @ISA          = qw( Exporter );
     $PACKAGE      = __PACKAGE__;
-    $VERSION      = q(0.44);
+    $VERSION      = q(0.46);
     $AUTHOR       = q(Dermot Musgrove <dermot.musgrove\@virgin.net>);
-    $DATE         = q(Fri Dec 12 16:36:36 GMT 1999);
+    $DATE         = q(Thu Dec 30 00:55:33 GMT 1999);
     $widgets      = {};
     $all_forms    = {};
     # These vars are imported by all Glade-Perl modules for consistency
@@ -112,7 +112,7 @@ sub AUTOLOAD {
     # This shows dynamic signal handler stub message_box - see %stubs above
     __PACKAGE__->show_skeleton_message(
       $AUTOLOAD."\n (AUTOLOADED by ".__PACKAGE__.")", 
-      [$self, @ARG], 
+      [$self, @_], 
       __PACKAGE__, 
       'pixmaps/Logo.xpm');
     
@@ -144,7 +144,7 @@ sub new {
 #=========== Utilities 					 	    ============
 #===============================================================================
 sub full_Path {
-    my ($class, $file, $directory, $default) = @ARG;
+    my ($class, $file, $directory, $default) = @_;
     my $me = "$class->full_Path";
     my $leaning_toothpick = '/';
     # set to $default if not defined
@@ -172,7 +172,7 @@ sub full_Path {
 }
 
 sub create_image {
-    my ($class, $filename, $pixmap_dirs) = @ARG;
+    my ($class, $filename, $pixmap_dirs) = @_;
     my $me = "$class->create_image";
     my ($work, $testfile, $found_filename, $dir);
     # First look in specified $pixmap_dirs
@@ -199,7 +199,7 @@ sub create_image {
 }
 
 sub create_pixmap {
-    my ($class, $widget, $filename, $pixmap_dirs) = @ARG;
+    my ($class, $widget, $filename, $pixmap_dirs) = @_;
     my $me = "$class->create_pixmap";
     # Usage is $pixmap = $class->create_pixmap(
     #   $widgets->{'name'}, 
@@ -245,7 +245,7 @@ sub create_pixmap {
 }
 
 sub message_box {
-    my ($class, $text, $title, $buttons, $default, $pixmapfile, $just, $handlers) = @ARG;
+    my ($class, $text, $title, $buttons, $default, $pixmapfile, $just, $handlers) = @_;
     my ($i, $ilimit);
     my $justify = $just || 'center';
     my $mbno = 1;
@@ -256,9 +256,10 @@ sub message_box {
     $widgets->{"MessageBox-$mbno"} = new Gtk::Window('toplevel');
     $widgets->{"MessageBox-$mbno"}->set_title($title);
     $widgets->{"MessageBox-$mbno"}->position('mouse');
-    $widgets->{"MessageBox-$mbno"}->allow_grow('1');
-    $widgets->{"MessageBox-$mbno"}->allow_shrink('1');
-    $widgets->{"MessageBox-$mbno"}->auto_shrink('0');
+    $widgets->{"MessageBox-$mbno"}->set_policy('1', '1', '0');
+#    $widgets->{"MessageBox-$mbno"}->allow_shrink('1');
+#    $widgets->{"MessageBox-$mbno"}->allow_grow('1');
+#    $widgets->{"MessageBox-$mbno"}->auto_shrink('0');
     $widgets->{"MessageBox-$mbno"}->border_width('6');
     $widgets->{"MessageBox-$mbno"}->set_modal('1');
     $widgets->{"MessageBox-$mbno"}->realize;
@@ -341,7 +342,7 @@ sub message_box {
 }
 
 sub message_box_close {
-    my ($class, $mbno, $data) = @ARG;
+    my ($class, $mbno, $data) = @_;
     # Close this message_box and free the $widget->{'MessageBox-$mbno'} structure
     $widgets->{"MessageBox-$mbno"}->get_toplevel->destroy;
     undef $widgets->{"MessageBox-$mbno"};
@@ -364,9 +365,9 @@ sub destroy_all_forms {
 }
 
 sub missing_handler {
-    my ($class, $widgetname, $signal, $handler, $pixmap) = @ARG;
+    my ($class, $widgetname, $signal, $handler, $pixmap) = @_;
     my $me = "$PACKAGE->missing_handler";
-    print STDOUT "    - $me        - called with args ('".join("', '", @ARG)."')"."\n";
+    print STDOUT "    - $me        - called with args ('".join("', '", @_)."')"."\n";
 #    my $message = "\n$me has been called because\n".
 #                    "a signal ($signal) was caused by widget ($widgetname).\n".
 #                    "When Perl::Generator writes the Perl source to a file a\n".
@@ -389,7 +390,7 @@ sub missing_handler {
 
 sub show_skeleton_message {
     # This proc pops up a message_box to prove that a stub has been called
-    my ($class, $me, $data, $package, $pixmap) = @ARG;
+    my ($class, $me, $data, $package, $pixmap) = @_;
     $PACKAGE->message_box("
 A signal handler has just been triggered.
 
@@ -403,7 +404,7 @@ this box to prove that I have been called
 
 sub debug_print {
     # DON'T USE THIS - IT IS ONLY FOR MY DEBUGGING!!!
-    my ($class, $ref) = @ARG;
+    my ($class, $ref) = @_;
     eval "use lib '/home/dermot/perl/Global'; use Init; Debug->Start(2); Debug->print(2, $ref)";
 }
 

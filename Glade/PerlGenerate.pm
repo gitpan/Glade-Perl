@@ -26,7 +26,7 @@ BEGIN {
                             $PACKAGE 
                           );
     $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.44);
+    $VERSION        = q(0.46);
     # Tell interpreter who we are inheriting from
     @ISA            = qw(
                             Glade::PerlProject
@@ -39,7 +39,7 @@ BEGIN {
 #=========== Utilities to run Generate phase                        ============
 #===============================================================================
 sub about_Form {
-    my ($class) = @ARG;
+    my ($class) = @_;
     my $gtkversion     = 
         Gtk->major_version.".".Gtk->minor_version.".".Gtk->micro_version;
     my $name = $0;
@@ -56,7 +56,7 @@ sub about_Form {
 }
 
 sub destroy_Form {
-    my ($class) = @ARG;
+    my ($class) = @_;
     $class->get_toplevel->destroy;
     Gtk->main_quit; 
 }
@@ -65,7 +65,7 @@ sub destroy_Form {
 #=========== Utilities to construct the form from a Proto                   ====
 #===============================================================================
 sub Form_from_Glade_File {
-    my ($class, %params) = @ARG;
+    my ($class, %params) = @_;
     my $me = "$class->Form_from_Glade_File";
     my $glade_proto = $class->Proto_from_File( $params{'glade_filename'}, 
         ' project child accelerator ', ' signal widget ' );
@@ -82,7 +82,7 @@ sub Form_from_Glade_File {
 }
 
 sub Form_from_XML {
-    my ($class, %params) = @ARG;
+    my ($class, %params) = @_;
     my $me = "$class->Form_from_XML";
     my $save_options = $main::Glade_Perl_Generate_options;
     $main::Glade_Perl_Generate_options->verbose(0);
@@ -112,7 +112,7 @@ sub Form_from_XML {
 # This means providing handlers for XML::Parser (Start, End, Char)
 # when it is run in 'Stream' mode
 sub Form_from_XML_Stream {
-    my ($class, $params) = @ARG;
+    my ($class, $params) = @_;
     my $me = "$class->Form_from_XML";
     my $save_options = $main::Glade_Perl_Generate_options;
     $main::Glade_Perl_Generate_options->verbose(0);
@@ -138,7 +138,7 @@ sub Form_from_XML_Stream {
 }
 
 sub Form_from_Pad_Proto {
-    my ($class, $proto, $glade_proto, $params) = @ARG;
+    my ($class, $proto, $glade_proto, $params) = @_;
     my $me = "$class->Form_from_Pad_Proto";
     my $depth = 0;
     $forms = {};
@@ -159,6 +159,16 @@ sub Form_from_Pad_Proto {
     if ($options->allow_gnome) {
         $class->diag_print (6, "$indent- Use()ing Gnome in $me");
         eval "use Gnome;";
+        unless (Gnome::Stock->can('pixmap_widget')) {
+            $class->diag_print (1, 
+                $options->indent."- You need either to build the Gtk-Perl Gnome ".
+                "module or uncheck the Glade 'Enable Gnome Support' project option");
+            $class->diag_print (1, 
+                $options->indent."- Continuing without Gnome for now although ".
+                "the generate run will fail if there are any Gnome widgets".
+                "specified in your project");
+            $options->allow_gnome(0);
+        }
         Gnome->init(__PACKAGE__, $VERSION);
     } else {
         Gtk->init;
@@ -240,7 +250,7 @@ sub Form_from_Pad_Proto {
 #=========== Diagnostic utilities                                   ============
 #===============================================================================
 sub unused_elements {
-    my ($class, $proto) = @ARG;
+    my ($class, $proto) = @_;
     my $me = "$class->unused_elements";
     my $typekey = $class->typeKey;
     my $key;
@@ -266,7 +276,7 @@ sub unused_elements {
 }
 
 sub unpacked_widgets {
-    my ($class) = @ARG;
+    my ($class) = @_;
     my $me = "$class->unpacked_widgets";
     my $count = 0;
     my $key;
@@ -282,7 +292,7 @@ sub unpacked_widgets {
 }
 
 sub unhandled_signals {
-    my ($class) = @ARG;
+    my ($class) = @_;
     my $me = "$class->unhandled_signals";
     my ($widget, $signal);
     my $count = 0;

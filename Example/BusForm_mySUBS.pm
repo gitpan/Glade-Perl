@@ -38,14 +38,14 @@ BEGIN {
 #==== Below are all the signal handlers supplied by the programmer          ====
 #===============================================================================
 sub Skeleton_Handler {
-	my ($class, $data) = @ARG;
+	my ($class, $data) = @_;
     my $me = __PACKAGE__."->Skeleton_Handler";
     # REPLACE the line below with the actions to be taken when $me is called
     __PACKAGE__->show_skeleton_message($me, \@ARG, __PACKAGE__, 'pixmaps/Logo.xpm');
 }
 
 sub on_New_activate {
-	my ($class, $data) = @ARG;
+	my ($class, $data) = @_;
     my $me = __PACKAGE__."->on_New_activate";
     my $filesel = fileselection1->new->TOPLEVEL;
     $filesel->set_title("New file selection triggered in $me");
@@ -53,7 +53,7 @@ sub on_New_activate {
 }
 
 sub on_Open_activate {
-	my ($class, $data) = @ARG;
+	my ($class, $data) = @_;
     my $me = __PACKAGE__."->on_Open_activate";
     my $filesel = fileselection1->new->TOPLEVEL;
     $filesel->set_title("Open file selection triggered in $me");
@@ -61,7 +61,7 @@ sub on_Open_activate {
 }
 
 sub on_Print_activate {
-	my ($class, $data) = @ARG;
+	my ($class, $data) = @_;
     my $me = __PACKAGE__."->on_Print_activate";
     __PACKAGE__->show_skeleton_message($me, \@ARG, __PACKAGE__, 'pixmaps/Logo.xpm');
 }
