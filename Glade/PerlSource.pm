@@ -15,6 +15,7 @@ require 5.000; use English; use strict 'vars', 'refs', 'subs';
 # If you use this library in a commercial enterprise, you are invited,
 # but not required, to pay what you feel is a reasonable fee to the
 # author, who can be contacted at dermot.musgrove@virgin.net
+#                              or dermot@glade.perl.connrctfree.co.uk
 
 BEGIN {
     use Glade::PerlRun qw( :METHODS :VARS ); # Our run-time utilities and vars
@@ -50,7 +51,7 @@ BEGIN {
                         $first_form
                       );
     $PACKAGE      = __PACKAGE__;
-    $VERSION        = q(0.43);
+    $VERSION        = q(0.44);
     @VARS         = qw( 
                         $VERSION
                         $AUTHOR
@@ -185,7 +186,7 @@ sub add_to_UI {
     }
     if ($class->Writing_to_File) {
         my $UI_String = ($indent x ($depth)).$expr;
-        if ($tab && !$notabs) {
+        if (!$notabs && $tab) {
             # replace multiple spaces with tabs
             $UI_String =~ s/$tab/\t/g;
         }
@@ -202,11 +203,6 @@ sub add_to_UI {
 #===============================================================================
 #=========== Source code templates                                  ============
 #===============================================================================
-# FIXME Write these subs
-sub perl_UI_SUBS_header {}
-sub perl_SUBS {}
-sub perl_SubClass {}
-
 sub write_UI {
     my ($class, $proto, $glade_proto) = @ARG;
     my $me = "$class->write_UI";
@@ -269,23 +265,28 @@ sub write_SUBCLASS {
             SUBCLASS->autoflush(1);
         }
     }
-    $autosubs &&
-        $class->diag_print (2, "$indent- Automatically generated SUBS are ".
-            "'$autosubs' by $me");
+#    $autosubs &&
+#        $class->diag_print (2, "$indent- Automatically generated SUBS are ".
+#            "'$autosubs' by $me");
 
     print SUBCLASS "#!/usr/bin/perl -w\n";
     $form = $first_form;
-#    foreach $form (keys %$forms) {
-        $class->diag_print(4, "$indent- Writing SUBCLASS for class $form");
-        $permitted_stubs = '';
-        # FIXME Now generate different source code for each user choice
-        print SUBCLASS $class->perl_SUBCLASS_AUTOLOAD_header(
-            $project, $proto, $form, $permitted_stubs)."\n";
-#        print SUBCLASS $class->perl_SUBCLASS_AUTOLOAD_new_bottom($project, $form);
+    $class->diag_print(4, "$indent- Writing SUBCLASS for class $form");
+    $permitted_stubs = '';
+    # FIXME Now generate different source code for each user choice
+    print SUBCLASS $class->perl_SUBCLASS_header(
+        $project, $proto, $form, $permitted_stubs)."\n";
+#    print SUBCLASS $class->perl_SUBCLASS_AUTOLOAD_new_bottom($project, $form);
+    foreach $form (keys %$forms) {
+    print SUBCLASS "#==============================================================================
+#=== These are the signal handlers for '$form' UI construction class 
+#==============================================================================";
+
         foreach $handler (sort keys (%{$forms->{$form}{'_HANDLERS'}})) {
             unless ($autosubs =~ / $handler /) {
-                print SUBCLASS "sub $handler {
-${indent}my (\$class, \$data, \$object, \$instance) = \@ARG;
+                print SUBCLASS "
+sub $handler {
+${indent}my (\$class, \$data, \$object, \$instance, \$event) = \@ARG;
 ${indent}my \$me = __PACKAGE__.\"->$handler\";
 ${indent}# Get ref to hash of all widgets on our form
 ${indent}my \$form = \$__PACKAGE__::all_forms->{\$instance};
@@ -294,12 +295,64 @@ ${indent}# REPLACE the line below with the actions to be taken when ".
 ${indent}__PACKAGE__->show_skeleton_message(\$me, \\\@ARG, ".
     "__PACKAGE__, '$project->{'logo'}');
 }
-
 ";
             }
-#        }
+        }
     }
     print SUBCLASS $class->perl_UI_footer(
+        $project, "Sub".$proto->{'name'}, "Sub".$first_form);
+
+}
+
+sub write_LIBGLADE {
+    my ($class, $proto, $glade_proto) = @ARG;
+    my $me = "$class->write_SUBCLASS";
+    my ($permitted_stubs);
+    my ($handler, $module, $form );
+    unless (fileno LIBGLADE) {            # ie user has supplied a filename
+        # Open LIBGLADE for output unless the filehandle is already open 
+        open LIBGLADE,     ">".($proto->{'LIBGLADE_filename'})    or 
+            die "error $me - can't open file ".
+                "'$proto->{'LIBGLADE_filename'}' for output";
+        $class->diag_print (4, "$indent- Writing LIBGLADE source     to ".
+            "$proto->{'LIBGLADE_filename'} - in $me");
+        if ($main::Glade_Perl_Generate_options->autoflush) {
+            LIBGLADE->autoflush(1);
+        }
+    }
+    $autosubs &&
+        $class->diag_print (2, "$indent- Automatically generated SUBS are ".
+            "'$autosubs' by $me");
+
+    print LIBGLADE "#!/usr/bin/perl -w\n";
+    $form = $first_form;
+    $class->diag_print(4, "$indent- Writing LIBGLADE for class $form");
+    $permitted_stubs = '';
+    # FIXME Now generate different source code for each user choice
+    print LIBGLADE $class->perl_LIBGLADE_header(
+        $project, $proto, $form, $permitted_stubs)."\n";
+#    print LIBGLADE $class->perl_LIBGLADE_AUTOLOAD_new_bottom($project, $form);
+    foreach $form (keys %$forms) {
+    print LIBGLADE "#==============================================================================
+#=== These are the signal handlers for '$form' UI construction class 
+#==============================================================================";
+
+        foreach $handler (sort keys (%{$forms->{$form}{'_HANDLERS'}})) {
+            unless ($autosubs =~ / $handler /) {
+                print LIBGLADE "
+sub $handler {
+${indent}my (\$class, \$data, \$event) = \@ARG;
+${indent}my \$me = __PACKAGE__.\"->$handler\";
+${indent}# REPLACE the line below with the actions to be taken when ".
+    "__PACKAGE__.\"->$handler.\" is called
+${indent}__PACKAGE__->show_skeleton_message(\$me, \\\@ARG, ".
+    "__PACKAGE__, '$project->{'logo'}');
+}
+";
+            }
+        }
+    }
+    print LIBGLADE $class->perl_UI_footer(
         $project, "Sub".$proto->{'name'}, "Sub".$first_form);
 
 }
@@ -336,7 +389,102 @@ $project->{'copying'} $project->{'author'}
 ";
 }
 
-sub perl_SUBCLASS_AUTOLOAD_header {
+sub perl_LIBGLADE_header {
+    my ($class, $project, $proto, $name, $permitted_stubs) = @ARG;
+    my $me = "$class->perl_LIBGLADE_Header";
+#use Data::Dumper; print Dumper(\@ARG); exit
+    my ($module, $super);
+    my $about_string = $class->perl_about($project, $name);
+    my $init_string = '';
+    my $isa_string = 'Glade::PerlRun Gtk::GladeXML';
+    my $use_string = "${indent}use Glade::PerlRun;
+${indent}use Gtk::GladeXML;";
+    $permitted_stubs = $permitted_stubs || '';
+    foreach $module (@use_modules) {
+        $use_string .= "\n${indent}use $module;";
+        $isa_string .= " $module";
+    }
+    if ($main::Glade_Perl_Generate_options->{'allow_gnome'}) {
+        $use_string .="\n${indent}# We need the Gnome bindings as well\n".
+                        "${indent}use Gnome;";
+        $init_string .= "${indent}Gnome->init('$project->{'name'}', '$project->{'version'}');
+${indent}Gtk::GladeXML->init();";
+    } else {
+        $init_string .= "${indent}Gtk->init();
+${indent}Gtk::GladeXML->init();";
+    }
+    $super = "$project->{'source_directory'}";
+    $super =~ s/.*\/(.*)$/$1/;
+    $module = $project->{'name'};
+    # remove double spaces
+    $isa_string =~ s/  / /g;
+return $class->perl_preamble($module, $project, $proto, "Libglade_$name").
+"BEGIN {
+${indent}use vars    qw( 
+${indent}                 \@ISA
+${indent}                 \$AUTOLOAD
+${indent}                 \%fields
+${indent}             );
+$use_string
+${indent}# Tell interpreter who we are inheriting from
+${indent}\@ISA      = qw( Glade::PerlRun Gtk::GladeXML);
+}
+
+\%fields = (
+# Insert any extra data access methods that you want to add to 
+#   our inherited super-constructor (or overload)
+${indent}USERDATA    => undef,
+${indent}VERSION     => '0.01',
+);
+
+#==============================================================================
+#=== These are the overloaded class constructors and so on                  ===
+#==============================================================================
+sub new {
+${indent}my \$that  = shift;
+${indent}# Allow indirect constructor so that we can call eg. 
+${indent}#   \$window1 = BusFrame->new; \$window2 = \$window1->new;
+${indent}my \$class = ref(\$that) || \$that;
+
+${indent}# Call our super-class constructor to get an object and reconsecrate it
+${indent}my \$self = bless new Gtk::GladeXML('$project->{'glade_filename'}'), \$class;
+
+${indent}# Add our own data access methods to the inherited constructor
+${indent}my(\$element);
+${indent}foreach \$element (keys \%fields) {
+${indent}${indent}\$self->{_permitted_fields}->{\$element} = \$fields{\$element};
+${indent}}
+${indent}\@{\$self}{keys \%fields} = values \%fields;
+${indent}return \$self;
+}
+
+sub run {
+${indent}my (\$class) = \@ARG;
+$init_string
+${indent}my \$window = \$class->new;
+${indent}\$window->signal_autoconnect_from_package('Libglade_$name');
+
+${indent}Gtk->main;
+${indent}return \$window;
+}
+#===============================================================================
+#==== Below are overloaded signal handlers                                  ====
+#===============================================================================
+$about_string
+
+sub destroy_Form {
+${indent}my (\$class, \$data, \$object, \$instance) = \@ARG;
+#${indent}__PACKAGE__->destroy_all_forms(\$__PACKAGE__::all_forms); 
+${indent}Gtk->main_quit; 
+}
+
+sub toplevel_hide                   { shift->get_toplevel->hide         }
+sub toplevel_close                  { shift->get_toplevel->close        }
+sub toplevel_destroy                { shift->get_toplevel->destroy      }
+";
+}
+
+sub perl_SUBCLASS_header {
     my ($class, $project, $proto, $name, $permitted_stubs) = @ARG;
     my $me = "$class->perl_UI_Header";
 #use Data::Dumper; print Dumper(\@ARG); exit
@@ -351,9 +499,9 @@ sub perl_SUBCLASS_AUTOLOAD_header {
         $isa_string .= " $module";
     }
     if ($main::Glade_Perl_Generate_options->{'allow_gnome'}) {
-        $init_string .= "${indent}Gnome->init('$project->{'name'}', '$project->{'version'}');";
         $use_string .="\n${indent}# We need the Gnome bindings as well\n".
-                        "${indent}use Gnome;"
+                        "${indent}use Gnome;";
+        $init_string .= "${indent}Gnome->init('$project->{'name'}', '$project->{'version'}');";
     } else {
         $init_string .= "${indent}Gtk->init;";
     }

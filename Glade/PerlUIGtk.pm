@@ -29,9 +29,10 @@ BEGIN {
                             @Notebook_panes
                             $Notebook_pane
                             $Notebook_tab
+                            $gtk_enums
                           );
     $PACKAGE =          __PACKAGE__;
-    $VERSION        = q(0.43);
+    $VERSION        = q(0.44);
     @VARS           = qw( 
                             $VERSION
                             $AUTHOR
@@ -41,6 +42,7 @@ BEGIN {
                             @Notebook_panes
                             $Notebook_pane
                             $Notebook_tab
+                            $gtk_enums
                         );
     # Tell interpreter who we are inheriting from
     @ISA            =   qw( Glade::PerlSource );
@@ -929,12 +931,11 @@ sub new_GtkMenuItem {
     my $name = $proto->{'name'};
     my $label = $class->use_par($proto, 'label', $DEFAULT, '' );
     my $right_justify = $class->use_par($proto, 'right_justify', $BOOL, 'False' );
-    my $stock_item = $class->use_par($proto, 'stock_item', $DEFAULT, '' );
 
 # FIXME - decide how to mix accellabels and labels with visible accelerators
-
-    if ($stock_item) {
+    if ($proto->{'stock_item'}) {
 # FIXME convert this to do a proper lookup (maybe with new sub)
+        my $stock_item = $class->use_par($proto, 'stock_item', $DEFAULT, '' );
         $stock_item =~ s/GNOMEUIINFO_MENU_(.*)_TREE/$1/;
         $stock_item = ucfirst(lc($stock_item));
         $label = "_".$stock_item;

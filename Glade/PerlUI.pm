@@ -39,7 +39,7 @@ BEGIN {
         $missing_widgets
         );
     $PACKAGE =          __PACKAGE__;
-    $VERSION        = q(0.43);
+    $VERSION        = q(0.44);
 
     $ignored_widgets = 0;
     $missing_widgets = 0;
@@ -249,14 +249,14 @@ sub my_gnome_libs_can_do {
 sub use_par {
     my ($class, $proto, $key, $request, $default, $dont_undef) = @ARG;
     my $me = "$class->use_par";
+    my $options = $main::Glade_Perl_Generate_options;
     my $type;
     my $self = $proto->{$key};
     unless (defined $self) {
         if (defined $default) {
             $self = $default;
-#            $class->diag_print (8, "$indent  No value in $proto->{'name'}\->{'$key'} ".
-            $class->diag_print (8, "$indent- No value in proto->{'$key'} ".
-                "so using DEFAULT of '$default' in $me");
+#            $class->diag_print (8, "$indent- No value in proto->{'$key'} ".
+#                "so using DEFAULT of '$default' in $me");
         } else {
             # We have no value and no default to use so bale out here
             $class->diag_print (1, "error No value in supplied ".
@@ -266,8 +266,8 @@ sub use_par {
         }
     } else {
         # We have a value to use
-        $class->diag_print (8, "$indent- Value supplied in ".
-            "proto->{'$key'} was '$self'");
+#        $class->diag_print (8, "$indent- Value supplied in ".
+#            "proto->{'$key'} was '$self'");
     }
     # We must have some sort of value to use by now
     unless ($request) {
@@ -282,11 +282,9 @@ sub use_par {
 #            " to default ('$self') in $me");
         
     } elsif ($request == $LOOKUP) {
+        return '' unless $self;
+        
         # make an effort to convert from Gtk to Gtk-Perl constant/enum name
-        $self =~ s/^G[DT]K_//;    # strip off leading GDK_ or GTK_
-# FIXME remove any GNOME types that are useless or improve whole lookup
-# process, perhaps only define the ones that can't be predicted or write a
-# lookup_enum sub to grep through the header files (and cache the result)
         my $lookup;
         if ($self =~ /^GNOME/) {
             # Check cached enums first
@@ -336,37 +334,45 @@ sub use_par {
                 $Glade::PerlUIExtra::gnome_enums->{$lookup} = $grep;
 #                $class->diag_print(2, $Glade::PerlUIExtra::gnome_enums);
                 # Cache this enum for later use
-                $class->diag_print(8, "$indent- I have converted '$key' from '".
-                    "$lookup' to '$self' (GNOME GREP) in $me");
+#                $class->diag_print(8, "$indent- I have converted '$key' from '".
+#                    "$lookup' to '$self' (GNOME GREP) in $me");
             }
+            
         } else {
-            foreach $type ( 
-                'WINDOW',       'WIN_POS',      'JUSTIFY',      
-                'POLICY',       'SELECTION',    'ORIENTATION',
-                'TOOLBAR_SPACE','EXTENSION_EVENTS',
-                'TOOLBAR',      'TOOLBAR_CHILD','TREE_VIEW', 
-                'BUTTONBOX',    'UPDATE',       'PACK',
-                'POS',          'ARROW',        'BUTTONBOX', 
-                'CURVE_TYPE',   'PROGRESS',     'VISUAL',       
-                'IMAGE',        'CALENDAR',     'SHADOW',
-                'CLOCK',        'RELIEF',       'SIDE',
-                'ANCHOR', 
-                ) {
-                # Remove leading GTK type
-                $self =~ s/^${type}_// && last    # finish early
+            # Check cached enums first
+            $lookup = $Glade::PerlUIExtra::gnome_enums->{$self};
+            unless ($lookup) {
+                $self =~ s/^G[DT]K_//;    # strip off leading GDK_ or GTK_
+                foreach $type ( 
+                    'WINDOW',       'WIN_POS',      'JUSTIFY',      
+                    'POLICY',       'SELECTION',    'ORIENTATION',
+                    'TOOLBAR_SPACE','EXTENSION_EVENTS',
+                    'TOOLBAR',      'TOOLBAR_CHILD','TREE_VIEW', 
+                    'BUTTONBOX',    'UPDATE',       'PACK',
+                    'POS',          'ARROW',        'BUTTONBOX', 
+                    'CURVE_TYPE',   'PROGRESS',     'VISUAL',       
+                    'IMAGE',        'CALENDAR',     'SHADOW',
+                    'CLOCK',        'RELIEF',       'SIDE',
+                    'ANCHOR', 
+                    ) {
+                    # Remove leading GTK type
+                    $self =~ s/^${type}_// && last    # finish early
+                }
+                $self = lc($self);        # convert to lower case
+                return '' unless $self;
+                if ($self) {$Glade::PerlUIGtk::gtk_enums->{($proto->{$key} || $default)} = $self;}
             }
-            $self = lc($self);        # convert to lower case
         }
-        $class->diag_print(8, "$indent- I have converted '$key' from '".
-            ($proto->{$key} || $default)."' to '$self' (LOOKUP) in $me");
+#        $class->diag_print(8, "$indent- I have converted '$key' from '".
+#            ($proto->{$key} || $default)."' to '$self' (LOOKUP) in $me");
 
     } elsif ($request == $BOOL) {
         # Now convert whatever we have ended up with to a BOOL
         # undef becomes 0 (== false)
         $type = $self;
         $self = ('*true*y*yes*on*1*' =~ m/\*$self\*/i) ? '1' : '0';
-        $class->diag_print(8, "$indent- I have converted proto->{'$key'} ".
-            "from '$type' to $self (BOOL) in $me");
+#        $class->diag_print(8, "$indent- I have converted proto->{'$key'} ".
+#            "from '$type' to $self (BOOL) in $me");
 
     } elsif ($request == $KEYSYM) {
         $self =~ s/GDK_//;
@@ -374,8 +380,8 @@ sub use_par {
 # use the next line instead of the Gtk::Keysyms{$self} line below it
 #        $self = ord ($self );
         $self = $Gtk::Keysyms{$self};
-        $class->diag_print(8, "$indent- I have converted '$key' from ".
-            ($proto->{$key})." to '$self' (Gtk::Keysyms)in $me");
+#        $class->diag_print(8, "$indent- I have converted '$key' from ".
+#            ($proto->{$key})." to '$self' (Gtk::Keysyms)in $me");
     } 
     # undef the parameter so that we can report any unused attributes later
     unless ($dont_undef) {undef $proto->{$key};}
@@ -768,7 +774,7 @@ sub internal_pack_widget {
             my $tooltip =  $class->use_par($proto, 'tooltip',  $DEFAULT, '' );
             if (eval "$current_form\{'$parentname'}{'tooltips'}" && 
                 !$tooltip &&
-                (' Gtk::VSeparator Gtk::HSeparator ' !~ / $refwid /)) {
+                (' Gtk::VSeparator Gtk::HSeparator Gtk::Combo Gtk::Label ' !~ / $refwid /)) {
                 $class->diag_print (1, "warn  Toolbar '$parentname' is expecting ".
                     "a tooltip but you have not set one for $refwid '$childname'");
             }            
@@ -1283,8 +1289,7 @@ sub new_from_child_name {
         my $pixmap_widget_name = 'undef';
         my $label   = $class->use_par($proto, 'label',         $DEFAULT, '');
         my $icon    = $class->use_par($proto, 'icon',          $DEFAULT, '' );
-        my $stock_button = $class->use_par($proto, 'stock_button',  $LOOKUP, '' );
-        my $stock_pixmap = $class->use_par($proto, 'stock_pixmap',  $LOOKUP, '' );
+#        my $stock_button = $class->use_par($proto, 'stock_button',  $LOOKUP, '' );
         my $tooltip = $class->use_par($proto, 'tooltip',       $DEFAULT, '' );
         if (eval "$current_form\{'$parent'}{'tooltips'}" && !$tooltip) {
             $class->diag_print (1, "warn  Toolbar '$parent' is expecting ".
@@ -1306,8 +1311,8 @@ sub new_from_child_name {
                         "'$type', \$widgets->{'$name'}, '$label', ".
                         "'$tooltip', '', $pixmap_widget_name );" );
 
-        } elsif ($stock_pixmap) {
-#            $stock_pixmap = $Glade::PerlUIExtra::gnome_enums->{$stock_pixmap};
+        } elsif ($proto->{'stock_pixmap'}) {
+            my $stock_pixmap = $class->use_par($proto, 'stock_pixmap',  $LOOKUP, '' );
             $pixmap_widget_name = "${current_form}\{'${name}-pixmap'}";
             if ($class->my_perl_gtk_can_do('gnome_stock_pixmap_widget')) {
                 $class->add_to_UI( $depth, 

@@ -5,10 +5,18 @@ use Glade::PerlGenerate;
 
 my $project_options_file = $ARGV[0];
 $project_options_file =~ s/(xml|glade)$/glade2perl.xml/;
-# Default $project_options_file is eg 'Existing/BusForm.glade2perl.xml'
+# Default $project_options_file is eg 'Example/BusForm.glade2perl.xml'
+
+my $log_file = $ARGV[0];
+$log_file =~ s/(xml|glade)$/glade2perl.log/;
+# Default $log_file is eg 'Example/BusForm.glade2perl.log'
 
 Glade::PerlGenerate->options(    
+#    'log_file'         => $log_file,                # Save diagnostics to disk
     'verbose'          => 0,                        # Turn off diagnostics
+#    'verbose'          => 2,                        # Some diagnostics
+#    'verbose'          => 4,                        # More diagnostics
+#    'verbose'          => 10,                       # All diagnostics
     'write_source'     => 'True',                   # We DO want source
     'dont_show_UI'     => 'True',                   # We DON'T want to show UI
     'options_set'      => 'Glade/Build Source',     # Glade set the options

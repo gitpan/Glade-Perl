@@ -1,5 +1,28 @@
 This is the Frequently Asked Question list for Glade-Perl source generator
 --------------------------------------------------------------------------
+Q   How do I set fonts, colours and bg-pixmaps of widgets at run time?
+
+A   To change the fonts, colours and bg-pixmaps of widgets at run-time you can
+    use something like the code below. This is for a button so it sets the style 
+    of the button->child (in other words the label in the button) and the actual 
+    way that you set the style will depend on what type of widget you are working
+    with. There are many ways to get the colours but this is one approach:
+
+    my $style = new Gtk::Style;
+    my $cm = $form->{'button43'}->get_toplevel->window->get_colormap;
+
+    $style->font(  Gtk::Gdk::Font->load(
+        '-*-times-bold-r-normal-*-*-120-*-*-p-*-iso8859-1'));
+    $style->fg('normal',   $cm->color_alloc(
+        {red=>65000, green=>0,     blue=>0}));
+    $style->fg('prelight', $cm->color_alloc(
+        {red=>0,     green=>30000, blue=>0}));
+    $style->fg('active',   $cm->color_alloc(
+        {red=>0,     green=>0,     blue=>65000 }));
+
+    $form->{'button43'}->child->set_style($style);
+
+--------------------------------------------------------------------------
 Q   Glade-Perl doesn't build your stock button correctly
     If you run Glade-Perl with 'verbose' => 2 and STDOUT visible (on an xterm) 
     you will see a message like:
@@ -11,7 +34,7 @@ A   Gtk-Perl 0.6123 doesn't do Gnome::Stock->button. Either remove the
     19990914.
     
 --------------------------------------------------------------------------
-Q   How do I see diagnostic messages when using glade2perl or from Glade
+Q   How do I see diagnostic messages when using glade2perl or from Glade?
 
 A   Copy glade2perl and edit the 'verbose' line to read
         'verbose' => 2,     # for some diagnostics
@@ -19,6 +42,7 @@ A   Copy glade2perl and edit the 'verbose' line to read
         'verbose' => 6,     # for lots of diagnostics (more than you want ?)
         'verbose' => 10,    # for every diagnostic message available
     Then either run Glade from a terminal or call the edited glade2perl
+    directly and redirect STDOUT to a file if you want to save the diagnostics.
     
 --------------------------------------------------------------------------
 Q   How do I write signal handlers in a separate module?
@@ -63,6 +87,7 @@ A   Each instance of a form (you can have more than one copy of a UI showing at
     This is for the case where the entry widget is on the same form as the 
     widget that causes the signal. In other cases you will have to store the 
     $instance value in a global or pass it as an arg somehow.
+
 --------------------------------------------------------------------------
 Q   My GtkClock does not show the current time
 

@@ -14,7 +14,7 @@ From version 22 October 1999 I am using Perl type release numbers - ie 0.40
 
 0.60   Stable release
 
-0.70   Use libglade and libxml ?
+0.70   Use libxml ?
 0.71   Some communication with Glade and editor (possibly include a builtin)
 0.75   Use XML streams or SAX parser
 

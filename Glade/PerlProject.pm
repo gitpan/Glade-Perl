@@ -31,7 +31,7 @@ BEGIN {
                             $VERSION
                        );
     $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.43);
+    $VERSION        = q(0.44);
     # Tell interpreter who we are inheriting from
     @ISA            = qw( 
                             Glade::PerlXML 
@@ -66,8 +66,9 @@ my %fields = (
     'tabwidth'          => 8,       # Replace each 8 spaces with a tab in sources
     'write_source'      => undef,   # Don't write source code
     'dont_show_UI'      => undef,   # Show UI and wait
-    'style'             => undef,   # Generate code using functional closures
-                                    # 'closures' as above
+    'style'             => undef,   # Generate code using OO AUTOLOAD code
+                                    # 'Libglade' generate libglade code
+                                    # 'closures' generate code using closures
                                     # 'AUTOLOAD' generate OO AUTOLOAD code
                                     # 'Export'   generate non-OO code
 # Diagnostics
@@ -78,11 +79,13 @@ my %fields = (
     'benchmark'         => undef,   # Don't add time to the diagnostic messages
     'log_file'          => undef,   # Write diagnostics to STDOUT 
                                     # or Filename to write diagnostics to
+#    'debug'             => 'True',  # For my testing and debugging.
 # Distribution
     'dist_type'         => undef,   # Type of distribution
     'dist_compress'     => undef,   # How to compress the distribution
     'dist_scripts'      => undef,   # Scripts that should be installed
     'dist_docs'         => undef,   # Documentation that should be included
+
 # Helpers
     'editors'           => undef,   # Editor calls that are available
     'active_editor'     => undef,   # Index of editor that we are using
@@ -141,8 +144,9 @@ sub diagnostics {
 
 sub diag_print {
     my ($class, $level, $message, $desc, $pad) = @ARG;
-    my ($key, $val, $ref);
     my $options = $main::Glade_Perl_Generate_options;
+#    if ($options->{'debug'}) {$level = 12;}
+    my ($key, $val, $ref);
     my $padkey = $pad || 17;
     my $title = "      ".($desc || "");
     my @times = times;
@@ -222,21 +226,23 @@ sub get_versions {
     unless ($class->my_perl_gtk_can_do('MINIMUM REQUIREMENTS')) {
         die "You need to upgrade your Gtk-Perl";
     }
-    my $gnome_libs_version = `gnome-config --version`;
-    chomp $gnome_libs_version;
-    $gnome_libs_version =~ s/gnome-libs //;
-    if ($options->my_gnome_libs &&
-            ($options->my_gnome_libs > $gnome_libs_version)) {
-        $class->diag_print (2, 
-            $options->indent."- gnome_libs reported version $gnome_libs_version".
-            " but user overrode with version ".$options->my_gnome_libs);
-    } else {
-        $options->my_gnome_libs($gnome_libs_version);
-        $class->diag_print (2, 
-            $options->indent."- gnome_libs reported version $gnome_libs_version");
-    }
-    unless ($class->my_gnome_libs_can_do('MINIMUM REQUIREMENTS')) {
-        die "You need to upgrade your gnome-libs";
+    if ($options->allow_gnome) {
+        my $gnome_libs_version = `gnome-config --version`;
+        chomp $gnome_libs_version;
+        $gnome_libs_version =~ s/gnome-libs //;
+        if ($options->my_gnome_libs &&
+                ($options->my_gnome_libs gt $gnome_libs_version)) {
+            $class->diag_print (2, 
+                $options->indent."- gnome_libs reported version $gnome_libs_version".
+                " but user overrode with version ".$options->my_gnome_libs);
+        } else {
+            $options->my_gnome_libs($gnome_libs_version);
+            $class->diag_print (2, 
+                $options->indent."- gnome_libs reported version $gnome_libs_version");
+        }
+        unless ($class->my_gnome_libs_can_do('MINIMUM REQUIREMENTS')) {
+            die "You need to upgrade your gnome-libs";
+        }
     }
 }
 
@@ -345,9 +351,8 @@ sub options {
         die "$me - Much as I like an easy life, please alter options ".
             "to, at least, show_UI or write_source\n    Run abandoned";
     }
-    if ($options->verbose == 0 )    { 
-        open STDOUT, ">/dev/null";
-    }
+#    if ($options->{'debug'}) {$options->verbose(0);}
+    if ($options->verbose == 0 )    {         open STDOUT, ">/dev/null";    }
     $indent = $options->indent; 
     $tab = (' ' x $options->tabwidth);
     if ($options->diag_wrap == 0) {
@@ -399,6 +404,8 @@ sub use_Glade_Project {
     $options->options('options_set' => $me);
     my $form = {};
     bless $form, $PACKAGE;
+    my $gnome_support = $proto->{'project'}{'gnome_support'};
+    $options->allow_gnome($proto->{'project'}{'gnome_support'} eq 'True');
     $class->get_versions($options);
     # Glade assumes that all directories are named relative to the Glade 
     # project (.glade) file (not <directory>) !
@@ -431,6 +438,9 @@ sub use_Glade_Project {
     $form->{'SUBCLASS_filename'} = $class->full_Path(
         "Sub".$proto->{'project'}{'name'}.".pm",         
         $form->{'source_directory'} );
+    $form->{'LIBGLADE_filename'} = $class->full_Path(
+        "Libglade_".$proto->{'project'}{'name'}.".pm",         
+        $form->{'source_directory'} );
     $form->{'GTK-Interface'}     = $proto;
     $form->{'logo'} = $class->full_Path(
         'Logo.xpm', 
@@ -449,7 +459,6 @@ sub use_Glade_Project {
         my $hostname = [split(" ", $host)];
         $form->{'author'} = "$fullname <$user\\\@$hostname->[0]>";
     }
-    my $gnome_support = $proto->{'project'}{'gnome_support'};
     # If allow_gnome is not specified, use glade project <gnome_support> property
     unless (defined $options->{'allow_gnome'}) {
         $options->{'allow_gnome'} = 

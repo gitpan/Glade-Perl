@@ -98,6 +98,9 @@ Package     my version	available from
 Glade       0.5.4       http://glade.pn.org/
 Glib/Gtk+   1.2.3       ftp://ftp.gimp.org/pub/gtk/
 gnome-libs  1.0.54      Gnome mirrors or Gnome.org CVS 
+                        If you use RPMs you will need gnome-libs-devel too but 
+                        you probably worked this out while building Glade and 
+                        Gtk-Perl :)
 Perl-Gtk    0.6123      CPAN 
     (but you'll need CVS >= 19991107 from Gnome.org to get the best results)
 Perl        5.004_04    CPAN
@@ -127,6 +130,7 @@ Bug reports and testing - Tim Conrow
 
 AUTHOR
 ------
+Dermot Musgrove <dermot@glade.perl.connectfree.net>
 Dermot Musgrove <dermot.musgrove@virgin.net>
 
 Any errors, omissions and general stupidity are my fault - sorry.

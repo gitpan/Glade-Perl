@@ -1,4 +1,17 @@
 Revision history for Perl module Glade::PerlGenerate development branch.
+Fri Dec 12 16:36:36 GMT 1999 - Dermot Musgrove <dermot.musgrove@virgin.net>
+  - Version 0.44
+  - PerlUI->internal_pack_widget() now doesn't warn about missing tooltips 
+    for GtkLabel or GtkCombo in toolbars
+  - PerlSource->write_SUBCLASS() now creates skeleton signal handlers for every
+    missing handler in every form.
+  - Some efficiency improvements
+  - PerlSource skeleton signal handlers generated with extra argument $event.
+  - PerlSource a new module is now generated to use libglade to construct the 
+    UI and with skeleton signal handlers with appropriate args.
+  - PerlProject fixed bug reported by Heiko.Klein@ikp.uni-koeln.de where gnome
+    version was checked even when gnome support was not requested - doh!
+    
 Wed Nov 10 20:33:55 GMT 1999 - Dermot Musgrove <dermot.musgrove@virgin.net>
   - Version 0.43
   - PerlUIGtk->newGtkButton() bug fixed to work around changes since vanilla

@@ -26,8 +26,6 @@ TODO
 
 *   Recombine into fewer .pm files, possibly fewer packages
 
-*   Make projectname_SUBS.pm file (as pre 0.2.0) if requested
-
 *   Make dist files eg Makefile.PL, MANIFEST, Changelog etc etc
 
 *   Internationalise every stage but particularly the source code generation

@@ -26,7 +26,7 @@ BEGIN {
                             $PACKAGE 
                           );
     $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.43);
+    $VERSION        = q(0.44);
     # Tell interpreter who we are inheriting from
     @ISA            = qw(
                             Glade::PerlProject
@@ -77,6 +77,7 @@ sub Form_from_Glade_File {
     $project->GTK_Interface($glade_proto->{'project'});
     $current_form && eval "$current_form = {};";
     my $window = $class->Form_from_Pad_Proto($project, $glade_proto, \%params );
+#    use Data::Dumper; print Dumper($Glade::PerlUIGtk::gtk_enums);
     return $window;
 }
 
@@ -143,6 +144,7 @@ sub Form_from_Pad_Proto {
     $forms = {};
     $widgets = {};
     my ($module);
+    my $options = $main::Glade_Perl_Generate_options;
 #    my ($handler, $module, $form );
     foreach $module (@{$params->{'use_modules'}}) {
         if ($module && $module ne '') {
@@ -154,7 +156,7 @@ sub Form_from_Pad_Proto {
             $class->diag_print (2, "$indent- Use()ing existing module '$module' in $me");
         }
     }
-    if ($main::Glade_Perl_Generate_options->allow_gnome) {
+    if ($options->allow_gnome) {
         $class->diag_print (6, "$indent- Use()ing Gnome in $me");
         eval "use Gnome;";
         Gnome->init(__PACKAGE__, $VERSION);
@@ -173,14 +175,36 @@ sub Form_from_Pad_Proto {
 
     # Now write the disk files
     if ($class->Writing_to_File) {
-        $class->write_UI($proto, $glade_proto);
-# FIXME write these subs in PerlSource
-        $class->write_SUBCLASS($proto, $glade_proto);
+        $module = "$glade_proto->{'project'}{'source_directory'}";
+        $module =~ s/.*\/(.*)$/$1/;
+        if ($options->style && $options->style eq "Libglade") {
+            # Write source that will use libglade to show the UI
+            $class->diag_print (2, "$indent  Generating libglade type code");
+            $class->write_LIBGLADE($proto, $glade_proto);
+            $class->diag_print (2, 
+                "$indent- One way to run the generated source from dir '$project->{'directory'}/':\n".
+                "${indent}${indent}perl -e 'use $module\::".
+                    "Libglade_$glade_proto->{'project'}{'name'}; ".
+                    "Libglade_${first_form}->run'");
+        } else {
+            $class->diag_print (4, "$indent  Generating OO AUTOLOAD code");
+            $class->write_UI($proto, $glade_proto);
+            $class->diag_print (2, 
+                "$indent- One way to run the generated source from dir '$project->{'directory'}/':\n".
+                "${indent}${indent}perl -e 'use $module\::".
+                    "$glade_proto->{'project'}{'name'}; ".
+                    "${first_form}->run'");
+            $class->diag_print (4, "$indent  Generating OO subclass code");
+            $class->write_SUBCLASS($proto, $glade_proto);
+            $class->diag_print (2, 
+                "$indent- Another way to run the generated source from dir '$project->{'directory'}/':\n".
+                "${indent}${indent}perl -e 'use $module\::".
+                    "Sub$glade_proto->{'project'}{'name'}; ".
+                    "Sub${first_form}->run'");
+        }
 #        $class->write_Documentation($proto, $glade_proto);
 #        $class->write_dist($proto, $glade_proto);
     }
-    $module = "$glade_proto->{'project'}{'source_directory'}";
-    $module =~ s/.*\/(.*)$/$1/;
     # Look through $proto and report any unused attributes (still defined)
     if ($class->diagnostics(2)) {
         $class->diag_print (2, "-----------------------------------------------------------------------------");
@@ -198,15 +222,10 @@ sub Form_from_Pad_Proto {
     chomp $endtime;
     $class->diag_print (2, 
         $indent."  GENERATION RUN COMPLETED by $PACKAGE (version $VERSION) at $endtime");
-        $class->diag_print (2, 
-            "-----------------------------------------------------------------------------");
     $class->diag_print (2, 
-        "$indent- One way to run the generated source from dir '$project->{'directory'}/':\n".
-        "${indent}${indent}perl -e 'use $module\::".
-            "$glade_proto->{'project'}{'name'}; ".
-            "${first_form}->run'");
+        "-----------------------------------------------------------------------------");
     $class->diag_print (2, 
-            "-----------------------------------------------------------------------------");
+        "-----------------------------------------------------------------------------");
     unless ($class->Writing_Source_only) { Gtk->main; }
     # We are finished with these attributes now so 'use them up'
     undef $glade_proto->{'project'}{'directory'};

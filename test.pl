@@ -12,6 +12,9 @@ my $glade = (shift @ARGV || "Example/BusForm.glade");
 my $project_options_file = $glade;
 $project_options_file =~ s/(xml|glade)$/glade2perl.xml/;
 # Default $project_options_file is eg 'Example/BusForm.glade2perl.xml'
+my $log_file = $glade;
+$log_file =~ s/(xml|glade)$/glade2perl.log/;
+# Default $log_file is eg 'Example/BusForm.glade2perl.log'
 
 sub main {
     # Build a UI from a string
@@ -65,7 +68,8 @@ source code generator",
                                    # at this character (approx). 
                                    # 0 = no breaks (not easy to
                                    # read on 80 column displays)
-
+    'log_file'      => undef,      # Write diagnostics to STDOUT
+#    'log_file'      => 
     'write_source'  => 'True',     # Write to the default files    No source
 #   'write_source'  => 'STDOUT',   # Write sources to STDOUT
                                    # but there will be nothing 
@@ -74,6 +78,8 @@ source code generator",
                                    # They will not run from here
                                    # you must cut-paste them
 #   'write_source'  => undef,      # Don't write source code
+    'style'         => undef,     # Generate OO AUTOLOAD code    OO with subclass
+#    'style'         => 'Libglade', # Generate libglade type code
 
     'dont_show_UI'  => 'True',     # Show UI during the Build     Show UI
                                    # and wait for user action
