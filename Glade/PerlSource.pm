@@ -33,6 +33,7 @@ BEGIN {
                     );
     use vars        qw( 
                         @ISA 
+                        $PACKAGE $VERSION $AUTHOR $DATE
                         %fields %stubs
                         @EXPORT @EXPORT_OK %EXPORT_TAGS 
                         @VARS @METHODS 
@@ -58,11 +59,11 @@ BEGIN {
                         $first_form
                         $init_string
                       );
+    $PACKAGE      = __PACKAGE__;
+    $VERSION      = q(0.60);
+    $AUTHOR       = q(Dermot Musgrove <dermot.musgrove@virgin.net>);
+    $DATE         = q(Fri May  3 03:56:25 BST 2002);
     @VARS         = qw( 
-                        $PACKAGE 
-                        $VERSION
-                        $AUTHOR
-                        $DATE
                         $PARTYPE $LOOKUP $BOOL $DEFAULT $KEYSYM $LOOKUP_ARRAY
 
                         $Glade_Perl
@@ -204,7 +205,7 @@ sub add_to_UI {
         }
         eval "push \@{${current_form}\{'UI_Strings'}}, \$UI_String";
     }
-    unless ($tofileonly) {
+    unless ($Glade_Perl->source->quick_gen or $tofileonly) {
         eval $expr or 
             ($@ && die  "\n\nin $me\n\twhile trying to eval".
                 "'$expr'\n\tFAILED with Eval error '$@'\n");
@@ -219,10 +220,12 @@ sub add_to_UI {
 #=========== Documentation files
 #===============================================================================
 sub write_documentation {
-    my ($class) = @_;
+    my ($class, $force) = @_;
     return unless $class->doc->write;
     my $me = __PACKAGE__."::write_documentation";
     my ($string, $file);
+    my $count = 0;
+
     $class->doc->directory($class->full_Path(
         $class->doc->directory, $class->glade->directory));
     
@@ -236,15 +239,17 @@ sub write_documentation {
     }
     
     for $file (sort keys %{$class->doc}) {
+        next unless $force || $class->doc->{$file};
         unless ("*$permitted_fields*directory*write*" =~ /\*$file\*/) {
             $class->doc->{$file} = $class->full_Path(
                 $class->doc->{$file}, 
                 $class->doc->directory);
-            unless (-f $class->doc->{$file}) {
+            if ($force || !-f $class->doc->{$file}) {
                 $class->diag_print(2, "%s- Generating documentation file '%s'",
                     $class->source->indent, $class->doc->{$file});
-                eval "\$string = \$class->doc_$file";
+                eval "\$string = \$class->dist_$file";
                 $class->save_file_from_string($class->doc->{$file}, $string);
+                $count++;
                 if ($class->verbosity >= 4) {
                     print "-----------------------------\n".
                         "$string\n-----------------------------\n";
@@ -252,14 +257,15 @@ sub write_documentation {
             }
         }
     }
+    return $count;
 }
 
-sub doc_COPYING {
+sub dist_COPYING {
     my ($class) = @_;
     return $Glade_Perl->app->copying;
 }
 
-sub doc_Changelog {
+sub dist_Changelog {
     my ($class) = @_;
     return "Revision history for Glade-Perl application '".$Glade_Perl->app->name."'
 --------------------------------------------------------------------
@@ -269,7 +275,7 @@ sub doc_Changelog {
 " - This file was created by ".__PACKAGE__."\n";
 }
 
-sub doc_FAQ {
+sub dist_FAQ {
     my ($class) = @_;
     return "Frequently Asked Questions about Glade-Perl application '".$Glade_Perl->app->name."'
 --------------------------------------------------------------------
@@ -280,7 +286,7 @@ sub doc_FAQ {
 " - This file was created by ".__PACKAGE__."\n";
 }
 
-sub doc_INSTALL {
+sub dist_INSTALL {
     my ($class) = @_;
     return "How to install Glade-Perl application '".$Glade_Perl->app->name."'
 --------------------------------------------------------------------
@@ -308,7 +314,7 @@ Build the RPMs by calling eg.
 ";
 }
 
-sub doc_NEWS {
+sub dist_NEWS {
     my ($class) = @_;
     return "NEWS about Glade-Perl application '".$Glade_Perl->app->name."'
 --------------------------------------------------------------------
@@ -319,7 +325,7 @@ sub doc_NEWS {
 " - This file was created by ".__PACKAGE__."\n";
 }
 
-sub doc_README {
+sub dist_README {
     my ($class) = @_;
     return "Introduction to Glade-Perl application '".$Glade_Perl->app->name."'
 --------------------------------------------------------------------
@@ -333,7 +339,7 @@ sub doc_README {
 ";
 }
 
-sub doc_ROADMAP {
+sub dist_ROADMAP {
     my ($class) = @_;
     return "ROADMAP for Glade-Perl application '".$Glade_Perl->app->name."'
 --------------------------------------------------------------------
@@ -344,7 +350,7 @@ sub doc_ROADMAP {
 " - This file was created by ".__PACKAGE__."\n";
 }
 
-sub doc_TODO {
+sub dist_TODO {
     my ($class) = @_;
     return "Things to do for Glade-Perl application '".$Glade_Perl->app->name."'
 --------------------------------------------------------------------
@@ -359,11 +365,13 @@ sub doc_TODO {
 #=========== Distribution files
 #===============================================================================
 sub write_distribution {
-    my ($class) = @_;
+    my ($class, $force) = @_;
     return unless $class->dist->write;
     my $me = __PACKAGE__."::write_distribution";
     my ($string, $file);
     my $exec_mode = 0755;
+    my $count = 0;
+    
     $class->dist->directory($class->full_Path(
         $class->dist->directory, $class->glade->directory));
     
@@ -377,44 +385,49 @@ sub write_distribution {
     }
     $class->dist->spec($class->app->name.".spec");
     for $file (sort keys %{$class->dist}) {
+        next unless $force || $class->dist->{$file};
         unless ("*$permitted_fields*directory*write*type*compress*scripts*docs*" =~ /\*$file\*/) {
             $class->dist->{$file} = $class->full_Path(
                 $class->dist->{$file}, 
                 $class->dist->directory);
-            unless (-f $class->dist->{$file}) {
+            if ($force || !-f $class->dist->{$file}) {
                 $class->diag_print(2, "%s- Generating distribution file '%s'",
-                    $class->source->indent, "$file - ".$class->dist->{$file});
+                    $class->source->indent, $class->dist->{$file});
                 eval "\$string = \$class->dist_$file";
-                $class->save_file_from_string($class->dist->{$file}, $string);
                 if ($class->verbosity >= 4) {
-                    print "-----------------------------\n".
-                        "$string\n-----------------------------\n";
+                    print "----------------------------- $file\n".
+                          "$string\n".
+                          "-----------------------------\n";
                 }
+                $class->save_file_from_string($class->dist->{$file}, $string);
+                $count++;
                 if ('*test_pl*' =~ /\*$file\*/) {
                     chmod $exec_mode, $class->dist->{$file};
                 }
             }
         }
     }
+    return $count;
 }
 
 sub dist_MANIFEST_SKIP {
     my ($class) = @_;
-    my $string;
-$string = "\\bRCS\\b
+
+    my $string = "\\bRCS\\b
 ^MANIFEST\\.
 ^Makefile\$
 \~\$
 \.html\$
 \.old\$
 ^blib/
-^MakeMaker-\d
+^MakeMaker-\\d
 pod2html
 .bak\$
-^".(basename $class->glade->file)."
+SIGS.pm
 ";
+    $string .= "\^".(basename $class->glade->file)."\n";
     if ($class->glade->proto->{project}{output_translatable_strings}) {
-        $string .= "^".$class->glade->proto->{project}{translatable_strings_file};
+        $string .= "\^".$class->glade->proto->{project}{translatable_strings_file};
     };
     return $string;
 }
@@ -448,7 +461,7 @@ my \@need_perl_modules = (
     #   this avoids dumping MakeMaker
     {'name'     => 'Gtk',
     'test'      => 'Gtk::Types',
-    'version'   => '0.7000',
+    'version'   => '".$Glade::PerlUI::gtk_perl_depends->{'MINIMUM REQUIREMENTS'}."',
     'reason'    => \"implements the perl bindings to Gtk+.\\n\".
                     \"The module is called Gtk-Perl on CPAN or \".
                     \"module gnome-perl in the Gnome CVS\"},
@@ -457,7 +470,7 @@ my \@need_perl_modules = (
     #   this avoids dumping MakeMaker
     {'name'     => 'Gnome',
     'test'      => 'Gnome::Types',
-    'version'   => '0.7000',
+    'version'   => '".$Glade::PerlUI::gnome_libs_depends->{'MINIMUM REQUIREMENTS'}."',
     'reason'    => \"implements the perl bindings to Gnome.\\n\".
                    \"It is a submodule of the Gtk-Perl package and needs to be built separately.\\n\".
                    \"Read the Gtk-Perl INSTALL file for details of how to do this.\\n\".
@@ -523,7 +536,7 @@ sub manifypods
     my \$self = shift;
     my \$ver = \$self->{'VERSION'} || \"\";
     local(\$_) = \$self->SUPER::manifypods(\@_);
-    s/pod2man\s*\$/pod2man --release ".$class->app->name."-\$ver/m;
+    s/pod2man\\s*\$/pod2man --release ".$class->app->name."-\$ver/m;
     \$_;
 }
 
@@ -701,7 +714,7 @@ require 5.000; use strict \'vars\', \'refs\', \'subs\';
 # ".S_("Copyright")." (c) ".S_("Date")." $project->{'date'}
 # ".S_("Author")." $project->{'author'}
 #
-#$project->{'copying'} $project->{'author'}
+$project->{'copying'} $project->{'author'}
 #
 #==============================================================================
 # ".S_("This perl source file was automatically generated by")." 
@@ -737,15 +750,15 @@ ${indent}#
 ${indent}# ".S_("Create a")." Gnome::About '\$ab'
 ${indent}my \$ab = new Gnome::About(
 ${indent}${indent}\$PACKAGE, 
-${indent}${indent}\$VERSION, 
+${indent}${indent}\$VER"."SION, 
 ${indent}${indent}_(\"Copyright\").\" \$DATE\", 
 ${indent}${indent}\$AUTHOR, 
-${indent}${indent}_(\"$project->{'description'}\").\"\\n\".
+${indent}${indent}_('$project->{'description'}').\"\\n\".
 ${indent}${indent}\"Gtk \".     _(\"version\").\": \$gtkversion\\n\".
 ${indent}${indent}\"Gtk-Perl \"._(\"version\").\": \$Gtk::VERSION\\n\".
 ${indent}${indent}`gnome-config --version`.\"\\n\".
-${indent}${indent}_(\"run from file\").\": \$name\\n\".
-${indent}${indent}\"$project->{'copying'}\", 
+${indent}${indent}_(\"run from file\").\": \$name\\n \\n\".
+${indent}${indent}'$project->{'copying'}', 
 ${indent}${indent}\"$logo\", 
 ${indent});
 ${indent}\$ab->set_title(_(\"About\").\" $name\" );
@@ -765,9 +778,9 @@ ${indent}${indent}Gtk->minor_version.\".\".
 ${indent}${indent}Gtk->micro_version;
 ${indent}my \$name = \$0;
 ${indent}my \$message = 
-${indent}${indent}__PACKAGE__.\" (\"._(\"version\").\" \$VERSION - \$DATE)\\n\".
+${indent}${indent}__PACKAGE__.\" (\"._(\"version\").\" \$VER"."SION - \$DATE)\\n\".
 ${indent}${indent}_(\"Written by\").\" \$AUTHOR \\n\\n\".
-${indent}${indent}_(\"$project->{'description'}\").\" \\n\\n\".
+${indent}${indent}_('$project->{'description'}').\" \\n\\n\".
 ${indent}${indent}\"Gtk \".     _(\"version\").\": \$gtkversion\\n\".
 ${indent}${indent}\"Gtk-Perl \"._(\"version\").\": \$Gtk::VERSION\\n\".
 ${indent}${indent}_(\"run from file\").\": \$name\";
@@ -849,9 +862,10 @@ ${indent}bless \$self, \$class;
 ${indent}\$self->FORM(\$forms->{'$formname'});
 ${indent}\$self->TOPLEVEL(\$self->FORM->{'$formname'});
 ${indent}\$self->FORM->{'TOPLEVEL'} = (\$self->TOPLEVEL);
+${indent}\$self->FORM->{'OBJECT'} = (\$self);
 ${indent}\$self->INSTANCE(\"$formname-\$instance\");
-${indent}\$self->CLASS_HIERARCHY(\$self->FORM->{'__WH'});
-${indent}\$self->WIDGET_HIERARCHY(\$self->FORM->{'__CH'});
+${indent}\$self->CLASS_HIERARCHY(\$self->FORM->{'__CH'});
+${indent}\$self->WIDGET_HIERARCHY(\$self->FORM->{'__WH'});
 ${indent}\$__PACKAGE__::all_forms->{\$self->INSTANCE} = \$self->FORM;
 ${indent}
 ${indent}return \$self;
@@ -1011,7 +1025,7 @@ ${indent}             \@ISA
 ${indent}             \%fields
 ${indent}             \%stubs
 ${indent}             \$PACKAGE
-${indent}             \$VERSION
+${indent}             \$VER"."SION
 ${indent}             \$AUTHOR
 ${indent}             \$DATE
 ${indent}             \$AUTOLOAD
@@ -1020,7 +1034,7 @@ ${indent}         );
 ${indent}# ".S_("Tell interpreter who we are inheriting from")."
 ${indent}\@ISA     = qw( $ISA_string );
 ${indent}\$PACKAGE = '$project->{'name'}';
-${indent}\$VERSION = '$project->{'version'}';
+${indent}\$VER"."SION = '$project->{'version'}';
 ${indent}\$AUTHOR  = '$project->{'author'}';
 ${indent}\$DATE    = '$project->{'date'}';
 ${indent}\$permitted_fields = '_permitted_fields';             
@@ -1059,7 +1073,7 @@ ${indent}${indent}${indent}\"We were called from \".join(\", \", caller).\"\\n\\
 ${indent}my \$name = \$AUTOLOAD;
 ${indent}\$name =~ s/.*://;       # ".S_("strip fully-qualified portion")."
 
-${indent}if (exists \$self->{\$permitted_fields}->{\$name} ) {
+${indent}if (exists \$self->{\$permitted_fields}{\$name} ) {
 ${indent}${indent}# ".S_("This allows dynamic data methods - see hash fields above")."
 ${indent}${indent}# eg \$class->UI('".S_("new_value")."');
 ${indent}${indent}# or \$current_value = \$class->UI;
@@ -1293,7 +1307,7 @@ sub perl_SIGS_top {
     if ($proto->app->allow_gnome) {
         $use_string .="\n${indent}# ".S_("We need the Gnome bindings as well")."\n".
                         "${indent}use Gnome;";
-        $init_string .= "${indent}Gnome->init(\"\$PACKAGE\", \"\$VERSION\");";
+        $init_string .= "${indent}Gnome->init(\"\$PACKAGE\", \"\$VER"."SION\");";
 #        $init_string .= "${indent}Gnome->init('$project->{'name'}', '$project->{'version'}');";
     } else {
         $init_string .= "${indent}Gtk->init;";
@@ -1305,7 +1319,7 @@ $use_string
 } # ".S_("End of sub")." BEGIN
 
 sub app_run {
-${indent}my (\$class) = \@_;
+${indent}my (\$class, \%params) = \@_;
 $init_string
 ${indent}my \$window = \$class->new;
 ${indent}\$window->TOPLEVEL->show;
@@ -1428,7 +1442,7 @@ ${indent}use vars qw(
 ${indent}             \@ISA
 ${indent}             \%fields
 ${indent}             \$PACKAGE
-${indent}             \$VERSION
+${indent}             \$VER"."SION
 ${indent}             \$AUTHOR
 ${indent}             \$DATE
 ${indent}             \$permitted_fields
@@ -1441,7 +1455,7 @@ ${indent}\@ISA     = qw( $name );
 ${indent}# ".S_("Uncomment the line below to enable gettext checking")."
 #${indent}\@ISA      = qw( $name Glade::PerlSource );
 ${indent}\$PACKAGE = 'Sub$project->{'name'}';
-${indent}\$VERSION = '$project->{'version'}';
+${indent}\$VER"."SION = '$project->{'version'}';
 ${indent}\$AUTHOR  = '$project->{'author'}';
 ${indent}\$DATE    = '$project->{'date'}';
 ${indent}\$permitted_fields = '_permitted_fields';             
@@ -1453,7 +1467,7 @@ ${indent}*AUTOLOAD = \\\&$name\::AUTOLOAD;
 # ".S_("Insert any extra data access methods that you want to add to")." 
 #   ".S_("our inherited super-constructor (or overload)")."
 ${indent}USERDATA    => undef,
-${indent}VERSION     => '0.01',
+${indent}VERSION     => '0.10',
 );
 
 sub DESTROY {
@@ -1466,7 +1480,7 @@ ${indent}# This sub will be called on object destruction
 sub new {
 ${indent}my \$that  = shift;
 ${indent}# ".S_("Allow indirect constructor so that we can call eg. ")."
-${indent}#   \$window1 = BusFrame->new; \$window2 = \$window1->new;
+${indent}#   \$window1 = Frame->new; \$window2 = \$window1->new;
 ${indent}my \$class = ref(\$that) || \$that;
 
 ${indent}# ".S_("Call our super-class constructor to get an object and reconsecrate it")."
@@ -1482,7 +1496,7 @@ ${indent}return \$self;
 } # ".S_("End of sub")." new
 
 sub app_run {
-${indent}my (\$class) = \@_;
+${indent}my (\$class, \%params) = \@_;
 $init_string
 ${indent}# ".S_("Uncomment the line below to enable gettext checking")."
 #${indent}\$class->check_gettext_strings;
@@ -1621,14 +1635,16 @@ ${indent}             \@ISA
 ${indent}             \%fields
 ${indent}             \$AUTOLOAD
 ${indent}             \$PACKAGE
-${indent}             \$VERSION
+${indent}             \$VER"."SION
 ${indent}             \$AUTHOR
 ${indent}             \$DATE
+${indent}             \$permitted_fields
 ${indent}             );
 ${indent}\$PACKAGE = '$project->{'name'}';
-${indent}\$VERSION = '$project->{'version'}';
+${indent}\$VER"."SION = '$project->{'version'}';
 ${indent}\$AUTHOR  = '$project->{'author'}';
 ${indent}\$DATE    = '$project->{'date'}';
+${indent}\$permitted_fields = '_permitted_fields';             
 $use_string
 ${indent}# ".S_("Tell interpreter who we are inheriting from")."
 ${indent}\@ISA     = qw( Glade::PerlRun Gtk::GladeXML);
@@ -1640,7 +1656,7 @@ ${indent}\$Glade::PerlRun::pixmaps_directory ||= '$Glade_Perl->{glade}{pixmaps_d
 # ".S_("Insert any extra data access methods that you want to add to")."
 #   ".S_("our inherited super-constructor (or overload)")."
 ${indent}USERDATA    => undef,
-${indent}VERSION     => '0.01',
+${indent}VERSION     => '0.10',
 );
 
 sub DESTROY {
@@ -1653,7 +1669,7 @@ ${indent}# This sub will be called on object destruction
 sub new {
 ${indent}my \$that  = shift;
 ${indent}# ".S_("Allow indirect constructor so that we can call eg.")."
-${indent}#   \$window1 = BusFrame->new; \$window2 = \$window1->new;
+${indent}#   \$window1 = Frame->new; \$window2 = \$window1->new;
 ${indent}my \$class = ref(\$that) || \$that;
 
 ${indent}my \$glade_file = '$proto->{glade}{file}';
@@ -1673,7 +1689,7 @@ ${indent}return \$self;
 } # ".S_("End of sub")." new
 
 sub app_run {
-${indent}my (\$class) = \@_;
+${indent}my (\$class, \%params) = \@_;
 $init_string
 ${indent}my \$window = \$class->new;
 ${indent}\$window->signal_autoconnect_from_package('$name');

@@ -21,6 +21,7 @@ require 5.000; use strict 'vars', 'refs', 'subs';
 BEGIN {
     use Glade::PerlSource qw( :VARS :METHODS );
     use vars              qw( 
+                            $PACKAGE $VERSION $AUTHOR $DATE
                             @VARS @METHODS
                             @EXPORT @EXPORT_OK %EXPORT_TAGS 
                             $CList_column
@@ -31,10 +32,11 @@ BEGIN {
                             $Notebook_tab
                             $enums
                           );
+    $PACKAGE      = __PACKAGE__;
+    $VERSION      = q(0.60);
+    $AUTHOR       = q(Dermot Musgrove <dermot.musgrove@virgin.net>);
+    $DATE         = q(Fri May  3 03:56:25 BST 2002);
     @VARS           = qw( 
-                            $VERSION
-                            $AUTHOR
-                            $DATE
                             $CList_column
                             $CTree_column
                             $nb
@@ -1128,7 +1130,7 @@ sub new_GtkPixmap {
     $filename = "\"\$Glade::PerlRun::pixmaps_directory/$filename\"";
     $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
         "\$class->create_pixmap($current_window, $filename );" );
-    unless (defined $widgets->{$name}) { 
+    unless ($Glade_Perl->source->quick_gen or defined $widgets->{$name}) { 
         die sprintf(("\nerror %s failed to create pixmap from file '%s'"),
             $me, $filename), "\n";
     }
@@ -1342,9 +1344,7 @@ sub new_GtkSpinButton {
     if ($numeric) {
         $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_numeric(1);" );
     }
-    if ($wrap) {
-        $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_wrap;" );
-    }
+    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_wrap($wrap);" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_snap_to_ticks(".
         "$snap );" );
 

@@ -56,9 +56,9 @@ BEGIN {
                         );
 
     $PACKAGE      = __PACKAGE__;
-    $VERSION      = q(0.59);
-    $AUTHOR       = q(Dermot Musgrove <dermot.musgrove\@virgin.net>);
-    $DATE         = q(Wed Jun 20 14:48:25 BST 2001);
+    $VERSION      = q(0.60);
+    $AUTHOR       = q(Dermot Musgrove <dermot.musgrove@virgin.net>);
+    $DATE         = q(Fri May  3 03:56:25 BST 2002);
     $widgets      = {};
     $all_forms    = {};
     $convert      = {};
@@ -69,7 +69,6 @@ BEGIN {
 
     # These vars are imported by all Glade-Perl modules for consistency
     @VARS         = qw(  
-                        $PACKAGE $VERSION $AUTHOR $DATE
                         $Glade_Perl
                         $I18N
                         $indent
@@ -117,7 +116,8 @@ BEGIN {
         'version'       => '0.01',
         'date'          => undef,
         'copying'       =>          # Copying policy to appear in generated source
-            '# Unspecified copying policy, please contact the author\n# ',
+            "# Unspecified copying policy, please contact the author
+# ",
         'description'   => undef,   # Description for About box etc.
 #        'pixmaps_directory' => undef,
         'logo'          => 'Logo.xpm', # Use specified logo for project
@@ -139,11 +139,11 @@ BEGIN {
     },
     'run_options'   => {
         'name'          => __PACKAGE__,
-        'version'       => $VERSION,   # Version of Glade-Perl used
+        'version'       => $VERSION,    # Version of Glade-Perl used
         'author'        => $AUTHOR,
         'date'          => $DATE,
         'logo'          => 'glade2perl_logo.xpm', # Our logo
-        'start_time'    => undef,   # Time that this run started
+        'start_time'    => undef,       # Time that this run started
         'mru'           => undef,
         'prune'         => undef,
         'proto'   => {
@@ -199,15 +199,63 @@ Glade::PerlRun - Utility methods for Glade-Perl (and generated applications).
 
  use vars qw(@ISA);
  use Glade::PerlRun qw(:METHODS :VARS);
- @ISA = qw( Glade::PerlRun 
+ @ISA = qw( Glade::PerlRun );
 
+ # 1) CLASS methods
  my $Object = Glade::PerlRun->new(%params);
- 
  $Object->glade->file($supplied_path);
- 
- $path = $Object->full_Path($Object->glade->file, $dir);
+ $widget = $window->lookup_widget('clist1');
 
- $Object->save_app_options($path);
+ # 2) OPTIONS handling
+ $options = Glade::PerlRun->options(%params);
+ $normalised_value = Glade::PerlRun->normalise('True');
+ $new_hash_ref = Glade::PerlRun->merge_into_hash_from(
+      $to_hash_ref,      # Hash to be updated
+      $from_hash_ref,    # Input data to be merged
+      'set accessors');  # Any value will add AUTOLOAD() accessors
+                         # for these keys.
+ $Object->save_app_options($mru_filename);
+ $Object->save_options;
+
+ my $string = Glade::PerlRun->string_from_file('/path/to/file');
+ Glade::PerlRun->save_file_from_string('/path/to/file', $string);
+
+ # 3) Diagnostic message printing
+ $Object->start_log('log_filename');
+ $Object->diag_print(2, "This is a diagnostics message");
+ $Object->diag_print(2, $hashref, "Prefix to message");
+ $Object->stop_log;
+
+ # 4) I18N
+ Glade::PerlRun->load_translations('MyApp', 'fr', '/usr/local/share/locale/',
+     undef, '__S', 'Merge with already loaded translations');
+ sprintf(_("A message '%s'"), $value);
+ sprintf(gettext('__S', "A message '%s'"), $value);
+ Glade::PerlRun->start_checking_gettext_strings("__S");
+ Glade::PerlRun->stop_checking_gettext_strings("__S");
+ Glade::PerlRun->write_missing_gettext_strings('__S');
+
+ # 5) UI methods
+ my $image = Glade::PerlRun->create_image('new.xpm', ['dir1', 'dir2']);
+ my $pixmap = Glade::PerlRun->create_pixmap($form, 'new.xpm', ['dir1', 'dir2']);
+
+ Glade::PerlRun->show_skeleton_message(
+    $me, \@_, __PACKAGE__, "$Glade::PerlRun::pixmaps_directory/Logo.xpm");
+ Glade::PerlRun->message_box(
+    $message,                               # Message to display
+    $title,                                 # Dialog title string
+    [_('Dismiss'), _("Quit")." Program"],   # Buttons to show
+    1,                                      # Default button is 1st
+    $pixmap,                                # pixmap filename
+    [&dismiss, &quit],                      # Button click handlers
+    $entry_needed);                         # Whether to show an entry
+                                            # widget for user data
+
+ # 6) General methods
+ $path = $Object->full_Path($Object->glade->file, $dir);
+ $path = Glade::PerlRun->relative_Path($relative_path, $directory);
+
+ $Object->reload_any_altered_modules;
 
 =head1 DESCRIPTION
 
@@ -232,6 +280,7 @@ The class methods provide an object constructor and data accessors.
 =over 4
 
 =cut
+
 sub new {
 
 =item new(%params)
@@ -300,7 +349,7 @@ e.g. my $glade_filename = $Object->glade->file;
 
 sub lookup_widget {
 
-=item lookup_widget()
+=item lookup_widget($widgetname)
 
 Accesses a window or a form's widget by name
 
@@ -380,7 +429,6 @@ e.g. Glade::PerlRun->options(%params);
         @use_modules = ();
         
         $self = bless __PACKAGE__->new(%$defaults), $class;
-#        $self = bless $class->new(%$defaults), $class;
 
         eval "$global = \$self";
 
@@ -471,7 +519,6 @@ sub load_all_options {
     my ($class, %params) = @_;
     my $me = (ref $class || $class)."->load_all_options";
 
-#print Dumper(\@_);
     my $type = $class->{type} || $params{type};
     $class->{$type}->xml->encoding(
         $params{$type}{xml}{encoding} ||
@@ -543,14 +590,11 @@ sub get_options {
     $file ||= $class->xml->{$type} || $NOFILE;
 
     if ($file eq $NOFILE) {
-#        $class->diag_print (4, "Not reading %s options from file", $type);
         $class->xml->{$type} = $file;
         $class->proto->{$type} = {};
         return;
     }
     if ($file && -r $file) {
-#        $class->xml->{$type} = $class->full_Path($file, $pwd);
-#        print sprintf("Reading %s options from file %s\n", $type, $class->xml->{$type});
         ($encoding, $class->proto->{$type}) = $class->simple_Proto_from_File(
 #        ($encoding, $class->proto->{$type}) = Glade::PerlXML->Proto_from_File(
             $class->xml->{$type}, 
@@ -587,7 +631,6 @@ sub simple_Proto_from_XML {
         $tag = substr($$xml, $$pos+1, $new_pos-$$pos-1);
         $$pos = $new_pos+1;
         if ($tag =~ /^\?/) {
-#print "$depth - We are working on tag '$tag'\n";
             if ($tag =~ s/\?xml.*\s*encoding\=["'](.*?)['"]\?\n*//) {
                 $found_encoding = $1;
             } else {
@@ -624,7 +667,7 @@ sub simple_Proto_from_XML {
             }
         }
     }
-#print "Encoding '$found_encoding'\n", Dumper($self);
+
     return ($found_encoding, values %$self);
 }
 
@@ -690,22 +733,17 @@ sub convert_old_options {
         # Normalise any True/False values to 1/0
         $old->{$key} = $class->normalise($old->{$key});
         if ($convert->{$key}) {
-#            print "Converting '$key' = '$old->{$key}'\n";
             eval $convert->{$key};
             die @! if @!;
             $converted++;
         } elsif (ref $old->{$key}) {
-#            print "Merging '$key' = '$old->{$key}'\n";
             $new->{$key} = $class->merge_into_hash_from(
                 $new->{$key}, $old->{$key}, $file);
         } else {
-#            print "Copying '$key' = '$old->{$key}'\n";
             $new->{$key} = $old->{$key};
         }
     }
 
-#print "OLD - ", Dumper($old);
-#print "NEW - ", Dumper($new);
     if ($file and $converted and $class->diagnostics(2)) {
         if (-w $file) {
             # We can rewrite the options file
@@ -767,7 +805,6 @@ e.g. $new_hash_ref = Glade::PerlRun->merge_into_hash_from(
     foreach $key (keys %$from_hash) {
         next if $key eq $permitted_fields;
         if (ref $from_hash->{$key} eq 'HASH') {
-#            print "    Merging HASH '$key' in $autoload\n";
             $to_hash->{$key} ||= bless {}, ref $to_hash;
             $class->merge_into_hash_from(
                 $to_hash->{$key},
@@ -780,7 +817,6 @@ e.g. $new_hash_ref = Glade::PerlRun->merge_into_hash_from(
                 $to_hash->{$key} = $class->normalise($from_hash->{$key});
             }
         }
-#        push @{$to_hash->{$permitted_fields}{$key}}, $autoload if $autoload;
         $to_hash->{$permitted_fields}{$key}++ if $autoload;
     }
     return $to_hash;
@@ -1051,9 +1087,6 @@ e.g. my options = $Object->reduce_hash(
                     $class->diag->indent, $key, $from);
             } else {
                 $return->{$key} = $all_options->{$key};
-#                $class->diag_print ($verbose, 
-#                    "%s- saving option '%s'", 
-#                    $class->diag->{'indent'}, $key);
             }
         }
     }
@@ -1075,7 +1108,6 @@ sub XML_from_Proto {
 
 	# make up the start tag 
 	foreach $key (sort keys %$proto) {
-#		unless ($key eq $typekey or $key eq $permitted_fields) {
 		unless ($prune =~ /\*$key\*/) {
 			if (ref $proto->{$key} eq 'ARRAY') {
                 print "error- Key '$key' is an ARRAY !!! and has been ignored\n";
@@ -1132,7 +1164,7 @@ e.g. Glade::PerlRun->save_file_from_string('/path/to/file', $string);
     open OUTPUT, ">".($filename) or 
         die sprintf("error %s - can't open file '%s' for output", 
             $me, $filename);
-    print OUTPUT $string;
+    print OUTPUT $string || '';
     close OUTPUT or
         die sprintf("error %s - can't close file '%s'", 
             $me, $filename);
@@ -1377,9 +1409,6 @@ sub gettext {
     defined $I18N->{'__'}{$_[0]} ? $I18N->{'__'}{$_[0]} : $_[0];
 }
 
-#===============================================================================
-#=========== Gettext Utilities                                              ====
-#===============================================================================
 # These are defined within a no-warning block to avoid warnings about redefining
 # They override the subs in Glade::PerlRun during your development
 {   
@@ -1483,13 +1512,13 @@ msgstr \"\"
 \"POT-Creation-Date: $date\\n\"
 \"PO-Revision-Date:  YEAR-MO-DA HO:MI+ZONE\\n\"
 \"Last-Translator:  ".$class->AUTHOR."\\n\"
-\"Language-Team:  LANGUAGE \<LL\@li.org\>\\n\"
+\"Language-Team:  LANGUAGE \<LL".'@li.org'."\>\\n\"
 \"MIME-Version:  1.0\\n\"
 \"Content-Type: text/plain; charset=CHARSET\\n\"
 \"Content-Transfer-Encoding:  ENCODING\\n\"
 
-# Generic replacement
-msgid  \"\%s\"
+#: Generic replacement
+msgid \"\%s\"
 msgstr \"\%s\"
 
 ";  }
@@ -1499,7 +1528,7 @@ msgstr \"\%s\"
         next unless $string and $saved->{$string};
         print POT wrap("#", "#",$saved->{$string}), "\n";
         if ($string =~ s/\n/\\n\"\n\"/g) {$string = "\"\n\"".$string}
-        print POT "msgid  \"$string\"\n";
+        print POT "msgid \"$string\"\n";
         if ($copy_to && $copy_to eq 'COPY_TO') {
             print POT "msgstr \"$string\"\n\n";
         } else {
@@ -1519,7 +1548,7 @@ Load a translation file (.mo) for later use as language type
   e.g. To load translations in current LANG from default locations
         $class->load_translations('MyApp');
   
-  OR    $class->load_translations('MyApp', 'pt_BR', undef, 
+  OR    $class->load_translations('MyApp', 'test', undef, 
             '/home/dermot/Devel/Glade-Perl/ppo/en.mo');
 
   OR    $class->load_translations('MyApp', 'fr', '/usr/local/share/locale/',
@@ -1534,13 +1563,11 @@ Load a translation file (.mo) for later use as language type
     return unless $language;
     $locale_dir ||= "/usr/local/share/locale";
     $domain     ||= "Glade-Perl";
-#print "Checking for I18N .mo file '$catalog_filename'\n";
+
     for $catalog_filename ( $file || 
         ("/usr/local/share/locale/$language/LC_MESSAGES/$domain.mo",
         "/usr/share/locale/$language/LC_MESSAGES/$domain.mo")) {
-#print "Checking for I18N .mo file '$catalog_filename'\n";
         if ($catalog_filename and (-f $catalog_filename)) {
-#print "Loading I18N .mo file '$catalog_filename'\n";
             $class->load_mo($catalog_filename, $key);
             last;
         }
@@ -1611,18 +1638,18 @@ sub mo_format_value {
 sub WH {
     my ($class, $new) = @_; 
     if ($new) {
-        return $class->{'__WH'} = $new;
+        return $class->FORM->{'__WH'} = $new;
     } else {
-      return $class->{'__WH'};
+      return $class->FORM->{'__WH'};
     }
 }
 
 sub CH {
     my ($class, $new) = @_;
     if ($new) {
-      return $class->{'__CH'} = $new;
+      return $class->FORM->{'__CH'} = $new;
     } else {
-      return $class->{'__CH'};
+      return $class->FORM->{'__CH'};
     }
 }
 
@@ -1689,7 +1716,6 @@ e.g. my $pixmap = Glade::PerlRun->create_pixmap(
     }
     unless ($found_filename) {
     	if (-f $filename) {
-#            print STDERR "Pixmap file '$testfile' exists in $me\n";
             $found_filename = $filename;
     	} else {
             print STDERR sprintf(_(
@@ -1751,7 +1777,6 @@ e.g. my $image = Glade::PerlRun->create_image(
     unless ($found_filename) {
     	if (-f $filename) {
             $found_filename = $filename;
-#            print STDERR "ImlibImage file '$testfile' exists in $me\n";
     	} else {
             print STDERR sprintf(_(
                 "error ImlibImage file '%s' does not exist in %s\n"),
@@ -1823,7 +1848,7 @@ e.g. Glade::PerlRun->show_skeleton_message(
     $pixmap  ||= "$Glade::PerlRun::pixmaps_directory/Logo.xpm";
     $package ||= (caller);
     $data    ||= ['unknown args'];
-#    $PACKAGE->message_box(sprintf(_("
+
     $class->message_box(sprintf(_("
 A signal handler has just been triggered.
 
@@ -1857,7 +1882,7 @@ e.g. Glade::PerlRun->message_box(
     1,                  # Default button is 1st
     $pixmap,            # pixmap filename
     [&dismiss, &quit],  # Button click handlers
-    $entry_needed);     # Whether to show an
+    $entry_needed);     # Whether to show an entry
                         # widget for user data
 
 =cut
@@ -1983,7 +2008,6 @@ sub destroy_all_forms {
     my $hashref = shift || $__PACKAGE__::all_forms;
     my $myform;
     foreach $myform (keys %$hashref) {
-#        print "We are destroying form '$myform'\n";
         $hashref->{$myform}->get_toplevel->destroy;
         undef $hashref->{$myform};
     }
@@ -2089,20 +2113,12 @@ e.g. my $path = Glade::PerlRun->relative_Path($relative_path, $directory);
     substr($path, 0,$li) = '';
     substr($basepath,0,$li) = '';
 
-#    if ($path eq $basepath) {
-#       &&
-#        defined($rel->fragment) &&
-#        !defined($rel->query)) {
-        $rel = "";
+    $rel = "";
 
-#    } else {
-        # Add one "../" for each path component left in the base path
-        $path = ('../' x $basepath =~ tr|/|/|) . $path;
-        $path = "./" if $path eq "";
-        $rel = $path;
-#    }
-
-#    $rel;
+    # Add one "../" for each path component left in the base path
+    $path = ('../' x $basepath =~ tr|/|/|) . $path;
+    $path = "./" if $path eq "";
+    $rel = $path;
 
     return $rel;
 }
@@ -2129,7 +2145,7 @@ e.g. my $string = Glade::PerlRun->string_from_file('/path/to/file');
     my $string = <INFILE>;
     close INFILE;
     $/ = $save;
-#print "File '$filename' contains '$string'\n";
+
     return $string;
 }
 
@@ -2188,6 +2204,18 @@ e.g. Glade::PerlRun->reload_any_altered_modules;
     }
     return "Reloaded $reloaded module(s) in process $$";
 }
+
+=back
+
+=head1 SEE ALSO
+
+Glade::PerlGenerate(3) glade2perl(1)
+
+=head1 AUTHOR
+
+Dermot Musgrove <dermot.musgrove@virgin.net>
+
+=cut
 
 1;
 

@@ -27,27 +27,32 @@ BEGIN {
     use Glade::PerlUIGtk  qw( :VARS );;
     use Glade::PerlUIExtra;
     use vars              qw( 
-        @ISA 
-        @EXPORT @EXPORT_OK %EXPORT_TAGS 
-        @VARS @METHODS
+                            @ISA 
+                            $PACKAGE $VERSION $AUTHOR $DATE
+                            @EXPORT @EXPORT_OK %EXPORT_TAGS 
+                            @VARS @METHODS
 
-        $gnome_widgets
-        $gnome_db_widgets
-        $gnome_libs_depends
-        $gtk_perl_depends
-        $gtk_perl_cant_do
-        $concept_widgets
-        $ignore_widgets
-        $ignored_widgets
-        $missing_widgets
-        $cxx_properties
-        $dialogs
-        $composite_widgets
-        $toplevel_widgets
-        );
+                            $gnome_widgets
+                            $gnome_db_widgets
+                            $gnome_libs_depends
+                            $gtk_perl_depends
+                            $gtk_perl_cant_do
+                            $concept_widgets
+                            $ignore_widgets
+                            $ignored_widgets
+                            $missing_widgets
+                            $cxx_properties
+                            $dialogs
+                            $composite_widgets
+                            $toplevel_widgets
+                            );
 
     $ignored_widgets = 0;
     $missing_widgets = 0;
+    $PACKAGE      = __PACKAGE__;
+    $VERSION      = q(0.60);
+    $AUTHOR       = q(Dermot Musgrove <dermot.musgrove@virgin.net>);
+    $DATE         = q(Fri May  3 03:56:25 BST 2002);
     @METHODS =          qw(  );
     @VARS =             qw(
         $gnome_widgets
@@ -90,8 +95,8 @@ $gnome_libs_depends     = {
 
 $gtk_perl_depends       = { 
     'MINIMUM REQUIREMENTS'  => '0.7000',
-    'LATEST_CPAN'           => '0.7007',
-    'LATEST_CVS'            => '20010601',
+    'LATEST_CPAN'           => '0.7008',
+    'LATEST_CVS'            => '20010629',
     
     '0.6123'                => '19990818',
     '0.7000'                => '20000102',
@@ -102,6 +107,7 @@ $gtk_perl_depends       = {
     '0.7005'                => '20010219',
     '0.7006'                => '20010328',
     '0.7007'                => '20010601',
+    '0.7008'                => '20010629',
 
     # Those below don't work yet even in the latest CVS version
     'GnomeDbGrid'           => '99999999',
@@ -393,18 +399,140 @@ sub use_par {
 
     } elsif ($request == $KEYSYM) {
         $self =~ s/GDK_//;
-# If you have an old version of Gtk-Perl that doesn't have Gtk::Keysyms
-# use the next line instead of the Gtk::Keysyms{$self} line below it
-#        $self = ord ($self );
-        $self = $Gtk::Keysyms{$self};
-#        $Glade_Perl->diag_print(8, "$indent- I have converted '$key' from ".
-#            ($proto->{$key})." to '$self' (Gtk::Keysyms)in $me");
+## If you have an old version of Gtk-Perl that doesn't have Gtk::Keysyms
+## use the next line instead of the Gtk::Keysyms{$self} line below it
+##        $self = ord ($self );
+#        $self = $Gtk::Keysyms{$self} || Gtk::Gdk->keyval_from_name($self);
+##        $Glade_Perl->diag_print(8, "$indent- I have converted '$key' from ".
+##            ($proto->{$key})." to '$self' (Gtk::Keysyms)in $me");
     } 
     # undef the parameter so that we can report any unused attributes later
     undef $proto->{$key} unless $dont_undef;
     # Backslash escape any single quotes (unless they are already backslashed)
     $self =~ s/(?!\\)(.)'/$1\\'/g;
+    $self =~ s/^'/\\'/g;
     return $self;
+}
+
+sub construct_widget {
+    my ($class, $parentname, $proto, $depth, $wh, $ch) = @_;
+    my $me = "$class->prepare_widget";
+    my ($widget_hierarchy, $class_hierarchy);
+    my ($name, $constructor, $expr);
+    unless ($proto->{name}) {
+        $Glade_Perl->diag_print (2, 
+            "You have supplied a proto without a name to %s", $me);
+        $Glade_Perl->diag_print (2, $proto);
+    } else {
+        $name = $proto->{name};
+
+    }
+    if ($depth == 1) {
+        $forms->{$name} = {};
+        # We are a toplevel window so create a new hash and 
+        # set $current_form with its name
+        # All these back-slashes are really necessary as this string
+        # is passed through so many others
+        $current_form_name = "$name-\\\\\\\$instance";
+        $current_form = "\$forms->{'$name'}";
+        $current_data = "\$data->{'$name'}\{__DATA}";
+        $current_name = $name;
+        $current_window = "\$forms->{'$name'}\{'$name'}";
+        $first_form ||= $name;
+
+        if ($Glade_Perl->source->hierarchy =~ /^(widget|both)/) {
+            $widget_hierarchy = "\$forms->{'$name'}{__WH}";
+        }
+        if ($Glade_Perl->source->hierarchy =~ /^(class|both)/) {
+            $class_hierarchy = "\$forms->{'$name'}{__CH}";
+        }
+
+    } else {
+        $widget_hierarchy = "$wh\{'$name'}" if $wh;
+        $class_hierarchy  = "$ch\{'$proto->{class}'}{'$name'}" if $ch; 
+    }
+    $class->add_to_UI( $depth,  "#" );
+    $class->add_to_UI( $depth,  "# ".S_("Construct a").
+        " $proto->{class} '$name'");
+    $constructor = "new_$proto->{class}";
+    if ($class->can($constructor)) {
+        # Construct the widget
+        my $eval_class = 'Glade::PerlProject';#ref $class || $class;
+        $expr =  "\$widgets->{'$name'} = ".
+            "$eval_class->$constructor('$parentname', \$proto, $depth );";
+        eval $expr or 
+            ($@ && die  "\nin $me\n\t".("while trying to eval").
+                " '$expr'\n\t".("FAILED with Eval error")." '$@'\n" );
+        if ($widget_hierarchy) {
+            # Add to form widget hierarchy
+            $class->add_to_UI( $depth,  
+                "$widget_hierarchy\{__W} = $current_form\{'$name'};" );
+#                    "\$class->W($widget_hierarchy, $current_form\{'$name'});" );
+#            if ($Glade_Perl->source->hierarchy =~ /order/) {
+#                if ($depth > 1) {
+#                    $class->add_to_UI( $depth,  
+#                        "push \@{$wh\{__C}}, $current_form\{'$name'};" );
+##                            "\$class->C($wh, $current_form\{'$name'});" );
+#                }
+#            }
+        }
+        if ($class_hierarchy) {
+            # Add to form class hierarchy
+            $class->add_to_UI( $depth,  
+                "$class_hierarchy\{__W} = $current_form\{'$name'};" );
+#                    "\$class->W($class_hierarchy, $current_form\{'$name'});" );
+#            if ($Glade_Perl->source->hierarchy =~ /order/) {
+#                if ($depth > 1) {
+#                    $class->add_to_UI( $depth,  
+#                        "push \@{$ch\{__C}}, $current_form\{'$name'};" );
+##                            "\$class->C($ch, $current_form\{'$name'});" );
+#                }
+#            }
+        }
+        if ($Glade_Perl->source->hierarchy =~ /order/) {
+            if ($depth > 1) {
+                $class->add_to_UI( $depth,  
+                    "push \@{$wh\{__C}}, $current_form\{'$name'};" );
+            }
+        }
+    } else {
+        $Glade_Perl->diag_print(1, "error I don't have a constructor called '%s'".
+            "- I guess that it isn't written yet :-)",
+            "$class->$constructor");
+    }
+    return ($widget_hierarchy, $class_hierarchy);
+}
+
+sub new_sub_widget {
+    my ($class, $parentname, $proto, $depth, $wh, $ch) = @_;
+    my $me = "$class->new_sub_widget";
+    my $childname;
+    if ($class->my_gtk_perl_can_do($proto->{'class'})) {
+        unless (" $ignore_widgets " =~ / $proto->{'class'} /) {
+            # This is a real widget subhash so recurse to expand
+            $childname = $class->Widget_from_Proto( 
+                $parentname, $proto, $depth, 
+                $wh, $ch );
+            $class->set_child_packing(
+                $parentname, $childname, $proto, $depth );
+            if ($Glade_Perl->diagnostics) {
+                # Check that we have used all widget properties
+                $class->check_for_unused_elements($proto);
+            }
+
+        } else {
+            unless (" $gnome_widgets " =~ / $proto->{'class'} /) {
+                $Glade_Perl->diag_print(3, 
+                    "warn  %s in %s ignored in %s", 
+                    $proto->{'class'}, $parentname, $me);
+            } else {
+                $Glade_Perl->diag_print(1, "error %s in %s ignored in %s", 
+                $proto->{'class'}, ($parentname || 'Glade project'), $me);
+            }
+            $ignored_widgets++;
+        }
+    }
+    return $childname;
 }
 
 sub Widget_from_Proto {
@@ -413,87 +541,18 @@ sub Widget_from_Proto {
 #$Glade_Perl->diag_print(2, $forms);
     my $typekey = $class->typeKey;
     my ($name, $widget_hierarchy, $class_hierarchy, $childname, 
-        $constructor, $window, $sig );
+        $window, $sig);
     my ($key, $dm, $self, $expr, $object, $refself, $packing );
     $parentname ||= "Top level application";
+
     if ($depth) {
         # We are a widget of some sort (toplevel window or child)
-        unless ($proto->{name}) {
-            $Glade_Perl->diag_print (2, 
-                "You have supplied a proto without a name to %s", $me);
-            $Glade_Perl->diag_print (2, $proto);
-        } else {
-            $name = $proto->{name};
-        }
-        if ($depth == 1) {
-            $forms->{$name} = {};
-            # We are a toplevel window so create a new hash and 
-            # set $current_form with its name
-            # All these back-slashes are really necessary as this string
-            # is passed through so many others
-            $current_form_name = "$name-\\\\\\\$instance";
-            $current_form = "\$forms->{'$name'}";
-            $current_data = "\$data->{'$name'}\{__DATA}";
-            $current_name = $name;
-            $current_window = "\$forms->{'$name'}\{'$name'}";
-            $first_form ||= $name;
+        ($widget_hierarchy, $class_hierarchy) = 
+            $class->construct_widget($parentname, $proto, $depth, $wh, $ch);
 
-            if ($Glade_Perl->source->hierarchy =~ /^(widget|both)/) {
-                $widget_hierarchy = "\$forms->{'$name'}{__WH}";
-            }
-            if ($Glade_Perl->source->hierarchy =~ /^(class|both)/) {
-                $class_hierarchy = "\$forms->{'$name'}{__CH}";
-            }
-
-        } else {
-            $widget_hierarchy = "$wh\{'$name'}" if $wh;
-            $class_hierarchy  = "$ch\{'$proto->{class}'}{'$name'}" if $ch; 
-        }
-        $class->add_to_UI( $depth,  "#" );
-        $class->add_to_UI( $depth,  "# ".S_("Construct a").
-            " $proto->{class} '$name'");
-        $constructor = "new_$proto->{class}";
-        if ($class->can($constructor)) {
-            # Construct the widget
-            my $eval_class = 'Glade::PerlProject';#ref $class || $class;
-            $expr =  "\$widgets->{'$name'} = ".
-                "$eval_class->$constructor('$parentname', \$proto, $depth );";
-            eval $expr or 
-                ($@ && die  "\nin $me\n\t".("while trying to eval").
-                    " '$expr'\n\t".("FAILED with Eval error")." '$@'\n" );
-            if ($widget_hierarchy) {
-                # Add to form widget hierarchy
-                $class->add_to_UI( $depth,  
-                    "$widget_hierarchy\{__W} = $current_form\{'$name'};" );
-#                    "\$class->W($widget_hierarchy, $current_form\{'$name'});" );
-                if ($Glade_Perl->source->hierarchy =~ /order/) {
-                    if ($depth > 1) {
-                        $class->add_to_UI( $depth,  
-                            "push \@{$wh\{__C}}, $current_form\{'$name'};" );
-#                            "\$class->C($wh, $current_form\{'$name'});" );
-                    }
-                }
-            }
-            if ($class_hierarchy) {
-                # Add to form class hierarchy
-                $class->add_to_UI( $depth,  
-                    "$class_hierarchy\{__W} = $current_form\{'$name'};" );
-#                    "\$class->W($class_hierarchy, $current_form\{'$name'});" );
-                if ($Glade_Perl->source->hierarchy =~ /order/) {
-                    if ($depth > 1) {
-                        $class->add_to_UI( $depth,  
-                            "push \@{$ch\{__C}}, $current_form\{'$name'};" );
-#                            "\$class->C($ch, $current_form\{'$name'});" );
-                    }
-                }
-            }
-        } else {
-            $Glade_Perl->diag_print(1, "error I don't have a constructor called '%s'".
-                "- I guess that it isn't written yet :-)",
-                "$class->$constructor");
-        }
     } else {
         # We are a complete GTK-Interface - ie we are the application
+#$Glade_Perl->diag_print(2, $proto);
         unless ($Glade_Perl->app->allow_gnome) {
             $ignore_widgets .= " $gnome_widgets";
         }
@@ -501,40 +560,21 @@ sub Widget_from_Proto {
             $ignore_widgets .= " $gnome_db_widgets";
         }
     }
+
     $self = $widgets->{$proto->{name}};
     $refself = ref $self;
+
+    # Iterate through keys looking for sub widgets and properties
     foreach $key (sort keys %{$proto}) {
-        # Iterate through keys looking for sub widgets
         if (ref $proto->{$key} eq 'HASH') {
             # this is a ref to a sub hash so expand it
             $object = $proto->{$key}{$typekey};
             if ($object) {
+#$Glade_Perl->diag_print(2, "Considering $key $object");
                 if ( $object eq 'widget') {
-                    if ($class->my_gtk_perl_can_do($proto->{$key}{'class'})) {
-                        unless (" $ignore_widgets " =~ / $proto->{$key}{'class'} /) {
-                            # This is a real widget subhash so recurse to expand
-                            $childname = $class->Widget_from_Proto( 
-                                $proto->{name}, $proto->{$key}, $depth + 1, 
-                                $widget_hierarchy, $class_hierarchy );
-                            $class->set_child_packing(
-                                $proto->{name}, $childname, $proto->{$key}, $depth+1 );
-                            if ($Glade_Perl->diagnostics) {
-                                # Check that we have used all widget properties
-                                $class->check_for_unused_elements($proto->{$key} );
-                            }
-
-                        } else {
-                            unless (" $gnome_widgets " =~ / $proto->{$key}{'class'} /) {
-                                $Glade_Perl->diag_print(3, 
-                                    "warn  %s in %s ignored in %s", 
-                                    $proto->{$key}{'class'}, $proto->{'name'}, $me);
-                            } else {
-                                $Glade_Perl->diag_print(1, "error %s in %s ignored in %s", 
-                                $proto->{$key}{'class'}, $proto->{'name'}, $me);
-                            }
-                            $ignored_widgets++;
-                        }
-                    }
+                    $childname = $class->new_sub_widget(
+                        $proto->{name}, $proto->{$key}, $depth+1, 
+                        $widget_hierarchy, $class_hierarchy);
 
                 } elsif ($object eq 'signal') {
                     # we are a SIGNAL
@@ -649,7 +689,7 @@ sub internal_pack_widget {
         # We probably have a parent to pack into somehow
         eval "\$refpar = (ref ${current_form}\{'$parentname'})||'UNDEFINED !!';";
         unless (eval "exists ${current_form}\{'$parentname'}") {
-            if ('Gtk::Menu' eq $refwid) {
+            if ($Glade_Perl->source->quick_gen or 'Gtk::Menu' eq $refwid) {
                 # We are a popup menu so we don't have a root window
 #            $class->add_to_UI( $depth, "${first_form}->popup_enable;" );
                 $class->add_to_UI($depth,   
@@ -818,7 +858,7 @@ sub internal_pack_widget {
                       
 #---------------------------------------
         } elsif (' Gtk::ScrolledWindow ' =~ m/ $refpar /) {
-            if (' Gtk::CList Gtk::CTree Gtk::Text ' =~ m/ $refwid /) {
+            if (' Gtk::CList Gtk::CTree Gtk::Text Gnome::IconList ' =~ m/ $refwid /) {
                 # These handle their own scrolling and
                 # Ctree/CList column labels stay fixed
                 $class->add_to_UI( $depth, 
@@ -1198,10 +1238,11 @@ sub set_window_properties {
             "'$wmclass_name', '$wmclass_class' );" );
     }
     $class->add_to_UI( $depth,  "\$widgets->{'$name'}->realize;" );
-
-	$widgets->{$name}->signal_connect("destroy" => \&Gtk::main_quit);
-	$widgets->{$name}->signal_connect("delete_event" => \&Gtk::main_exit);
-
+#use Data::Dumper;print Dumper($Glade_Perl->source);
+    unless ($Glade_Perl->source->quick_gen) {
+    	$widgets->{$name}->signal_connect("destroy" => \&Gtk::main_quit);
+	    $widgets->{$name}->signal_connect("delete_event" => \&Gtk::main_exit);
+    }
     $class->pack_widget($parent, $name, $proto, $depth );
 }
 
@@ -1220,7 +1261,8 @@ sub new_accelerator {
     my $me = "$class->new_accelerator";
     my $mods = '[]';
     my $accel_flags = "['visible', 'locked']";
-    my $key       = $class->use_par($proto, 'key',          $KEYSYM);
+#   my $key       = $class->use_par($proto, 'key', $LOOKUP);
+    my $key       = $class->use_par($proto, 'key', $KEYSYM);
     my $modifiers = $class->use_par($proto, 'modifiers',    $DEFAULT, 0);
     my $signal    = $class->use_par($proto, 'signal');
     unless (defined $need_handlers->{$parentname}{$signal}) {
@@ -1248,9 +1290,15 @@ sub new_accelerator {
             "${current_window}\->set_accelerator(".
                 "$gnome_frig, $key, $mods);");
     
+    } elsif ($Glade_Perl->source->quick_gen) {
+        # Do no checks
+        
     } elsif (eval "${current_form}\{'$parentname'}->can('$signal')") {
         $class->add_to_UI( $depth, "${current_form}\{'accelgroup'}->add(".
-            ($key || "''").", $mods, $accel_flags, ".
+#            ($key || "''").
+            "\$Gtk::Keysyms{'$key'} || Gtk::Gdk->keyval_from_name('$key') || ".
+            $Gtk::Keysyms{$key}.
+            " , $mods, $accel_flags, ".
             "${current_form}\{'$parentname'}, '$signal');");
     } else {
         $Glade_Perl->diag_print (1, "error Widget '%s' can't emit signal ".
@@ -1465,15 +1513,21 @@ sub new_from_child_name {
             "\$widgets->{'$name'} = ${current_form}\{'$parent'}->vbox;" );
 
 #---------------------------------------
-    } elsif (eval "${current_form}\{'$parent'}->can('$type')") {
+    } elsif ($Glade_Perl->source->quick_gen || eval "${current_form}\{'$parent'}->can('$type')") {
         my $label   = $class->use_par($proto, 'label', $DEFAULT, '');
         $class->add_to_UI( $depth, 
             "\$widgets->{'$name'} = ".
                 "${current_form}\{'$parent'}->$type;" );
 
         if ($label) {
-            if ($widgets->{$name}->can('child')) {
+            if ($Glade_Perl->source->quick_gen) {
+                $class->add_to_UI( $depth, 
+                    "\$widgets->{'$name'}->child->set_text(_('$label'));", 
+                    'TO_FILE_ONLY' );
+
+            } elsif ($widgets->{$name}->can('child')) {
                 my $childref = ref $widgets->{$name}->child;
+            
                 if ($childref eq 'Gtk::Label') {
                     $class->add_to_UI( $depth, 
                         "\$widgets->{'$name'}->child->set_text(_('$label'));", 
@@ -1523,7 +1577,7 @@ sub new_signal {
     my ($class, $parentname, $proto, $depth) = @_;
     my $me = "$class->new_signal";
     my $signal  = $proto->{name};
-    my ($call, $expr);
+    my ($call, $expr, $when);
 #    $class = ref $class || $class;
 # FIXME to do signals properly
     if ($proto->{'handler'}) {
@@ -1534,8 +1588,10 @@ sub new_signal {
         my $after   = $class->use_par($proto, 'after', $BOOL, 'False');
         unless ($object) {$object = $parentname}
         if ($after)  {
+            $when = 'after_';
             $call .= 'signal_connect_after'
         } else {
+            $when = '';
             $call .= 'signal_connect'
         }
         if ($handler =~ /[- \.]/) {
@@ -1558,15 +1614,8 @@ sub new_signal {
         }
         if ($class->can($handler) || 
             eval "$current_name->can('$handler')"
-            # || 
-            #    (
-            #        #($Glade_Perl->source->style || 'AUTOLOAD') eq 'Libglade' &&
-            #        defined $use_modules[0] && 
-            #        print "$use_modules[0]\->can('$handler')\n" &&
-            #        eval "$use_modules[0]\->can('$handler')"
-            #    )
             ) {
-            # All is hunky-dory - no need to generate a stub
+            # Handler already available - no need to generate a stub
             eval "delete $current_form\{_HANDLERS}{'$handler'}";
             # First connect the signal handler as best we can
             unless ($Glade_Perl->Writing_Source_only) {
@@ -1576,16 +1625,6 @@ sub new_signal {
                     "'name of form instance' )\"";
                 eval $expr
             }
-            # Now write a signal_connect for generated code
-            # All these back-slashes are really necessary as these strings
-            # are passed through so many others (evals and so on)
-            $expr = "push \@{${current_form}\{'Signal_Strings'}}, ".
-                "\"$class->add_to_UI( 1, ".
-                "\\\"\\\\\\${current_form}\{'$object'}->$call( ".
-                "'$signal', \\\\\\\"\\\\\\\$class\\\\\\\\\::$handler\\\\\\\", '$data', '$object', ".
-                "\\\\\\\"$current_form_name\\\\\\\" );\\\", 'TO_FILE_ONLY' );\"";
-                eval $expr
-            
         } else {
             # First we'll connect a default handler to hijack the signal 
             # for us to use during the Build run
@@ -1593,25 +1632,29 @@ sub new_signal {
                 "connected to widget '%s' needs to be written",
                 $handler, $object);
             unless ($Glade_Perl->Writing_Source_only) {
-            $expr = "push \@{${current_form}\{'Signal_Strings'}}, ".
+                $expr = "push \@{${current_form}\{'Signal_Strings'}}, ".
                 "\"\\${current_form}\{'$object'}->$call(".
                 "'$signal', \\\"\$class\\\::missing_handler\\\", ".
                 "'$parentname', '$signal', '$handler', '".
                 $Glade_Perl->app->logo."' )\"";
                 eval $expr
             }
-            # Now write a signal_connect for generated code
-            # All these back-slashes are really necessary as these strings
-            # are passed through so many others (evals and so on)
-            my $eval_class = ref $class || $class;
-            $expr = "push \@{${current_form}\{'Signal_Strings'}}, ".
-                "\"$eval_class->add_to_UI( 1, ".
-                "\\\"\\\\\\${current_form}\{'$object'}->$call( ".
-                "'$signal', \\\\\\\"\\\\\\\$class\\\\\\\\\::$handler\\\\\\\", '$data', '$object', ".
-                "\\\\\\\"$current_form_name\\\\\\\" );\\\", 'TO_FILE_ONLY' );\"";
-            eval $expr
         }
-
+        # Now write a signal_connect for generated code
+        # All these back-slashes are really necessary as these strings
+        # are passed through so many others (evals and so on)
+        my $id_string = "";
+        if ($Glade_Perl->source->save_connect_id) {
+            $id_string = 
+                "\\\\\\${current_form}\{'__CONNECT_ID'}{'$object'}{'$when$signal'} = ";
+        }
+        $expr = "push \@{${current_form}\{'Signal_Strings'}}, ".
+            "\"$class->add_to_UI( 1, \\\"".$id_string.
+            "\\\\\\${current_form}\{'$object'}->$call(".
+            "'$signal', \\\\\\\"\\\\\\\$class\\\\\\\\\::$handler\\\\\\\", '$data', '$object', ".
+            "\\\\\\\"$current_form_name\\\\\\\" );\\\", 'TO_FILE_ONLY' );\"";
+        eval $expr
+            
     } else {
         # This is a signal that we will cause
     }

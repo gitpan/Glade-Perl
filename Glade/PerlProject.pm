@@ -31,6 +31,7 @@ BEGIN {
     use Glade::PerlUI;
     use vars           qw( 
                             @ISA 
+                            $PACKAGE $VERSION $AUTHOR $DATE
                             %app_fields
                             $new
                             $convert
@@ -40,6 +41,10 @@ BEGIN {
                             Glade::PerlSource
                             Glade::PerlUI
                         );
+    $PACKAGE      = __PACKAGE__;
+    $VERSION      = q(0.60);
+    $AUTHOR       = q(Dermot Musgrove <dermot.musgrove@virgin.net>);
+    $DATE         = q(Fri May  3 03:56:25 BST 2002);
 
 %app_fields = (
     'type'  => 'glade2perl',
@@ -74,6 +79,8 @@ BEGIN {
         'tabwidth'      => 8,       # Replace each 8 spaces with a tab in sources
         'tab'           => '',
         'write'         => undef,   # Dont write source code
+        'quick_gen'     => 0,       # 1 = Don't perform any checks
+        'save_connect_id'=> 0,      # 1 = generate code to save signal_connect ids
         'hierarchy'     => '',      # Dont generate any hierarchy
                                     # widget... 
                                     #   eg $hier->{'vbox2'}{'table1'}...
@@ -382,6 +389,18 @@ sub use_Glade_Project {
             $me, $proj_opt->{$type}{logo});
     }
     
+    unless (-r $proj_opt->{app}{logo}) {             
+        $Glade_Perl->diag_print (2, "%s- Writing our own logo to '%s' in %s",
+            $indent, $proj_opt->{app}{logo}, $me);
+        open LOGO, ">$proj_opt->{app}{logo}" or 
+            die sprintf("error %s - can't open file '%s' for output", 
+                $me, $proj_opt->{app}{logo});
+        print LOGO $class->our_logo;
+        close LOGO or
+        die sprintf("error %s - can't close file '%s'", 
+            $me, $proj_opt->{app}{logo});
+    }
+    
     unless ($proj_opt->{app}{logo} && -r $proj_opt->{app}{logo}) {
         $proj_opt->{app}{logo} = $proj_opt->{$type}{logo};
     }            
@@ -394,9 +413,13 @@ sub use_Glade_Project {
         my $user = $pwuid->[0];
         my $fullname = $pwuid->[6];
         my $hostname = [split(" ", $host)];
-        $proj_opt->{app}{'author'} = "$fullname <$user\\\@$hostname->[0]>";
+        $proj_opt->{app}{'author'} = "$fullname <$user\@$hostname->[0]>";
     }
-    
+    # Remove trailing spaces and ensure only one leading '#'
+    $Glade_Perl->{app}{copying} =~ s/ *$//;
+    if ($Glade_Perl->app->copying !~ /^#/) {
+        $Glade_Perl->app->copying("#".$Glade_Perl->app->copying);
+    }
     # escape any quotes
     $proj_opt->{app}{'author'} =~ s/\"/\\\"/g;
     $proj_opt->{app}{'author'} =~ s/\'/\\\'/g;

@@ -18,6 +18,11 @@ Glade-Perl - perl source code generator
 
 TODO
 ----
+*   Investigate a 'quick and dirty' generation mode that performs no checks
+    and does not test-eval the code during the run. First tests show only
+    an improvement from 15 secs to 14 secs on a reference form so the loss
+    of validation may not be worth the time savings.
+    
 *   Implement GnomeDb widgets when they are available in Gtk-Perl
 
 *   Make better Examples/tests with docs.
@@ -33,7 +38,6 @@ TODO
     widget data. Perhaps not necessary.
 
 *   Recombine into fewer .pm files, possibly fewer packages
-
     Possibly move PerlUI subs to PerlGenerate
     
 *   Fix the signal handling for AccelLabels and pixmaps. Which widget should
@@ -42,11 +46,11 @@ TODO
 *   Check all evals for proper exception handling.
 
 *   I use several 'eval's, one allows for dynamic construction
-    of (unknown) widget types and another is only so that the 
+    of (possibly unknown) widget types and another is only so that the 
     UI can be built and a source line generated with the same 
     call (at least they stay in step - if the UI displays then
     I know that the generated code will work the same way.)
-    However, I am not sure that 'evals' are a proper way to go but it is
+    However, I am not sure that 'evals' are the best solution but it is
     probably too late to change now.
 
 *   It is still relatively inefficient. I construct an XML::Parser 'Tree' 

@@ -1,5 +1,29 @@
 This is the Frequently Asked Question list for Glade-Perl source generator
 --------------------------------------------------------------------------
+Q   When I try to update Glade-Perl with 'perl -MCPAN -e shell' I get:
+
+    Warning: Cannot install Glade-Perl, don't know what it is.
+    Try the command
+
+        i /Glade-Perl/
+
+A   I don't think that it is possible to install 'Glade-Perl' but you must
+    install one of the sub modules and CPAN.pm will fetch and build all the
+    Glade-Perl modules for you. There is another problem as CPAN.pm reads
+    the version numbers from 02packages.data.txt and they're not all correct.
+    I don't know whether this my fault or some historical accident but it
+    _is_ possible to get the latest version by installing Glade::PerlRun.
+    
+        perl -MCPAN -e shell
+    
+    and then in the interactive shell you enter:
+    
+        install Glade::PerlRun
+        
+    and this should fetch, build, test and install Glade-Perl for you.
+    You must be superuser to actually install the modules of course.
+
+--------------------------------------------------------------------------
 Q   How do I see diagnostic messages when using glade2perl or from Glade?
 
 A   The simplest way (from version 0.58) is to call glade2perl from the
@@ -141,6 +165,15 @@ A   Each instance of a form (you can have more than one copy of a UI showing at
     This is for the case where the entry widget is on the same form as the 
     widget that causes the signal. In other cases you will have to store the 
     $instance value in a global or pass it as an arg somehow.
+
+    Since Glade-Perl-0.59 there is also a sub PerlRun->lookup_widget().
+    It is a new method that accesses a window or a form's widget by name. 
+    It prints an error if the widget does not exist.
+
+      e.g. my $widget = $window->lookup_widget('clist1');
+         
+        OR my $form = $window->FORM;     # or use $form in signal handlers
+           my $widget = $form->lookup_widget('clist1');
 
     Other unusual ways
     ------------------

@@ -28,6 +28,7 @@ BEGIN {
     use Glade::PerlUI       qw( :VARS );  # UI construction vars and methods
     use vars                qw( 
                             @ISA 
+                            $PACKAGE $VERSION $AUTHOR $DATE
                           );
     # Tell interpreter who we are inheriting from
 #                            Glade::PerlSource
@@ -38,6 +39,10 @@ BEGIN {
                             Glade::PerlXML
                             Glade::PerlUI
                         );
+    $PACKAGE      = __PACKAGE__;
+    $VERSION      = q(0.60);
+    $AUTHOR       = q(Dermot Musgrove <dermot.musgrove@virgin.net>);
+    $DATE         = q(Fri May  3 03:56:25 BST 2002);
 }
 
 sub DESTROY {
@@ -67,7 +72,7 @@ the same methods that glade2perl calls:
 
  Glade::PerlGenerate->Form_from_Glade_File(
 
-   'author'        => 'Dermot Musgrove <dermot.musgrove\@virgin.net>',
+   'author'        => 'Dermot Musgrove <dermot.musgrove@virgin.net>',
    'description'   => "This is an example of the Glade-Perl
 source code generator",
    'verbose'       => 2,
@@ -352,8 +357,13 @@ sub Form_from_Proto {
 #        $class->load_translations('Glade-Perl', $options->source->LANG, undef, 
 #            '/home/dermot/Devel/Glade-Perl/ppo/en.mo', '__S', undef);
 #        $class->start_checking_gettext_strings("__S");
-        $Glade_Perl->diag_print (2, "%s- Source code will be generated for locale <%s>", 
-            $indent, $options->source->LANG);
+        my $gen_type = " Style ".$options->source->style;
+        if ($options->source->quick_gen) {
+            $gen_type .= " with NO VALIDATION!";
+        }
+        $Glade_Perl->diag_print (2, "%s- Source code will be generated for ".
+            "locale <%s>%s", 
+            $indent, $options->source->LANG, $gen_type);
 
         $proto->app->logo(basename ($proto->app->logo));
         $module = $proto->module->directory unless $proto->module->directory eq '.';
@@ -361,8 +371,7 @@ sub Form_from_Proto {
         $module .= "::" if $module;
         
         $proto->test->first_form($proto->test->first_form || $first_form);
-#print "$me started with test->use_module '".$proto->test->use_module."'\n";
-#print "$me started with test->first_form '".$proto->test->first_form."'\n";
+
         if ($options->source->style && $options->source->style eq "Libglade") {
             # Write source that will use libglade to show the UI
             $Glade_Perl->diag_print (2, "%s  Generating libglade type code", $indent);
@@ -381,12 +390,6 @@ sub Form_from_Proto {
                 "$indent$indent  perl -e 'use ".
                     $proto->test->use_module."; ".
                     $proto->test->first_form."->app_run'");
-#            $Glade_Perl->diag_print (2, 
-#                "%s- One way to run the generated source from dir '%s/':\n".
-#                "%sperl -e 'use %s; %s->app_run'",
-#                    $indent, $proto->glade->directory, ($indent x 3), 
-#                    $proto->test->use_module,
-#                    $proto->test->first_form);
 
         } else {
             $Glade_Perl->diag_print (4, "%s- Generating UI construction code", $indent);
@@ -431,11 +434,13 @@ sub Form_from_Proto {
                     $module.$proto->module->subapp->class.
                     "; Sub".$Glade_Perl->test->first_form."->app_run'");
         }
-        $Glade_Perl->write_documentation;
-        $Glade_Perl->write_distribution;
     }
+
+    $Glade_Perl->write_documentation;
+    $Glade_Perl->write_distribution;
+
     # Look through $proto and report any unused attributes (still defined)
-    if ($Glade_Perl->diagnostics(2)) {
+    if (!$Glade_Perl->source->quick_gen && $Glade_Perl->diagnostics(2)) {
         $Glade_Perl->diag_print (2, "%s", "-----------------------------------------------------------------------------");
         $Glade_Perl->diag_print (2, "%s  CONSISTENCY CHECKS", $indent);
         $Glade_Perl->diag_print (2, "%s- %s unused widget properties", $indent, $missing_widgets);
@@ -486,7 +491,7 @@ sub check_for_unused_elements {
                             $Glade_Perl->diag_print (4, 
                                 "warn  Intentionally ignored property for %s %s {'%s'}{'%s'} => '%s' seen by %s",
                                 $proto->{$typekey}, $object, $name, $key, $proto->{$key}, $me);
-                        } else {
+                        } elsif (!$Glade_Perl->source->quick_gen) {
                             $Glade_Perl->diag_print (1, 
                                 "error Unused widget property for %s %s {'%s'}{'%s'} => '%s' seen by %s",
                                 $proto->{$typekey}, $object, $name, $key, $proto->{$key}, $me);
@@ -917,8 +922,8 @@ Glade::PerlGenerate->Form_from_Glade_File() and
 Glade::PerlGenerate->Form_from_XML()
 methods or with the same name in the options XML files.
 
-Boolean values can be specified as True|true|Yes|yes|1 or 
-False|false|No|no|0|''|undef 
+Boolean values can be specified as C<True|true|Yes|yes|1 or 
+False|false|No|no|0|''|undef >
 
 =head1 <app> options that describe your application
 
@@ -936,19 +941,19 @@ The author's name to appear in generated sources. Backslash-escape any
 The default is synthesised from some of the values returned by 
 Perl's gethostbyname "localhost"
 
-e.g. 'Dermot Musgrove <dermot.musgrove\@virgin.net'
+e.g. C<Dermot Musgrove <dermot.musgrove@virgin.net>
 
 =item <version> - default is 0.01
 
 Version number to use in generated sources.
 
-e.g. '0.53-pre1'
+e.g. C<0.53-pre1>
 
 =item <date> - defaults to build time.
 
 The date string to show in sources.
 
-e.g. 'Christmas eve 2001'
+e.g. C<Christmas eve 2001>
 
 =item <copying> - default is '# Unspecified copying policy, please contact the author\n# '
 
@@ -959,8 +964,8 @@ as perl # comments so that the generated source is valid.
 
 A general description of the app to appear in sources and about_boxes
 
-e.g 'This is a reference form that contains all the widgets that Glade 
-knows about'
+e.g C<This is a reference form that contains all the widgets that Glade 
+knows about>
 
 =item <logo> - default 'Logo.xpm'
 
@@ -974,7 +979,7 @@ to be use()d in the generated classes.
 In an options file, a newline separated list of modules to be use()d by 
 generated classes
 
-e.g ['Existing::mySUBS', 'Some::Other::Module']
+e.g C<['Existing::mySUBS', 'Some::Other::Module']>
 
 =item <allow_gnome> - Default is read from the Glade project file
 
@@ -998,7 +1003,7 @@ Name of Glade file to read
 
 Character encoding of Glade file 
 
-eg 'ISO-8859-1'
+eg C<ISO-8859-1>
 
 =back
 
@@ -1023,9 +1028,9 @@ Name of the Glade::PerlGenerate logo pixmap used.
 Version number of my Gtk-Perl module. This overrides the number reported by
 Gtk::Perl so that CVS fixes can be used.
 
-'0.6123'   I have CPAN version 0.6123
+C<0.6123>   I have CPAN version 0.6123
 
-'19991001' I have the gnome.org CVS version of 'gnome-perl' 
+C<19991001> I have the gnome.org CVS version of 'gnome-perl' 
 that I downloaded on Oct 1st 1999
 
 =item <my_gnome_libs> - Default is to use gnome-libs version no
@@ -1033,9 +1038,9 @@ that I downloaded on Oct 1st 1999
 Version number of my gnome-libs. This overrides the number reported by
 `gnome-libs-config --version` so that CVS fixes can be used.
 
-'1.0.58'   I have the released version 1.0.58 of 'gnome-libs'
+C<1.0.58>   I have the released version 1.0.58 of 'gnome-libs'
 
-'19991001' I have the gnome.org CVS version of 'gnome-libs' 
+C<19991001> I have the gnome.org CVS version of 'gnome-libs' 
 that I downloaded on Oct 1st 1999
 
 =item <dont_show_UI> - default is to show the UI and wait for user action
@@ -1079,7 +1084,7 @@ Character encoding of glade2perl.xml options files.
 This option is only meaningful when set by Glade::PerlGenerate->options() or
 Form_from_File() although it is saved in the file itself.
 
-eg 'ISO-8859-1'
+eg C<ISO-8859-1>
 
 =back
 
@@ -1103,44 +1108,47 @@ Indent to use for 'nested' source code
 
 Number of spaces to replace with a tab in generated source code
 
-e.g. 4
+e.g. C<4>
 
 =item <write> - default is no source
 
 Where to write the source code. glade2perl sets this to 1.
 
-'STDOUT'  Write sources to STDOUT but there will be nothing to run later
+C<STDOUT>  Write sources to STDOUT but there will be nothing to run later
 
-'File.pm' Write sources to File.pm They will not run from here 
+C<File.pm> Write sources to File.pm They will not run from here 
 and you must cut-paste them
 
-True - write the sources to standard files.
+C<True> - write the sources to standard files.
 
-undef     Don't write source code
+C<undef>     Don't write source code
 
 =item <hierarchy> - default means don't generate any hierarchy
 
-...widget... generates a widget hierarchy eg $hier->{'vbox2'}{'table1'}...
+C<...widget...> generates a widget hierarchy eg C<$form-E<gt>{'__WH'}{'vbox2'}{'table1'}... >
 
-...class...  generates a class hierarchy eg $hier->{'GtkVBox'}{'vbox2'}{'GtkTable'}{'table1'}...
+C<...class...>  generates a class hierarchy eg C<$form-E<gt>{'__CH'}{'GtkVBox'}{'vbox2'}{'GtkTable'}{'table1'}... >
 
-...both...   both widget and class hierarchies generated
+C<...both...>   both widget and class hierarchies generated
 
-e.g. 'widget_hierarchy'
+C<...ordered...> generates an ordered hierarchy that reflects the order that child
+widgets were added to the UI eg C<$form-E<gt>{'__WH'}{'vbox2'}{'table1'}{'__C'}[2]... >
+
+e.g. C<widget_hierarchy>
 
 =item <style> - default AUTOLOAD
 
-AUTOLOAD - OO class implements missing signal handlers with an AUTOLOAD sub
+C<AUTOLOAD> - OO class implements missing signal handlers with an AUTOLOAD sub
 
-Libglade - generate libglade code and signal handlers
+C<Libglade> - generate libglade code and signal handlers
 
-split - generates each class in its own .pm file.
+C<split> - generates each class in its own .pm file.
 
 =item <LANG> - default $ENV{'LANG'}
 
 Which language do we want the source to be documented in?
 
-e.g. 'pt_BR'
+e.g. C<pt_BR>
 
 =back
 
@@ -1193,13 +1201,13 @@ Bool - True will cause the time to prefix all diagnostics messages
 Write diagnostics and errors to filename if verbose > 0
 glade2perl can set this to /path/to/glade/file.glade2perl.log
 
-e.g. '/home/dermot/Devel/Test/Project1.glade2perl.log'
+e.g. C</home/dermot/Devel/Test/Project1.glade2perl.log>
 
 =item <LANG> - default $ENV{'LANG'}
 
 Which language do we want the diagnostic messages in?
 
-e.g. 'de'
+e.g. C<de>
 
 =back
 
@@ -1273,7 +1281,7 @@ e.g. 'de'
  <?xml version="1.0" encoding="ISO-8859-1"?>
  <glade2perl-Options>
    <app>
-    <author>Dermot Musgrove &lt;dermot.musgrove\@virgin.net&gt;</author>
+    <author>Dermot Musgrove &lt;dermot.musgrove@virgin.net&gt;</author>
    </app>
 
    <diag>
@@ -1283,7 +1291,7 @@ e.g. 'de'
    </diag>
 
    <glade2perl>
-     <author>Dermot Musgrove &lt;dermot.musgrove\@virgin.net&gt;</author>
+     <author>Dermot Musgrove &lt;dermot.musgrove@virgin.net&gt;</author>
      <logo>/home/dermot/Devel/HTML-Site/pixmaps/glade2perl_logo.xpm</logo>
      <mru>/home/dermot/Devel/Glade-Perl/Example/Reference/Project.glade</mru>
      <name>Glade::PerlGenerate</name>
@@ -1325,7 +1333,7 @@ e.g. 'de'
  #
  # If you use this library in a commercial enterprise, you are invited,
  # but not required, to pay what you feel is a reasonable fee to cpan.org
- # at http://www.perl.org or contact donors\@perlmongers.org for details.
+ # at http://www.perl.org or contact donors@perlmongers.org for details.
  # </copying>
    </app>
    <glade2perl>
@@ -1364,7 +1372,7 @@ A perl class/module (projectSIGS.pm) that contains
 a class for each toplevel window/dialog, with skeleton 
 signal handlers for any that were missing at build time. 
 
-If the 'split' style is used, the typical filename will be
+If the C<split> style is used, the typical filename will be
 projectSIGS_class .pm (one file per class).
 
 =item project.pm
@@ -1378,7 +1386,7 @@ definitions to your Glade project, skeletons for the handlers will be
 generated in the projectSIGS.pm file and you can cut-and-paste them
 from there into the relevant class in the project.pm "App" module.
 
-If the 'split' style is used, the typical filename will be
+If the C<split> style is used, the typical filename will be
 project_class .pm (one file per class).
 
 =item Subproject.pm
@@ -1402,14 +1410,16 @@ it is only written the first time through (if missing).
 
 =head1 SEE ALSO
 
+Glade::Run(3) glade2perl(1)
+
 Documentation that came with the module is in Directory 'Documentation' in 
 files README, Changelog, FAQ, FAQ.i18n, TODO, NEWS, ROADMAP etc.
 
-The test file for 'make test' is test.pl which is runnable and has
+The test file for C<make test> is test.pl which is runnable and has
 examples of user options.
 
 A Perl script to generate source code from the Glade 'Build' button or menuitem
-is in file 'Example/glade2perl' and is installed when you 'make install'. 
+is in file 'Example/glade2perl' and is installed when you C<make install>. 
 You can also call this script from the command line.
 
 A module that subclasses the test example is in file Example/SubBus.pm. This
@@ -1417,3 +1427,10 @@ module will use (inherit or subclass) the generated perl classes and also use
 the supplied signal handlers module (Example/BusForm_mySUBS.pm)
 
 =cut
+
+=head1 AUTHOR
+
+Dermot Musgrove <dermot.musgrove@virgin.net>
+
+=cut
+

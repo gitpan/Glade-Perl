@@ -31,6 +31,10 @@ BEGIN {
                        );
     # Tell interpreter who we are inheriting from
     @ISA            = qw( Glade::PerlRun );
+    $PACKAGE      = __PACKAGE__;
+    $VERSION      = q(0.60);
+    $AUTHOR       = q(Dermot Musgrove <dermot.musgrove@virgin.net>);
+    $DATE         = q(Fri May  3 03:56:25 BST 2002);
 }
 
 sub DESTROY {
@@ -115,6 +119,7 @@ sub Proto_from_XML_Parser_Tree {
                 $work->{&typeKey} = $self->[$count];
                 # prefix with tilde to force to end (alphabetically)
                 $tk = "~$self->[$count]-".sprintf(&keyFormat, $key, $self->[$count] );
+#print "$tk\n";
                 $np->{$tk} = $work;
             }
 

@@ -1,5 +1,64 @@
 Revision history for Perl module Glade::PerlGenerate development branch.
 
+Fri May  3 03:56:25 BST 2002 Dermot Musgrove <dermot.musgrove at virgin.net>
+  - Version 0.60
+  - Documentation and dist files written for Libglade style apps as well.
+  - PerlRun->save_file_from_string() allows writing undef string.
+  - PerlUI->new_GtkSpinButton() bug fix for set_wrap() code.
+  - PerlProject->use_Glade_Project() forces a leading '#' for 'copying'.
+  - PerlSource->perl_preamble() (extra) leading '#' removed from 'copying.
+  - PerlSource->dist_Makefile_PL() now uses Glade-Perl's min. requirements
+    as defaults for Makefile.PL version checks for Gtk and Gnome.
+  - PerlUI->internal_pack_widget() fixed to add() Gnome::IconLists instead
+    of add_with_viewport() - thanks to René Seindal <rene at seindal.dk>
+  - PerlUI->new_accelerator() changed to generate code that looks up the
+    keyval at UI construction time so that apps are more portable.
+    Also generated code will use Gtk::Gdk->keyval_from_name() in case any
+    subsequent app user doesn't have a populated Gtk::Keysyms.pm (some RPMs)
+  - PerlUIExtra->new_GtkPixmapMenuItem() similarly changed.
+  - PerlUIExtra->new_GnomeEntry() fixed to set history ID correctly.
+    Thanks to Franco Broi for the bug report.
+  - PerlSource->perl_AUTOLOAD_top() small change to generated sub AUTOLOAD()
+  - PerlSource->perl_*_top() now generate modules with initial version
+    number of 0.10 (was 0.01) to make scripts handling the distribution of
+    modules more predictable - minor version now always has 2 significant
+    digits and can be incremented without packing (eg. 0.10 > 0.11).
+    Also %params now passed through from toplevel script to app_run()
+  - New user option <source><save_connect_id>1</save_connect_id></source>
+    and PerlUI->new_signal() changed to generate code that will save all 
+    the signal connection ids in a predictable way so that signals can be
+    blocked and unblocked in handlers. The connection id is held in eg:
+      my $id = $forms->{'__CONNECT_ID'}{'entry1'}{'after_key_press_event'}
+    and can be used like $form->{'entry1'}->signal_handler_block($id);
+    and later $form->{'entry1'}->signal_handler_unblock($id);
+    or $form->{'entry1'}->signal_disconnect($id);
+    or $form->{'entry1'}->signal_emit($id);
+    The last hash key is either 'signal' or 'after_signal' depending on
+    whether the signal is connected normally or after. I have never needed
+    this functionality but someone asked for it, the costs of the changes
+    are negligible and they should not affect any existing code - just 
+    don't give any widget the name '__CONNECT_ID'. 
+    The default (0) produces the same code as previous versions.
+  - PerlProject->use_Glade_project() fixed to write missing project logo.
+  - PerlSource->dist_MANIFEST_SKIP() generates file MANIFEST.SKIP such that
+    src/ProjectSIGS.pm will not be included in default MANIFEST file when 
+    you run 'make manifest'
+  - PerlRun->write_missing_gettext_strings() produces better .pot file
+  - FAQ - new Q/A about automatic installion using CPAN.pm and updated Q/A 
+    about accessing widgets with PerlRun->lookup_widget() new in 0.59
+  - PerlUI->use_par() fixed to escape leading single quote in string
+  - PerlUI->Widget_from_Proto() split into construct_widget() and 
+    new_sub_widget(). This is an attempt to tidy the code a little.
+  - PerlRun data fields altered to double quote default 'copying' message
+    so that the \n is interpolated. Thanks to Mark W. Eichin for report.
+  - PerlProject->use_Glade_project() fixed to not escape author strings
+    and PerlSource->perl_preamble() to cope with the change. Also Mark :)
+  - PerlSource->perl_about() fixed to pass author/description/copying
+    as single-quoted literals in generated code (see above).
+  - $PACKAGE, $VERSION, $AUTHOR, $DATE fields not now inherited from
+    Glade::PerlRun. This was bad behaviour and broke the CPAN automatic
+    updating module so each module is separately updated now.
+  
 Wed Jun 20 14:48:25 BST 2001 Dermot Musgrove <dermot.musgrove at virgin.net>
   - Version 0.59
   - All modules now have empty DESTROY() sub as perl 5.6 demands.
@@ -12,21 +71,21 @@ Wed Jun 20 14:48:25 BST 2001 Dermot Musgrove <dermot.musgrove at virgin.net>
       OR my $form = $window->FORM; # or use $form in signal handlers
          my $widget = $form->lookup_widget('clist1');
   - Glade-Perl will now create skeleton documentation files if they
-    do not already exist. These default to files in directory 'Documentation'
+    do not already exist. These default to directory 'Documentation' files
     called COPYING, Changelog, FAQ, INSTALL, NEWS, README, ROADMAP and TODO
-    If you don't want to generate the doc files add a line to site or project 
-    options file:
+    If you don't want to generate the doc files add a line to site or 
+    project options file:
       <doc><write>0</write></doc>
   - Glade-Perl will now create skeleton distribution files if they
-    do not already exist. These default to files - Makefile.PL, MANIFEST.SKIP, 
+    do not already exist. These default to - Makefile.PL, MANIFEST.SKIP, 
     Project.spec and test.pl - so you should be able to call:
     'perl Makefile.PL; make manifest; make dist;' and then either
     'rpm -ta Project-0.01.tar.gz' to build a RPM or the normal perl methods
-    of 'make test' and 'make install'. This is all at a very early stage and 
-    will probably fail in many cases but you should, at least, have some 
-    files to edit :)
-    If you don't want to generate the dist files add a line to site or project
-    options file:
+    of 'make test' and 'make install'. This is all at a very early stage 
+    and will probably fail in many cases but you should, at least, have 
+    some files to edit :)
+    If you don't want to generate the dist files add a line to site or 
+    project options file:
       <dist><write>0</write></dist>
     
 Fri Apr 13 01:01:22 BST 2001 Dermot Musgrove <dermot.musgrove at virgin.net>

@@ -81,7 +81,7 @@ gnome-libs      1.2.13  Gnome mirrors or Gnome.org CVS
                         If you use RPMs you will need gnome-libs-devel too but 
                         you probably worked this out while building Glade and 
                         Gtk-Perl :)
-Gtk-Perl        0.7007  CPAN or http://projects.prosa.it/gtkperl/
+Gtk-Perl        0.7007  CPAN or http://www.gtkperl.org/download.html
 Perl            5.00503 CPAN
 XML::Parser     2.27    CPAN
 Unicode::String 2.04    CPAN (optionally used for I18N)

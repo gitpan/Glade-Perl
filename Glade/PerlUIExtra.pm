@@ -21,12 +21,17 @@ require 5.000; use strict 'vars', 'refs', 'subs';
 BEGIN {
     use Glade::PerlSource qw( :VARS :METHODS );
     use vars              qw( 
+                            $PACKAGE $VERSION $AUTHOR $DATE
                             $enums
                           );
     # These cannot be looked up in the include files
     $enums =      {
         'GNOME_MENU_SAVE_AS_STRING'     => 'Save _As...',
     };
+    $PACKAGE      = __PACKAGE__;
+    $VERSION      = q(0.60);
+    $AUTHOR       = q(Dermot Musgrove <dermot.musgrove@virgin.net>);
+    $DATE         = q(Fri May  3 03:56:25 BST 2002);
 }
 
 sub DESTROY {
@@ -516,10 +521,13 @@ sub new_GnomeEntry {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeEntry";
     my $name = $proto->{name};
+    my $history_id = $class->use_par($proto, 'history_id',  $DEFAULT, '' );
     my $max_saved = $class->use_par($proto, 'max_saved', $DEFAULT, 10 );
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gnome::Entry(".
-        "$max_saved);" );
+        "'$history_id');" );
+    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_max_saved(".
+        "$max_saved );" );
 
     $class->pack_widget($parent, $name, $proto, $depth );
     return $widgets->{$name};
@@ -875,7 +883,7 @@ sub new_GtkPixmapMenuItem {
             $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
                 "Gnome::Stock->menu_item('$work->{'sim'}', _('$label'));" );
             $work->{'ak'} =~ s/GDK_//;
-            $work->{'ak'} = $Gtk::Keysyms{$work->{'ak'}} if $work->{'ak'};
+#            $work->{'ak'} = $Gtk::Keysyms{$work->{'ak'}} if $work->{'ak'};
 
             my $ac_mods = $class->use_par($proto, 'ac_mods', $DEFAULT, '0' ) ||
                 $work->{'am'};
@@ -887,7 +895,11 @@ sub new_GtkPixmapMenuItem {
             if ($work->{'ak'} || $ac_mods) {
 #            if ($work->{'ak'} && $ac_mods) {
                 $class->add_to_UI( $depth, "${current_form}\{accelgroup}->add(".
-                    ($work->{'ak'} || "''").", \['$ac_mods'\], $accel_flags, ".
+                    "\$Gtk::Keysyms{'$work->{'ak'}'} || ".
+                    "Gtk::Gdk->keyval_from_name('$work->{'ak'}') || ".
+                    $Gtk::Keysyms{$work->{'ak'}}.
+#                    ($work->{'ak'} || "''").
+                    ", \['$ac_mods'\], $accel_flags, ".
                     "\$widgets->{'$name'}, 'activate');");
             }
             if (_($label) =~ /_/) {

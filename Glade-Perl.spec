@@ -1,4 +1,4 @@
-%define ver     0.59
+%define ver     0.60
 %define rel     1
 %define name    Glade-Perl
 %define rlname  %{name}
