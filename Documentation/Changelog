@@ -1,4 +1,14 @@
 Revision history for Perl module Glade::PerlGenerate development branch.
+Wed Apr 19 02:28:58 BST 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
+  - Version 0.55
+  - New FAQ about building Unicode::String for perl 5.6
+  - PerlXML->Proto_from_XML_Parser_Tree() changed to cancel the use of 
+    encodings if Unicode::String is not available. You should not need to
+    install Unicode::String now unless you use european characters.
+  - Documentation/Gtk-Perl-Docs.html tidied and Stephen Wilhelm's Gtk-Perl
+    tutorial http://personal.riverusers.com/~swilhelm/perlgtk/tutorial/
+    now pushed as the best starting point for learning Gtk-Perl.
+  
 Sun Apr 16 00:07:26 BST 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
   - Version 0.54
   - PerlUI->new_from_child_name() fixed to use gnome_app_docked_item() and

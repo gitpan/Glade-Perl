@@ -1,5 +1,23 @@
 This is the Frequently Asked Question list for Glade-Perl source generator
 --------------------------------------------------------------------------
+Q   Unicode::String 2.05 fails compilation under (default) Perl 5.6.0.
+
+A   The maintainers have been notified and should fix this problem soon 
+    (17 Apr 2000) but if you are brave you can amend String.xs as below
+    
+    It dies because PERL_POLLUTE is disabled by default in 5.6 which
+    includes these two lines (from embedvar.h):
+    
+    #define na                    PL_na
+    #define dowarn                PL_dowarn
+
+    Adding those to the top of String.xs should cure any "'dowarn'
+    undeclared/undefined  (first use in this function)" messages when
+    compiling Unicode::String.
+
+    Thanks to Jay J <linux@zeroink.com> for this temporary fix
+
+--------------------------------------------------------------------------
 Q   I wanted my real name and address in the files, so I added
       <author>René</author> 
     to the project xml file but when inspecting the generated files, I found
@@ -155,10 +173,12 @@ A   This is caused by changes made to the CVS version of Gtk-Perl. Version
 Q   How do I set fonts, colours and bg-pixmaps of widgets at run time?
 
 A   To change the fonts, colours and bg-pixmaps of widgets at run-time you can
-    use something like the code below. This is for a button so it sets the style 
-    of the button->child (in other words the label in the button) and the actual 
-    way that you set the style will depend on what type of widget you are working
-    with. There are many ways to get the colours but this is one approach:
+    use something like the code below. This is for a button so it sets the 
+    style of the button->child (in other words the label in the button) and the 
+    actual way that you set the style will depend on what type of widget you are 
+    working with. 
+    
+    There are many ways to get the colours but this is one approach:
 
     my $style = new Gtk::Style;
     my $cm = $form->{'button43'}->get_toplevel->window->get_colormap;
@@ -205,6 +225,7 @@ A   Copy glade2perl and edit the 'verbose' line to read
 Q   How do I write signal handlers in a separate module?
 
 A   As always with Perl, there is more than one way to do it.
+
     1) The first way is to put your signal handlers in a .pm module and use() 
     the module from the generated source code. An example of this is the file
     '$DIST_DIR/Example/Bus/Bus_mySUBS.pm. You then specify this module to 
@@ -214,13 +235,19 @@ A   As always with Perl, there is more than one way to do it.
     run when you cause the signal.
 
     2) The better and simpler way is edit the generated Project.pm module and 
-    put the signal handlers there. See $DIST_DIR/Example/Generated/SubBus.pm.
+    put the signal handlers there. See $DIST_DIR/Example/Bus/Generated/Bus.pm.
+    
     Glade-Perl >= 0.48 generates up to 4 perl files.
       A) ProjectUI.pm   - the UI constructor class (always written)
       B) ProjectSIGS.pm - utilities and skeleton signal handlers (always written)
       C) Project.pm     - a base for your app that you can safely edit
       D) SubProject.pm  - an example subclass of your app that you can edit
 
+    3) Another way is to subclass the Bus.pm class and put your signal handlers 
+    there. A skeleton subclass is generated in SubProject.pm and you can see a
+    test example generated as $DIST_DIR/Example/Bus/Generated/SubBus.pm and 
+    how to run it by looking at the test script $DIST_DIR/test.pl.
+    
 --------------------------------------------------------------------------
 Q   How do I access widgets to set or get their data/text?
 
@@ -271,7 +298,7 @@ Q   My GtkClock does not show the current time
 
 A   Older versions of gnome-libs (at least <= 1.0.8) do not handle the clock 
     type 'realtime' properly. Gtk-Perl 0.6123 cannot explicitly set the type 
-    so we are stuck. Upgrade to a newer version of gnome-libs.
+    so we are stuck. Upgrade to a newer version of gnome-libs or Gtk-Perl.
         
 --------------------------------------------------------------------------
 Q   When I upgraded to Glade-Perl version 0.3.5 (or greater) I get error ...

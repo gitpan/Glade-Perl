@@ -24,7 +24,7 @@ BEGIN {
                             $enums
                           );
     $PACKAGE =          __PACKAGE__;
-    $VERSION            = q(0.54);
+    $VERSION            = q(0.55);
     # These cannot be looked up in the include files
     $enums =      {
         'GNOME_MENU_SAVE_AS_STRING'     => 'Save _As...',

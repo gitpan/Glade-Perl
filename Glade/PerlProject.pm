@@ -35,7 +35,7 @@ BEGIN {
                             $xAUTOLOAD
                        );
     $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.54);
+    $VERSION        = q(0.55);
     # Tell interpreter who we are inheriting from
     @ISA            = qw( 
                             Glade::PerlXML 
@@ -442,7 +442,7 @@ sub options {
         }
     }
     $options->{'glade2perl_encoding'} ||= $options->glade_encoding;
-#use Data::Dumper; print Dumper($options);
+
     # merge in the supplied arg options
     $class->add_to_hash_from($options, \%params);
 
@@ -491,6 +491,7 @@ sub options {
                     $me, $log_file);
         }
         if ($class->diagnostics(2)) {
+#use Data::Dumper; print Dumper($options);
             $class->diag_print (2, 
                 "--------------------------------------------------------");
             $class->diag_print (2, "%s  DIAGNOSTICS (locale <%s> verbosity %s) ".

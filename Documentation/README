@@ -21,7 +21,7 @@ Documentation/COPYING            # How we encourage copying
 Documentation/Changelog          # History of the changes made
 Documentation/FAQ                # Frequently asked questions
 Documentation/INSTALL            # How to install the module
-Documentation/Glade-Project.txt  # How Glade-Perl uses the Glade project options
+Documentation/Glade-Project.txt  # How Glade-Perl uses the Glade file
 Documentation/Gtk-Perl-Docs.html # Some pointers to Gtk-Perl documentation
 Documentation/NEWS               # What is new in each version
 Documentation/README             # This file

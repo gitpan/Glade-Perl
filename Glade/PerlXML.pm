@@ -28,7 +28,7 @@ BEGIN {
                             $seq
                        );
     $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.54);
+    $VERSION        = q(0.55);
     $AUTHOR         = q(Dermot Musgrove <dermot.musgrove\@virgin.net>);
     $DATE           = q(30 June 1999);
     # Tell interpreter who we are inheriting from
@@ -135,6 +135,9 @@ sub Proto_from_XML_Parser_Tree {
     # Tree[3] cannot exist since the fileelement must enclose everything
     if ($encoding && ($encoding eq 'ISO-8859-1')) {
         eval "use Unicode::String qw(utf8 latin1)";
+        undef $encoding if $@;  # We can't use encodings correctly
+    } else {
+        undef $encoding;        # We don't recognise the encodings name
     }
     my ($tk, $i, $ilimit );
     my ($count, $np, $key, $work );
@@ -190,10 +193,10 @@ sub Proto_from_XML_Parser_Tree {
             # this is a simple element to add with 
             # key in $self->[$count] and val in $self->[$count+1][2]
             if ($encoding && ($encoding eq 'ISO-8859-1')) {
-                # Uncomment the line below if you are using european characters
+                # We use line below if you are using european characters
                 $np->{$self->[$count]} = &utf8($self->[$count+1][2])->latin1;
             } else {
-                # Comment out the line below if you are using european characters
+                # We use the line below if you are NOT using european characters
                 $np->{$self->[$count]} = $self->[$count+1][2];
             }
         }
@@ -276,14 +279,12 @@ sub simple_Proto_from_XML {
     my ($class, $xml, $depth, $pos, $repeated) = @_;
     my ($self, $tag, $use_tag, $prev_contents, $work);
     my $new_pos;
-#    my $pos = -1;
     while (($new_pos = index($$xml, "<", $$pos)) > -1) {
         $prev_contents = substr($$xml, $$pos, $new_pos-$$pos);
         $$pos = $new_pos;
         $new_pos = index($$xml, ">", $$pos);
         $tag = substr($$xml, $$pos+1, $new_pos-$$pos-1);
         $$pos = $new_pos+1;
-#print "Depth = $depth\tPos is $$pos\ttag = '$tag'\n";
         next if $tag =~ /^\?/;
         if ($tag =~ s|^/||) {
             # We are an endtag so return the $prev_contents
@@ -291,7 +292,6 @@ sub simple_Proto_from_XML {
                 return $self;
 
             } else {
-#print "Depth = $depth\tPos = $$pos\t'$tag'\t => '$prev_contents'\n";
                 return &UnQuoteXMLChars($prev_contents);
             }
 
@@ -300,8 +300,10 @@ sub simple_Proto_from_XML {
             $work = $class->simple_Proto_from_XML(
                 $xml, $depth + 1, $pos, $repeated);
             if (" $repeated " =~ / $tag /) {
+                # Store as a numbered key
                 $use_tag = "~$tag-".sprintf(&keyFormat, $seq++);
             } else {
+                # Store as key
                 $use_tag = $tag;
             }
             $self->{$use_tag} = $work;

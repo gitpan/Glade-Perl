@@ -26,7 +26,7 @@ BEGIN {
                             $PACKAGE 
                           );
     $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.54);
+    $VERSION        = q(0.55);
     # Tell interpreter who we are inheriting from
     @ISA            = qw(
                             Glade::PerlProject
@@ -1085,7 +1085,7 @@ Name of the Glade::PerlGenerate logo pixmap used.
 =head1 EXAMPLE OPTIONS FILES
 
 =head2 This is a typical project_options file 
-~/Devel/Glade-Perl/Reference/Existing/Reference.glade2perl.xml 
+~/Devel/Glade-Perl/Example/Reference/Existing/Reference.glade2perl.xml 
 
  <?xml version="1.0" encoding="ISO-8859-1"?>
  <G2P-Options>

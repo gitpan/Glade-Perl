@@ -6,7 +6,7 @@ BEGIN     {
     use Glade::PerlGenerate;
     }
 
-my $VERSION = "0.53";
+my $VERSION = "0.55";
 
 # We expect to be supplied with parameter
 #   $_[0] is name of a Glade <GTK-Interface> XML file
@@ -42,7 +42,7 @@ sub main {
     &file_test || print "Not ";
     print "Test 2..3 OK\n\n";
 
-    # Subclass the generated code
+    # Use the Subclass to run the generated code
     print "Test 3..3 Subclassing the generated source code for the example Glade file\n";
     eval "use Generated::SubBus; SubBusFrame->run" || print 'Not ';
     print "Test 3..3 OK\n\n";

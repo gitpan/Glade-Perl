@@ -40,7 +40,7 @@ BEGIN {
         $cxx_properties
         );
     $PACKAGE =          __PACKAGE__;
-    $VERSION        = q(0.54);
+    $VERSION        = q(0.55);
 
     $ignored_widgets = 0;
     $missing_widgets = 0;

@@ -5,28 +5,29 @@
     <body bgcolor=#e7e7ff>
 <h1>Some notes on Gtk-Perl documentation</h1>
 
-    Firstly, make sure that you have the latest Gtk-Perl (or at least 
+    Firstly, make sure that you have the latest Gtk-Perl (or at the very least 
     version 0.6123). Older versions have too many errors and omissions.
 
-<h2>HTML</h2>
+<h2>HTML Tutorial</h2>
 
-    Stephen Wilhelm <swilhelm@theriver.com> has finished 21 chapters 
-    (14 April 2000) of his excellent
-    <a href="http://personal.riverusers.com/~swilhelm/perlgtk/tutorial/">
-    online Gtk-Perl tutorial</a> for Gtk-Perl. It follows the Gtk+ style 
+    Stephen Wilhelm <swilhelm@theriver.com> has finished 34 chapters 
+    (18 April 2000) of his excellent
+    <a href="http://personal.riverusers.com/~swilhelm/perlgtk/tutorial/index.html">
+    online tutorial</a> for Gtk-Perl. It follows the Gtk+ Tutorial style 
     and has some very pretty syntax highlighting for the code examples :)
-
     <p>
-    The Gtk-Perl maintainers have automated the building of documention for
-    the bindings and if you build Gtk-Perl yourself docs should be produced 
-    then. Examples of what is produced are the 
-    <a href="http://www.lettere.unipd.it/~lupus/perl-gtk-ref.html">
-        reference manual of modules and functions</a>, and 
-    <a href="http://www.lettere.unipd.it/~lupus/perl-gtk-ds.html">
-        some data structures and types</a>
-    (currently enumerations and flags).
-
-<h2>Gtk-Perl package documentation</h2>
+    You can now download a tarball of the whole site from the tutorial homepage 
+    so that you have a Gtk-Perl tutorial/manual for use when you are off-line.
+    <p>
+    I have learnt a lot from the tutorial and examples and I think that this 
+    is (or very soon will be) the best way to start with Gtk-Perl. 
+    
+    <h2>Gtk-Perl package documentation</h2>
+    If you need a complete reference of all the Gtk-Perl modules and their
+    methods and data structures
+    the Gtk-Perl maintainers have automated the building of documention for
+    the bindings.
+    and if you build Gtk-Perl yourself, up-to-date docs will be produced then.
     <ul>
     <li>
     Pod versions of the files are in the build/ directory of each module after 
@@ -37,6 +38,13 @@
       pod2html perl-gtk-ds.pod  > perl-gtk-ds.html
     </pre>
 
+    Online HTML examples of what is produced are 
+    <ul>
+        <li><a href="http://www.lettere.unipd.it/~lupus/perl-gtk-ref.html">
+            the reference manual of modules and functions</a>
+        <li><a href="http://www.lettere.unipd.it/~lupus/perl-gtk-ds.html">
+            some data structures and types</a> (currently enumerations and flags).
+    </ul>
     </li>
     <li>
     You may be able to learn something from the Gtk-Perl distribution .xs files
@@ -47,7 +55,7 @@
     </li>
     </ul>
 
-<h2>Distribution and source files</h2>
+<h2>Other distributions and source files</h2>
     <ul>
     <li>
         <h3>Gtk documentation</h3>
@@ -79,8 +87,8 @@
         <h3>Gnome documentation</h3>
         Again, if you have the gnome sources, read the .[ch] files
         <p>
-            /usr/doc/gnome-libs-devel-1.0.8/devel-docs/ in my gnome-libs-devel
-            rpm package or directory devel-docs/ in the CVS dir.
+        /usr/doc/gnome-libs-devel-1.0.8/devel-docs/ in my gnome-libs-devel
+        rpm package or directory devel-docs/ in the source tree.
     </li>
     </ul>
     
@@ -101,5 +109,5 @@
 
     <p>
     Please don't post long code examples or attachments and definitely no HTML :-) 
-    Also use a meaningful subject line, 'How do I add text to a List in Gtk-Perl' 
+    Also use a meaningful subject line, 'How do I add text to a Gtk::List' 
     is much better than 'Help, I'm a newbie'
