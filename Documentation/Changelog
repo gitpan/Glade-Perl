@@ -1,4 +1,22 @@
 Revision history for Perl module Glade::PerlGenerate development branch.
+Wed Jan 19 17:12:54 GMT 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
+  - Version 0.47
+  - PerlRun->message_box() amended to allow an entry field for a question_box
+  - PerlUI->new_from_child_name(), PerlUIGtk->new_GtkRadioButton() and 
+    PerlUIGtk->new_GtkToggleButton() fixed to build correctly when child_name 
+    is specified even though Glade doesn't  distinguish between GtkButton,
+    GtkRadioButton and GtkToggleButton properly. Thanks to
+    jes@presto.med.upenn.edu for pointing this out.    
+  - PerlUIGtk->new_GtkRadioButton() changed to use any existing rb_group widget
+    and not keep updating the rb_group with new widget (pointless behaviour)
+  - PerlUI->use_par amended to report any missing GNOMEUIINFO nicknames. This 
+    will not work correctly until Gtk-Perl implements the GNOMEUIINFO stuff :(
+    For the moment omit any menu items that are reported as missing. Thanks
+    to Curt Johnson <cjohnson@arrayservices.com> for this report.
+  - PerlUI->set_window_properties() amended to use 'default_width' or
+    'default_height' properties if present.
+  - 
+  
 Tue Jan  4 03:38:01 GMT 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
   - Version 0.46
   - Added check for Gnome::Stock if allow_gnome is set

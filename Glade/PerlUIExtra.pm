@@ -26,7 +26,7 @@ BEGIN {
                             $gnome_enums
                           );
     $PACKAGE =          __PACKAGE__;
-    $VERSION            = q(0.46);
+    $VERSION            = q(0.47);
     # These cannot be looked up in the include files
     $gnome_enums =      {
         'GNOME_ANIMATOR_LOOP_NONE'      => 'none',
@@ -743,11 +743,7 @@ sub new_GtkPixmapMenuItem {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkPixmapMenuItem";
     my $name = $proto->{'name'};
-#    $class->diag_print(2, $proto);
-#    $class->diag_print(2, $Glade::PerlUIExtra::gnome_enums);
-#    my $stock_item = uc($class->use_par($proto, 'stock_item', $DEFAULT, '' ));
-#    my $stock_icon = $class->use_par($proto, 'stock_icon', $DEFAULT, '' );
-#    my $stock_item = uc($class->use_par($proto, 'stock_item', $LOOKUP, '' ));
+    my $work;
     my $stock_item = uc($class->use_par($proto, 'stock_item', $DEFAULT, '' ));
     my $stock_icon = $class->use_par($proto, 'stock_icon', $LOOKUP, '' );
     my $label = $class->use_par($proto, 'label', $DEFAULT, '' );
@@ -761,10 +757,15 @@ sub new_GtkPixmapMenuItem {
 #        $proto->{'stock_item_temp'} = "GNOME_STOCK_MENU_$stock_item";
         $proto->{'stock_item_temp'} = "GNOME_STOCK_PIXMAP_$stock_item";
 #        $stock_item = $gnome_enums->{"GNOME_STOCK_PIXMAP_$stock_item"};
-        $stock_item = $class->use_par($proto, 'stock_item_temp', $LOOKUP, '' );
-        $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
-            "Gnome::Stock->menu_item('$stock_item', '$stock_item');" );
-            
+        $work = $class->use_par($proto, 'stock_item_temp', $LOOKUP, '' );
+        if ($work) {
+            $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
+                "Gnome::Stock->menu_item('$work', '$work');" );
+        } else {
+            $stock_item = ucfirst(lc($stock_item));
+            $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
+                "new Gtk::MenuItem('$stock_item');" );
+        }            
     } elsif ($stock_icon) {
         $stock_icon = ucfirst($stock_icon);
         # Remove any underline accelerators

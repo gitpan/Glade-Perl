@@ -37,9 +37,9 @@ BEGIN {
     # Tell interpreter who we are inheriting from
     @ISA          = qw( Exporter );
     $PACKAGE      = __PACKAGE__;
-    $VERSION      = q(0.46);
+    $VERSION      = q(0.47);
     $AUTHOR       = q(Dermot Musgrove <dermot.musgrove\@virgin.net>);
-    $DATE         = q(Thu Dec 30 00:55:33 GMT 1999);
+    $DATE         = q(Wed Jan 19 17:12:54 GMT 2000);
     $widgets      = {};
     $all_forms    = {};
     # These vars are imported by all Glade-Perl modules for consistency
@@ -53,6 +53,7 @@ BEGIN {
                         create_image 
                         create_pixmap 
                         missing_handler 
+                        new_message_box 
                         message_box 
                         message_box_close 
                         destroy_all_forms
@@ -245,7 +246,8 @@ sub create_pixmap {
 }
 
 sub message_box {
-    my ($class, $text, $title, $buttons, $default, $pixmapfile, $just, $handlers) = @_;
+    my ($class, $text, $title, $buttons, $default, 
+        $pixmapfile, $just, $handlers, $entry) = @_;
     my ($i, $ilimit);
     my $justify = $just || 'center';
     my $mbno = 1;
@@ -266,88 +268,101 @@ sub message_box {
     $widgets->{"MessageBox-$mbno"}{'tooltips'} = new Gtk::Tooltips;
         #
         # Create a GtkVBox called MessageBox-vbox1
-        $widgets->{'MessageBox-vbox1'} = new Gtk::VBox(0, 0);
-        $widgets->{'MessageBox-vbox1'}->border_width(0);
-        $widgets->{"MessageBox-$mbno"}->add($widgets->{'MessageBox-vbox1'});
-        $widgets->{'MessageBox-vbox1'}->show();
+        $widgets->{"MessageBox-$mbno"}{'vbox1'} = new Gtk::VBox(0, 0);
+        $widgets->{"MessageBox-$mbno"}{'vbox1'}->border_width(0);
+        $widgets->{"MessageBox-$mbno"}->add($widgets->{"MessageBox-$mbno"}{'vbox1'});
+        $widgets->{"MessageBox-$mbno"}{'vbox1'}->show();
             #
             # Create a GtkHBox called MessageBox-hbox1
-            $widgets->{'MessageBox-hbox1'} = new Gtk::HBox('0', '0');
-            $widgets->{'MessageBox-hbox1'}->border_width('0');
-            $widgets->{'MessageBox-vbox1'}->add($widgets->{'MessageBox-hbox1'});
-            $widgets->{'MessageBox-hbox1'}->show();
+            $widgets->{"MessageBox-$mbno"}{'hbox1'} = new Gtk::HBox('0', '0');
+            $widgets->{"MessageBox-$mbno"}{'hbox1'}->border_width('0');
+            $widgets->{"MessageBox-$mbno"}{'vbox1'}->add($widgets->{"MessageBox-$mbno"}{'hbox1'});
+            $widgets->{"MessageBox-$mbno"}{'hbox1'}->show();
 
     		if ($pixmapfile) { 
                 #
                 # Create a GtkPixmap called pixmap1
-    			$widgets->{'pixmap1'} = $class->create_pixmap($widgets->{'MessageBox-hbox1'}, $pixmapfile);
-    			if ($widgets->{'pixmap1'}) {
-                    $widgets->{'pixmap1'}->set_alignment('0.5', '0.5');
-    	            $widgets->{'pixmap1'}->set_padding('0', '0');
-        	        $widgets->{'MessageBox-hbox1'}->add($widgets->{'pixmap1'});
-            	    $widgets->{'pixmap1'}->show();
-    	            $widgets->{'MessageBox-hbox1'}->set_child_packing($widgets->{'pixmap1'}, '0', '0', '0', 'start');
+    			$widgets->{"MessageBox-$mbno"}{'pixmap1'} = $class->create_pixmap($widgets->{"MessageBox-$mbno"}{'hbox1'}, $pixmapfile);
+    			if ($widgets->{"MessageBox-$mbno"}{'pixmap1'}) {
+                    $widgets->{"MessageBox-$mbno"}{'pixmap1'}->set_alignment('0.5', '0.5');
+    	            $widgets->{"MessageBox-$mbno"}{'pixmap1'}->set_padding('0', '0');
+        	        $widgets->{"MessageBox-$mbno"}{'hbox1'}->add($widgets->{"MessageBox-$mbno"}{'pixmap1'});
+            	    $widgets->{"MessageBox-$mbno"}{'pixmap1'}->show();
+    	            $widgets->{"MessageBox-$mbno"}{'hbox1'}->set_child_packing($widgets->{"MessageBox-$mbno"}{'pixmap1'}, '0', '0', '0', 'start');
     			}
     		}
 
                 #
                 # Create a GtkLabel called MessageBox-label1
-                $widgets->{'MessageBox-label1'} = new Gtk::Label($text);
-                $widgets->{'MessageBox-label1'}->set_justify($justify);
-                $widgets->{'MessageBox-label1'}->set_alignment('0.5', '0.5');
-                $widgets->{'MessageBox-label1'}->set_padding('0', '0');
-                $widgets->{'MessageBox-hbox1'}->add($widgets->{'MessageBox-label1'});
-                $widgets->{'MessageBox-label1'}->show();
-    	        $widgets->{'MessageBox-hbox1'}->set_child_packing($widgets->{'MessageBox-label1'}, '1', '1', '10', 'start');
-        	$widgets->{'MessageBox-vbox1'}->set_child_packing($widgets->{'MessageBox-hbox1'}, '1', '1', '0', 'start');
+                $widgets->{"MessageBox-$mbno"}{'label1'} = new Gtk::Label($text);
+                $widgets->{"MessageBox-$mbno"}{'label1'}->set_justify($justify);
+                $widgets->{"MessageBox-$mbno"}{'label1'}->set_alignment('0.5', '0.5');
+                $widgets->{"MessageBox-$mbno"}{'label1'}->set_padding('0', '0');
+                $widgets->{"MessageBox-$mbno"}{'hbox1'}->add($widgets->{"MessageBox-$mbno"}{'label1'});
+                $widgets->{"MessageBox-$mbno"}{'label1'}->show();
+    	        $widgets->{"MessageBox-$mbno"}{'hbox1'}->set_child_packing($widgets->{"MessageBox-$mbno"}{'label1'}, '1', '1', '10', 'start');
+        	$widgets->{"MessageBox-$mbno"}{'vbox1'}->set_child_packing($widgets->{"MessageBox-$mbno"}{'hbox1'}, '1', '1', '0', 'start');
             #
             # Create a GtkHBox called MessageBox-action_area1
-            $widgets->{'MessageBox-action_area1'} = new Gtk::HBox('1', '5');
-            $widgets->{'MessageBox-action_area1'}->border_width('10');
-            $widgets->{'MessageBox-vbox1'}->add($widgets->{'MessageBox-action_area1'});
-            $widgets->{'MessageBox-action_area1'}->show();
+            $widgets->{"MessageBox-$mbno"}{'action_area1'} = new Gtk::HBox('1', '5');
+            $widgets->{"MessageBox-$mbno"}{'action_area1'}->border_width('10');
+            $widgets->{"MessageBox-$mbno"}{'vbox1'}->add($widgets->{"MessageBox-$mbno"}{'action_area1'});
+            $widgets->{"MessageBox-$mbno"}{'action_area1'}->show();
+                if ($entry) {
+                    #
+                    # Create a GtkEntry called MessageBox-entry
+                    $widgets->{"MessageBox-$mbno"}{'entry'} = new Gtk::Entry;
+                    $widgets->{"MessageBox-$mbno"}{'vbox1'}->add($widgets->{"MessageBox-$mbno"}{'entry'});
+					$widgets->{"MessageBox-$mbno"}{'entry'}->show( );
+					$widgets->{"MessageBox-$mbno"}{'entry'}->set_usize('160', '0' );
+					$widgets->{"MessageBox-$mbno"}{'entry'}->can_focus('1' );
+					$widgets->{"MessageBox-$mbno"}{'entry'}->set_text('' );
+					$widgets->{"MessageBox-$mbno"}{'entry'}->set_max_length('0' );
+					$widgets->{"MessageBox-$mbno"}{'entry'}->set_visibility('1' );
+					$widgets->{"MessageBox-$mbno"}{'entry'}->set_editable('1' );
+					$widgets->{"MessageBox-$mbno"}{'entry'}->grab_focus();
+                }
                 #
                 # Create a GtkHButtonBox called MessageBox-hbuttonbox1
-                $widgets->{'MessageBox-hbuttonbox1'} = new Gtk::HButtonBox;
-                $widgets->{'MessageBox-hbuttonbox1'}->set_layout('default_style');
-                $widgets->{'MessageBox-hbuttonbox1'}->set_spacing('10');
-                $widgets->{'MessageBox-action_area1'}->add($widgets->{'MessageBox-hbuttonbox1'});
-                $widgets->{'MessageBox-hbuttonbox1'}->show();
+                $widgets->{"MessageBox-$mbno"}{'hbuttonbox1'} = new Gtk::HButtonBox;
+                $widgets->{"MessageBox-$mbno"}{'hbuttonbox1'}->set_layout('default_style');
+                $widgets->{"MessageBox-$mbno"}{'hbuttonbox1'}->set_spacing('10');
+                $widgets->{"MessageBox-$mbno"}{'action_area1'}->add($widgets->{"MessageBox-$mbno"}{'hbuttonbox1'});
+                $widgets->{"MessageBox-$mbno"}{'hbuttonbox1'}->show();
     			#
     			# Now add all the buttons that were requested (and check for default)
     			$ilimit = scalar(@$buttons);
     			for ($i = 0; $i < $ilimit; $i++) {
                     #
                     # Create a GtkButton called MessageBox-button2
-                    $widgets->{'MessageBox-button'.$i} = new Gtk::Button($buttons->[$i]);
-                    $widgets->{'MessageBox-button'.$i}->can_focus('1');
+                    $widgets->{"MessageBox-$mbno"}{'button'.$i} = new Gtk::Button($buttons->[$i]);
+                    $widgets->{"MessageBox-$mbno"}{'button'.$i}->can_focus('1');
     				if ($handlers->[$i]) {
-    					$widgets->{'MessageBox-button'.$i}->signal_connect('clicked', $handlers->[$i], $buttons->[$i]);
+    					$widgets->{"MessageBox-$mbno"}{'button'.$i}->signal_connect('clicked', $handlers->[$i], $mbno, $buttons->[$i]);
     				} else {
-#			            $widgets->{"MessageBox-$mbno"}{'tooltips'}->set_tip($widgets->{'MessageBox-button'.$i}, 'Click here to get rid of this message');
-    					$widgets->{'MessageBox-button'.$i}->signal_connect('clicked', "${PACKAGE}::message_box_close", $mbno, $buttons->[$i]);
+#			            $widgets->{"MessageBox-$mbno"}{'tooltips'}->set_tip($widgets->{"MessageBox-$mbno"}{'button'.$i}, 'Click here to get rid of this message');
+    					$widgets->{"MessageBox-$mbno"}{'button'.$i}->signal_connect('clicked', "${PACKAGE}::message_box_close", $mbno, $buttons->[$i]);
     				}
-                    $widgets->{'MessageBox-button'.$i}->border_width('0');
-                    $widgets->{'MessageBox-hbuttonbox1'}->add($widgets->{'MessageBox-button'.$i});
+                    $widgets->{"MessageBox-$mbno"}{'button'.$i}->border_width('0');
+                    $widgets->{"MessageBox-$mbno"}{'hbuttonbox1'}->add($widgets->{"MessageBox-$mbno"}{'button'.$i});
     				if ($i == ($default-1)) {
-                        $widgets->{'MessageBox-button'.$i}->can_default('1');
-    	                $widgets->{'MessageBox-button'.$i}->grab_default();
+                        $widgets->{"MessageBox-$mbno"}{'button'.$i}->can_default('1');
+    	                $widgets->{"MessageBox-$mbno"}{'button'.$i}->grab_default();
     				}
-                    $widgets->{'MessageBox-button'.$i}->show();
+                    $widgets->{"MessageBox-$mbno"}{'button'.$i}->show();
                 }
-    			$widgets->{'MessageBox-action_area1'}->set_child_packing($widgets->{'MessageBox-hbuttonbox1'}, '1', '1', '0', 'start');
-    	    $widgets->{'MessageBox-vbox1'}->set_child_packing($widgets->{'MessageBox-action_area1'}, '0', '1', '0', 'end');
+    			$widgets->{"MessageBox-$mbno"}{'action_area1'}->set_child_packing($widgets->{"MessageBox-$mbno"}{'hbuttonbox1'}, '1', '1', '0', 'start');
+    	    $widgets->{"MessageBox-$mbno"}{'vbox1'}->set_child_packing($widgets->{"MessageBox-$mbno"}{'action_area1'}, '0', '1', '0', 'end');
     $widgets->{"MessageBox-$mbno"}->show();
     return $widgets->{"MessageBox-$mbno"};
 }
 
 sub message_box_close {
     my ($class, $mbno, $data) = @_;
-    # Close this message_box and free the $widget->{'MessageBox-$mbno'} structure
+    # Close this message_box and undef the $widget->{'MessageBox-$mbno'} structure
     $widgets->{"MessageBox-$mbno"}->get_toplevel->destroy;
     undef $widgets->{"MessageBox-$mbno"};
     if ('*Quit Program*Quit PerlGenerate*Quit UI Build*Close Form*' =~ m/\*$data\*/) {
-#        __PACKAGE__->destroy_all_forms;
         Gtk->main_quit;
     }
     return $data;

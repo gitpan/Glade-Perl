@@ -32,7 +32,7 @@ BEGIN {
                             $gtk_enums
                           );
     $PACKAGE =          __PACKAGE__;
-    $VERSION        = q(0.46);
+    $VERSION        = q(0.47);
     @VARS           = qw( 
                             $VERSION
                             $AUTHOR
@@ -1181,29 +1181,34 @@ sub new_GtkRadioButton {
     my $me = "$class->new_GtkRadioButton";
     my $name = $proto->{'name'};
     my $label  = $class->use_par($proto, 'label'    ,  $DEFAULT, '' );
-    my $draw_indicator = $class->use_par($proto, 'draw_indicator', $BOOL,        'False' );
+    my $draw_indicator = $class->use_par($proto, 'draw_indicator', $BOOL, 'False' );
     my $active = $class->use_par($proto, 'active',     $BOOL,    'False' );
-    my $group  = $class->use_par($proto, 'group'    ,  $DEFAULT, '' );
-    my $rb_group = "$current_form\{'rb-group-$group'}";
+    unless ($class->new_from_child_name($parent, $name, $proto, $depth )) {
+        my $group  = $class->use_par($proto, 'group'    ,  $DEFAULT, '' );
+        my $rb_group = "$current_form\{'rb-group-$group'}";
 
-    if ($group) {
-        if (eval "defined $rb_group") {
-            $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::RadioButton('$label', $rb_group );" );
+        if ($group) {
+            if (eval "defined $rb_group") {
+                $class->add_to_UI( $depth,  "\$widgets->{'$name'} = ".
+                    "new Gtk::RadioButton('$label', $rb_group );" );
+            } else {
+                $class->add_to_UI( $depth,  "\$widgets->{'$name'} = ".
+                    "new Gtk::RadioButton('$label' );" );
+                $class->add_to_UI( $depth,  "$rb_group = \$widgets->{'$name'};" );
+
+            }
         } else {
-            $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::RadioButton('$label' );" );
-    
+            $class->add_to_UI( $depth,  "\$widgets->{'$name'} = ".
+                "new Gtk::RadioButton('$label' );" );
         }
-        $class->add_to_UI( $depth,  "$rb_group = \$widgets->{'$name'};" );
-    } else {
-        $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::RadioButton('$label' );" );
+        $class->pack_widget($parent, $name, $proto, $depth );
     }
-
-    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_mode(".
+    
+    $class->add_to_UI( $depth, "$current_form\{'$name'}->set_mode(".
         "'$draw_indicator' );" );
-    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_state(".
+    $class->add_to_UI( $depth, "$current_form\{'$name'}->set_state(".
         "'$active' );" );
 
-    $class->pack_widget($parent, $name, $proto, $depth );
     return $widgets->{$name};
 }
 
@@ -1220,16 +1225,16 @@ sub new_GtkRadioMenuItem {
 
     if ($group) {
         if (eval "defined $rmi_group") {
-            $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::RadioMenuItem(".
-                "'$label', $rmi_group );" );
+            $class->add_to_UI( $depth,  "\$widgets->{'$name'} = ".
+                "new Gtk::RadioMenuItem('$label', $rmi_group );" );
         } else {
-            $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::RadioMenuItem(".
-                "'$label' );" );
+            $class->add_to_UI( $depth,  "\$widgets->{'$name'} = ".
+                "new Gtk::RadioMenuItem('$label' );" );
         }
         $class->add_to_UI( $depth,  "$rmi_group = \$widgets->{'$name'};" );
     } else {
-        $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::RadioMenuItem(".
-            "'$label' );" );
+        $class->add_to_UI( $depth,  "\$widgets->{'$name'} = ".
+            "new Gtk::RadioMenuItem('$label' );" );
     }
 
     if ($right_justify) {
@@ -1260,10 +1265,10 @@ sub new_GtkScrolledWindow {
         "'$hscrollbar_policy', '$vscrollbar_policy' );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->border_width(".
         "'$border_width' );" );
-    $class->add_to_UI( $depth, "\$widgets->{'$name'}->hscrollbar->set_update_policy(".
-        "'$hupdate_policy' );" );
-    $class->add_to_UI( $depth, "\$widgets->{'$name'}->vscrollbar->set_update_policy(".
-        "'$vupdate_policy' );" );
+    $class->add_to_UI( $depth, "\$widgets->{'$name'}->hscrollbar->".
+        "set_update_policy('$hupdate_policy' );" );
+    $class->add_to_UI( $depth, "\$widgets->{'$name'}->vscrollbar->".
+        "set_update_policy('$vupdate_policy' );" );
 
     $class->pack_widget($parent, $name, $proto, $depth );
     return $widgets->{$name};
@@ -1388,14 +1393,19 @@ sub new_GtkToggleButton {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkToggleButton";
     my $name = $proto->{'name'};
-    my $label        = $class->use_par($proto, 'label'    ,    $DEFAULT, '' );
     my $active       = $class->use_par($proto, 'active',       $BOOL,    'False' );
 
-    $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::ToggleButton(".
-        "'$label' );" );
-    $class->add_to_UI( $depth, "\$widgets->{'$name'}->active(".
+    unless ($class->new_from_child_name($parent, $name, $proto, $depth )) {
+        my $label        = $class->use_par($proto, 'label'    ,    $DEFAULT, '' );
+        $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::ToggleButton(".
+            "'$label' );" );
+        $class->pack_widget($parent, $name, $proto, $depth );
+    }
+    $class->add_to_UI( $depth, "$current_form\{'$name'}->active(".
         "'$active' );" );
-    $class->pack_widget($parent, $name, $proto, $depth );
+#    $class->add_to_UI( $depth, "\$widgets->{'$name'}->active(".
+#        "'$active' );" );
+
     return $widgets->{$name};
 }
 

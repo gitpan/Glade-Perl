@@ -51,7 +51,7 @@ BEGIN {
                         $first_form
                       );
     $PACKAGE      = __PACKAGE__;
-    $VERSION        = q(0.46);
+    $VERSION        = q(0.47);
     @VARS         = qw( 
                         $VERSION
                         $AUTHOR

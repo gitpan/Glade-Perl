@@ -39,7 +39,7 @@ BEGIN {
         $missing_widgets
         );
     $PACKAGE =          __PACKAGE__;
-    $VERSION        = q(0.46);
+    $VERSION        = q(0.47);
 
     $ignored_widgets = 0;
     $missing_widgets = 0;
@@ -349,11 +349,16 @@ sub use_par {
                     $gnome_incs = "$inc_dir/libgnomeui";
                     $command = "\$grep = `grep -h \" $self \" $gnome_incs/*.h`";
                     eval $command;
-#print "grep returned '$grep'\n";
+#print "Looking for '$self' grep returned '$grep'\n";
                     $grep =~ s/.*$self\s+//g;
                     $grep =~ s/^[\"\s]*//g;
                     $grep =~ s/[\"\s]*$//g;
-                    $self = $grep if $grep;
+                    $self = $grep;
+                    unless ($self) {
+                        $class->diag_print(1, 
+                        "error Unable to find '$lookup' in Gnome header files");
+                        last;
+                    }
 #print "grep grepped to '$grep'\n";
                 }
                 $Glade::PerlUIExtra::gnome_enums->{$lookup} = $grep;
@@ -1077,8 +1082,12 @@ sub set_window_properties {
         my $height = $class->use_par($proto, 'height', $DEFAULT, 0 );
         $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_usize(".
             "'$width', '$height' );" );
-#        $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_default_size(".
-#            "'$width', '$height' );" );
+    }
+    if ( (defined $proto->{'default_width'}) || (defined $proto->{'default_height'}) ) {
+        my $default_width  = $class->use_par($proto, 'default_width',  $DEFAULT, 0 );
+        my $default_height = $class->use_par($proto, 'default_height', $DEFAULT, 0 );
+        $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_default_size(".
+            "'$default_width', '$default_height' );" );
     }
     if ( (defined $proto->{'x'}) || (defined $proto->{'y'}) ) {
         my $x = $class->use_par($proto, 'x',  $DEFAULT, 0 );
@@ -1330,6 +1339,7 @@ sub new_from_child_name {
 #---------------------------------------
     } elsif ($type eq 'Toolbar:button') {
         my $pixmap_widget_name = 'undef';
+        my ($group, $rb_group, $use_group);
         my $label   = $class->use_par($proto, 'label',         $DEFAULT, '');
         my $icon    = $class->use_par($proto, 'icon',          $DEFAULT, '' );
 #        my $stock_button = $class->use_par($proto, 'stock_button',  $LOOKUP, '' );
@@ -1347,13 +1357,33 @@ sub new_from_child_name {
                     "${current_window}, '$icon' );" ); 
 
             # We have label and so on to add
-            $type =~ s/.*:(.*)/$1/;
+            if ($proto->{'class'} eq 'GtkToggleButton') {
+                $type = 'togglebutton';
+
+            } elsif ($proto->{'class'} eq 'GtkRadioButton') {
+                $type = 'radiobutton';
+                $group  = $class->use_par($proto, 'group', $DEFAULT, '' );
+                $rb_group = "$current_form\{'rb-group-$group'}";
+                if ($rb_group && eval "defined $rb_group") {
+                    $use_group = $rb_group;
+                }
+
+            } else {
+                $type =~ s/.*:(.*)/$1/;
+            }
+
+            $use_group ||= 'undef';
             $class->add_to_UI( $depth, 
                 "\$widgets->{'$name'} = ".
                     "${current_form}\{'$parent'}->append_element(".
-                        "'$type', \$widgets->{'$name'}, '$label', ".
+                        "'$type', $use_group, '$label', ".
                         "'$tooltip', '', $pixmap_widget_name );" );
 
+            unless (!$rb_group || eval "defined $rb_group") {
+                $class->add_to_UI( $depth,  
+                    "$rb_group = \$widgets->{'$name'};" );
+            }
+            
         } elsif ($proto->{'stock_pixmap'}) {
             my $stock_pixmap = $class->use_par($proto, 'stock_pixmap',  $LOOKUP, '' );
             $pixmap_widget_name = "${current_form}\{'${name}-pixmap'}";
@@ -1366,12 +1396,39 @@ sub new_from_child_name {
                     "$pixmap_widget_name = Gnome::Stock->new_with_icon(".
                         "'$stock_pixmap');" ); 
             }
-            $type =~ s/.*:(.*)/$1/;
+#            $type =~ s/.*:(.*)/$1/;
+            # We have label and so on to add
+            if ($proto->{'class'} eq 'GtkToggleButton') {
+                $type = 'togglebutton';
+
+            } elsif ($proto->{'class'} eq 'GtkRadioButton') {
+                $type = 'radiobutton';
+                $group  = $class->use_par($proto, 'group'    ,  $DEFAULT, '' );
+                $rb_group = "$current_form\{'rb-group-$group'}";
+                if ($rb_group && eval "defined $rb_group") {
+                    $use_group = $rb_group;
+                }
+
+            } else {
+                $type =~ s/.*:(.*)/$1/;
+            }
+
+            $use_group ||= 'undef';
             $class->add_to_UI( $depth, 
                 "\$widgets->{'$name'} = ".
                     "${current_form}\{'$parent'}->append_element(".
-                        "'$type', \$widgets->{'$name'}, '$label', ".
+                        "'$type', $use_group, '$label', ".
                         "'$tooltip', '', $pixmap_widget_name );" );
+
+            unless (!$rb_group || eval "defined $rb_group") {
+                $class->add_to_UI( $depth,  
+                    "$rb_group = \$widgets->{'$name'};" );
+            }
+#            $class->add_to_UI( $depth, 
+#                "\$widgets->{'$name'} = ".
+#                    "${current_form}\{'$parent'}->append_element(".
+#                        "'$type', \$widgets->{'$name'}, '$label', ".
+#                        "'$tooltip', '', $pixmap_widget_name );" );
 
         }
 
