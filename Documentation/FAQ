@@ -1,5 +1,49 @@
 This is the Frequently Asked Question list for Glade-Perl source generator
 --------------------------------------------------------------------------
+Q   I wanted my real name and address in the files, so I added
+      <author>René</author> 
+    to the project xml file but when inspecting the generated files, I found
+    # Copyright (c) Date Sat Apr  1 13:21:33 CEST 2000
+    # Author RenÃfÂ©
+    Clearly glade2perl (or some module used herein) is doing something weird
+    to the accented e in my name.
+
+A   You guessed correctly - XML::Parser (which I use to read the options files
+    as well as the Glade file) produces UTF8 encoded characters and these need
+    to be converted from UTF8 to Latin1 in your case.
+
+    Glade-Perl >= 0.53 should handle ISO-8859-1 characters correctly in both
+    the Glade file and the project options files. If you want to use another
+    encoding, you can edit Glade/PerlGenerate at or near line 76 to read:
+        $Glade_Perl->{'options'}{'glade_encoding'} ||= 'ISO-8859-9';
+    so that Glade-Perl will default to another encoding (see XML::Parser docs).
+    
+    You can also specify a user option (either in glade2perl or in the project 
+    options file as 
+      <glade2perl_encoding>ISO-8859-9</glade2perl_encoding> 
+    to read the user options file as Latin9 characters.
+    
+    In Glade-Perl 0.52 there are some commented lines that you can uncomment
+    to handle Latin1 characters.
+
+    If you always want to use European characters there are some changes that
+    you can make to Glade/PerlXML.pm so that your characters will be handled 
+    correctly. This will also allow European characters in the UI.
+
+    First download from CPAN and install perl module Unicode::String. 
+    Then uncomment PerlXML.pm line 23 to use() the module
+      use Unicode::String qw(utf8 latin1);    # To read ISO-8859-1 chars
+
+    Comment out PerlXML line 181 and uncomment line 183
+            # Comment out the line below if you are using european characters
+    #        $np->{$self->[$count]} = $self->[$count+1][2];
+            # Uncomment the line below if you are using european characters
+            $np->{$self->[$count]} = &utf8($self->[$count+1][2])->latin1;
+  
+    I am working on a proper solution that will allow Glade-Perl to handle all
+    character encodings and I would greatly appreciate any advice :)
+
+--------------------------------------------------------------------------
 Q   I use Solaris 2.6 and Ultra SPARC cpu, if I use the Gnome stock button, 
     why does it report a lot of error messages?
 

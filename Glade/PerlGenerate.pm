@@ -26,7 +26,7 @@ BEGIN {
                             $PACKAGE 
                           );
     $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.52);
+    $VERSION        = q(0.53);
     # Tell interpreter who we are inheriting from
     @ISA            = qw(
                             Glade::PerlProject
@@ -71,12 +71,19 @@ sub Form_from_Glade_File {
 #        $params{'glade_filename'}, " widget child accelerator ")->
 #        {'GTK-Interface'};
 #    use Data::Dumper; print Dumper($glade_proto);
-    my $glade_proto = $class->Proto_from_File( $params{'glade_filename'}, 
-        ' accelerator signal widget ', ' project child ');
-    $Glade_Perl->{'options'}{'glade_filename'} = $params{'glade_filename'};    
+    # FIXME The line below is necessary until Damon sorts out Glade's XML.
+    # Glade doesn't write an encoding declaration at the top of the file :(
+    $Glade_Perl->{'options'}{'glade_encoding'} ||= 'ISO-8859-1';
+    my ($encoding, $glade_proto) = $class->Proto_from_File( 
+        $params{'glade_filename'}, 
+        ' accelerator signal widget ', ' project child ', 
+        $Glade_Perl->{'options'}->glade_encoding);
+    $Glade_Perl->{'options'}->{'glade_filename'} = $params{'glade_filename'};
     $Glade_Perl->{'run_options'} = $class->use_Glade_Project($glade_proto );
     $Glade_Perl->{'options'}{'name'} = $glade_proto->{'project'}{'name'};
-    $class->add_to_hash_from($Glade_Perl->{'options'}, $Glade_Perl->{'run_options'});
+    $class->add_to_hash_from(
+        $Glade_Perl->{'options'}, 
+        $Glade_Perl->{'run_options'});
     $params{'use_modules'} ||= 
         [split (/\n/, ($Glade_Perl->{'options'}->use_modules || '' ))];
     $current_form && eval "$current_form = {};";
@@ -92,8 +99,10 @@ sub Form_from_XML {
     my $save_options = $Glade_Perl->{'options'};
     $Glade_Perl->{'options'}->verbose(0);
     $Glade_Perl->{'options'}->write_source(undef);
-    my $glade_proto = $class->Proto_from_XML( $params{'xml'}, 
-        ' accelerator signal widget ' , ' project child ');
+    my ($encoding, $glade_proto) = $class->Proto_from_XML( 
+        $params{'xml'}, 
+        ' accelerator signal widget ' , ' project child ', 
+        $Glade_Perl->{'options'}->glade_encoding);
     my $form;
     $indent = ' ';
     $Glade_Perl->{'glade_options'} = $glade_proto->{'project'};
@@ -174,10 +183,10 @@ sub Form_from_Proto {
         unless ($options->source_LANG) {
             $options->source_LANG($options->diag_LANG);
         }
-#        $class->load_translations('Glade-Perl', $options->source_LANG, 
-#            undef, undef, '__S', undef);
-        $class->load_translations('Glade-Perl', $options->source_LANG, undef, 
-            '/home/dermot/Devel/Glade-Perl/ppo/en.mo', '__S', undef);
+        $class->load_translations('Glade-Perl', $options->source_LANG, 
+            undef, undef, '__S', undef);
+#        $class->load_translations('Glade-Perl', $options->source_LANG, undef, 
+#            '/home/dermot/Devel/Glade-Perl/ppo/en.mo', '__S', undef);
 #        $class->check_gettext_strings("__S");
         $class->diag_print (2, "%s- Source code will be generated for locale <%s>", 
             $indent, $options->source_LANG);
@@ -714,6 +723,7 @@ __END__
 #==== Documentation ============================================================
 #===============================================================================
 =pod
+=pod
 
 =head1 NAME
 
@@ -721,69 +731,48 @@ Glade::PerlGenerate - Generate Perl source from a Glade XML project file.
 
 =head1 SYNOPSIS
 
+The simplest way to run Glade::PerlGenerate is to use the supplied script 
+'glade2perl' that is also called by Glade when you hit the 'Build' button.
+
+ glade2perl Project.glade
+
+Otherwise you can control every aspect of the source generation by calling
+the same methods that glade2perl calls:
+
  use Glade::PerlGenerate;
 
-
- # Choose the Generate run options. Some other examples are in test.pl script
  Glade::PerlGenerate->options(
-  #  User option       Value       Meaning                         Default
- #  -----------       -----       -------                         -------
+
    'author'        => 'Dermot Musgrove <dermot.musgrove\@virgin.net>',
- # 'author'        => undef,      # Author string for sources eg  values from Perl's
-                                  # 'My Name <my.email@some.org>' (gethostbyname("localhost"))
- # 'version'       => undef,      # Version number to use         0.01
- # 'date'          => undef,      # The date to show in sources   Build time of
- # 'copying'       => undef,      # Copying text to include     
    'description'   => "This is an example of the Glade-Perl
- source code generator",
-   'verbose'       => 2,          # Level of verbosity            1
-                                  # 0 (quiet) to 10 (all)
-   'indent'        => '    ',     # Indent for source code        4 spaces
-   'tabwidth'      => 4,          # Number of spaces to replace   8
-                                  # with a tab in source code
-   'diag_wrap'     => 0,          # Wrap diagnostic messages      0 = no wrap
-                                  # at this character (approx). 
-                                  # 0 = no breaks (not easy to
-                                  # read on 80 column displays)
-
-   'write_source'  => 'True',     # Write to the default files    No source
- # 'write_source'  => 'STDOUT',   # Write sources to STDOUT
-                                  # but there will be nothing 
-                                  # to run later
- # 'write_source'  => 'File.pm',  # Write sources to File.pm
-                                  # They will not run from here
-                                  # you must cut-paste them
- # 'write_source'  => undef,      # Don't write source code
-
-   'dont_show_UI'  => 'True',     # Show UI during the Build     Show UI
-                                  # and wait for user action
+source code generator",
+   'verbose'       => 2,
+   'indent'        => '    ',
+   'tabwidth'      => 4,
+   'diag_wrap'     => 0,
+   'write_source'  => 'True',
+   'dont_show_UI'  => 'True',
    'autoflush'     => 'True',
    'use_modules'   => 'Example::BusForm_mySUBS',
- # 'site_options'  => 'File.xml', # Site options file name       /etc/gpgrc.xml
- # 'user_options'  => 'File.xml', # User options file name       ~/.gpgrc.xml
-   'project_options' => $project_options_file, 
-                                  # Project-specific options     Don't read file
-   'allow_gnome'   => undef,      # Ignore/report Gnome widgets  Ignore Gnome
- # 'my_perl_gtk'   => '0.6123',   # I have CPAN version 0.6123   Use Gtk-Perl's version no
- # 'my_perl_gtk'   => '19991001', # I have the gnome.org CVS     Use Gtk-Perl's version no
-                                  # version of 'gnome-perl' that 
-                                  # I downloaded on Oct 1st 1999
- # 'my_gnome_libs' => '19991001', # I have the gnome.org CVS     Use gnome-libs version no
-                                  # version of 'gnome-libs' that 
-                                  # I downloaded on Oct 1st 1999
-   'log_file'      => 'Test.log', # Diagnostics log file         use STD[OUT|ERR]
+   'log_file'      => 'Test.log',
+
  );
-        
- Then to generate the UI defined in a file
+
+Then to generate the UI defined in a file
+
  Glade::PerlGenerate->Form_from_Glade_File(
+
    'glade_filename'=> "Example/BusForm.glade"
+
  );
 
+OR if you want to generate  the UI directly from an XML string
 
- OR if you want to generate  the UI directly from an XML string
  Glade::PerlGenerate->Form_from_XML(
+
    'xml'           => $xml_string,
    'use_modules'   => ['Example::Project_mySUBS']
+
  );
 
 =head1 DESCRIPTION
@@ -801,6 +790,364 @@ The stub will simply show a message_box to prove that the handler has been
 called and you can write your own with the same name in another module. You 
 then quote this module to the next Generate run and Glade::PerlGenerate will 
 use these handlers and not define stubs.
+
+=head1 USER OPTIONS
+
+These options can be specified using the Glade::PerlGenerate->options()
+method or with the same name in the options XML files.
+
+Boolean values can be specified as True|true|Yes|yes|1 or 
+False|false|No|no|0|''|undef 
+
+
+
+
+=head2 Project options
+
+=over 4
+
+=item author
+
+The author's name to appear in generated sources. Backslash-escape any
+@ signs so that they are passed through perl strings correctly.
+The default is synthesised from some of the values returned by 
+Perl's gethostbyname "localhost"
+
+e.g. 'Dermot Musgrove <dermot.musgrove\@virgin.net'
+
+=item version - default is 0.01
+
+Version number to use in generated sources.
+
+e.g. '0.53-pre1'
+
+=item date - defaults to build time.
+
+The date to show in sources.
+
+e.g. 'Christmas eve 2001'
+
+=item copying - default is '# Unspecified copying policy, please contact the author\n# '
+
+Copying text to include in generated sources. Make sure that they are specified
+as perl # comments so that the generated source is valid.
+
+=item description - default is 'No description'
+
+A general description of the app to appear in sources and about_boxes
+
+e.g 'This is a reference form\n that contains all the widgets that Glade 
+knows about'
+
+=item use_modules - default means don't use() any other modules
+
+When specified as an arg to the options() method, an anonymous hash of 
+modules to be use()d in the generated classes.
+
+In an options file, a newline separated list of modules to be use()d by 
+generated classes
+
+e.g ['Existing::mySUBS', 'Some::Other::Module']
+
+=item allow_gnome - Default is read from the Glade project file
+
+Bool - whether or not to allow Gnome widgets in the generated source
+
+=item site_options - Default is /etc/gpgrc.xml
+
+File name containing options for all projects on this site.
+This option is only meaningful when set by Glade::PerlGenerate->options() 
+although it is logged in the project_options file 
+
+=item user_options - Default is ~/.gpgrc.xml
+
+File name containing options for all projects in this user. 
+This option is only meaningful when set by Glade::PerlGenerate->options() 
+although it is logged in the project_options file 
+
+=item project_options - Default means don't read or save a file
+
+Filename of project options to read and save.
+This option is only meaningful when set by Glade::PerlGenerate->options() 
+although it is logged in the project_options file 
+
+=item glade_encoding - default 'ISO-8859-1'
+
+Character encoding of Glade file 
+
+eg 'ISO-8859-1'
+
+=item glade2perl_encoding - default is glade_encoding option
+
+Character encoding of glade2perl.xml options files.
+This option is only meaningful when set by Glade::PerlGenerate->options() 
+although it is saved in the file itself.
+
+eg 'ISO-8859-1'
+
+
+
+=back
+
+=head2 From the Glade file
+
+=over 4
+
+=item name
+
+Name to use for the generated packages. Any spaces, dots or minuses will
+be removed from the name as these are not valid in perl package names.
+
+=item source_directory - 
+
+Directory to contain the generated sources
+
+=item pixmaps_directory - 
+
+Directory to search for pixmaps
+
+
+
+=back
+
+=head2 The UI
+
+=over 4
+
+=item dont_show_UI - default is to show the UI and wait for user action
+
+Bool - whether to show the UI during the Build. glade2perl sets this to 0
+so that the UI is not shown.
+
+=item logo - default 'Logo.xpm'
+
+Use the specified logo in about boxes or if any pixmap is missing
+
+=item my_perl_gtk - Default is to use Gtk-Perl's version no
+
+Version number of my Gtk-Perl module. This overrides the number reported by
+Gtk::Perl so that CVS fixes can be used.
+
+'0.6123'   I have CPAN version 0.6123
+
+'19991001' I have the gnome.org CVS version of 'gnome-perl' 
+that I downloaded on Oct 1st 1999
+
+=item my_gnome_libs - Default is to use gnome-libs version no
+
+Version number of my gnome-libs. This overrides the number reported by
+`gnome-libs-config --version` so that CVS fixes can be used.
+
+'1.0.58'   I have the released version 1.0.58 of 'gnome-libs'
+
+'19991001' I have the gnome.org CVS version of 'gnome-libs' 
+that I downloaded on Oct 1st 1999
+
+
+
+
+=back
+
+=head2 Source code options
+
+=over 4
+
+=item indent - default is 4 spaces
+
+Indent to use for 'nested' source code
+
+ e.g. '  ' (2 spaces)
+
+=item tabwidth - default is 8
+
+Number of spaces to replace with a tab in generated source code
+
+e.g. 4
+
+=item write_source - default is no source
+
+Where to write the source code. glade2perl sets this to 1.
+
+'STDOUT'  Write sources to STDOUT but there will be nothing to run later
+
+'File.pm' Write sources to File.pm They will not run from here 
+and you must cut-paste them
+
+True - write the sources to standard files.
+
+undef     Don't write source code
+
+=item hierarchy - default means don't generate any hierarchy
+
+...widget... generates a widget hierarchy eg $hier->{'vbox2'}{'table1'}...
+
+...class...  generates a class hierarchy eg $hier->{'GtkVBox'}{'vbox2'}{'GtkTable'}{'table1'}...
+
+...both...   both widget and class hierarchies generated
+
+e.g. 'widget_hierarchy'
+
+=item style - default AUTOLOAD
+
+AUTOLOAD - OO class implements missing signal handlers with an AUTOLOAD sub
+
+Libglade - generate libglade code and signal handlers
+
+=item source_LANG - default $ENV{'LANG'}
+
+Which language do we want the source to be documented in?
+
+e.g. 'pt_BR'
+
+
+
+=back
+
+=head2 Diagnostics options
+
+=over 4
+
+=item verbose - default is 2
+
+Level of verbosity of diagnostics
+
+ 0  - Quiet/no diagnostics (glade2perl uses this)
+ 1  - Main project messages and errors only
+ 2  - also warnings
+ 4  - also project options and more diagnostics
+ 6  - also source code as it is generated
+ 8  - also lookups and conversions
+ 10 - everything (more than you want?)
+
+=item diag_wrap - default is 0 (no breaks)
+
+Maximum diagnostics message line length (approximate)
+
+ 0   - no breaks (not easy to read on 80 column displays).
+ 80  - should display comfortably on 80 column display
+ 132 - Wrap diagnostics so that lines are about 132 characters long
+
+=item log_file - Default is to use STDOUT
+
+Write diagnostics and errors to filename if verbose > 0
+glade2perl can set this to /path/to/glade/file.glade2perl.log
+
+e.g. '/home/dermot/Devel/Test/Project1.glade2perl.log'
+
+=item autoflush - default is False (write at end of block)
+
+Bool - whether to autoflush the file output. 
+This is really to force errors to be
+shown by my editor's shellout in the case of a failure.
+
+=item benchmark - default means don't add time to the diagnostic messages
+
+Bool - True will cause the time to prefix all diagnostics messages
+
+=item diag_LANG - default $ENV{'LANG'}
+
+Which language do we want the diagnostic messages in?
+
+e.g. 'de'
+
+
+
+
+=back
+
+=head2 Run History - for internal use only
+
+=over 4
+
+=item start_time
+
+Time that this run started
+
+=item options_set - default 'DEFAULT'
+
+Who set the options last.
+
+=item glade_proto
+
+This is where Glade::PerlGenerate stores the Glade proto
+
+=item glade2perl_version
+
+Version of Glade::PerlGenerate that wrote this file.
+
+=item glade2perl_logo - default 'glade2perl_logo.xpm'
+
+Name of the Glade::PerlGenerate logo pixmap used.
+
+
+=back
+
+=head1 EXAMPLE OPTIONS FILES
+
+=head2 This is a typical project_options file 
+~/Devel/Glade-Perl/Reference/Existing/Reference.glade2perl.xml 
+
+ <?xml version="1.0" encoding="ISO-8859-1"?>
+ <G2P-Options>
+   <allow_gnome>1</allow_gnome>
+   <autoflush>1</autoflush>
+   <debug>1</debug>
+   <description>A reference form containing 
+ all possible Gtk and Gnome widgets</description>
+   <dont_show_UI>1</dont_show_UI>
+   <glade2perl_encoding>ISO-8859-1</glade2perl_encoding>
+   <glade2perl_version>0.53</glade2perl_version>
+   <hierarchy>NONE</hierarchy>
+   <log_file>Existing/Reference.glade2perl.log</log_file>
+   <options_set>Glade/Build Source</options_set>
+   <project_options>Existing/Reference.glade2perl.xml</project_options>
+   <start_time>Sat Apr  8 15:29:12 BST 2000</start_time>
+   <style>notLibglade</style>
+   <tabwidth>8</tabwidth>
+   <use_modules>Existing::Reference_mySUBS</use_modules>
+   <user_options>/home/dermot/.glade2perl.xml</user_options>
+   <version>0.53</version>
+ </G2P-Options>
+
+
+=head2 This what I have in my user_options file 
+~/.glade2perl.xml 
+
+ <G2P-Options>
+   <author>Dermot Musgrove <dermot.musgrove\@virgin.net></author>
+   <diag_LANG>en</diag_LANG>
+   <diag_wrap>0</diag_wrap>
+   <indent>  </indent>
+   <source_LANG>en</source_LANG>
+   <style>AUTOLOAD</style>
+   <tabwidth>4</tabwidth>
+   <write_source>1</write_source>
+ </G2P-Options>
+
+
+=head2 This what I have in my site_options file 
+/etc/glade2perl.xml 
+
+ <G2P-Options>
+   <copying># This library is released under the same conditions as Perl, that
+ # is, either of the following:
+ #
+ # a) the GNU General Public License as published by the Free
+ # Software Foundation; either version 1, or (at your option) any
+ # later version.
+ #
+ # b) the Artistic License.
+ #
+ # If you use this library in a commercial enterprise, you are invited,
+ # but not required, to pay what you feel is a reasonable fee to the
+ # author </copying>
+   <my_perl_gtk>20000301</my_perl_gtk>
+ </G2P-Options>
+
+
+
+
+
 
 
 =head1 ERRORS and WARNINGS

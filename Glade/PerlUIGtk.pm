@@ -32,7 +32,7 @@ BEGIN {
                             $enums
                           );
     $PACKAGE =          __PACKAGE__;
-    $VERSION        = q(0.52);
+    $VERSION        = q(0.53);
     @VARS           = qw( 
                             $VERSION
                             $AUTHOR
@@ -116,35 +116,19 @@ sub new_GtkAccelLabel {
     my $wrap    = $class->use_par($proto, 'wrap', $BOOL, 'False' );
     my $pattern = $label;
 
-    # The line below replaces Gtk+ function gtk_label_parse_uline
-    $label =~ s/_(.)/$1/;
-    $class->add_to_UI( $depth, "\$widgets->{'$name'} = new Gtk::AccelLabel(".
-        "_('$label') );" );
-    if ($1) {
-        # We have an accelerator key indicated by $1
-        my $accel_key = $1;
-        # Replace chars with spaces (except '_')
-        $pattern =~ tr/_/ /c;
-#        $class->add_to_UI( $depth, "\$widgets->{'$name'}->parse_uline;" );
-        $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_pattern(".
-            "'$pattern');", undef, 'NOTABS'  );
+    if ($label =~ /_/) {
+        $class->add_to_UI( $depth,  "\$widgets->{'$name'} = ".
+            "new Gtk::AccelLabel('');" );
+        $class->add_to_UI( $depth, "\$widgets->{'$name'}->parse_uline(".
+            "_('$label') );" );
+    } else {
+        $class->add_to_UI( $depth,  "\$widgets->{'$name'} = ".
+            "new Gtk::AccelLabel(_('$label'));" );
+    }
 # FIXME How do we know which widget/signal to emit?
 # Should we use set_accel_widget? Probably I guess but how?
 # How should we check that this is all correct?
 # Look at gnome-libs gnome-libs/libgnomeui/gnome-app-helper.c
-#        if (eval "${current_form}\{$parent}->can('button_press_event')") {
-#            $class->add_to_UI( $depth, "${current_form}\{accelgroup}->add(".
-#                "'".ord(lc($accel_key))."', ['mod1_mask'], ['visible', 'locked'], ".
-#                "$current_form\{'$parent'}, 'button_press_event');");
-#        } else {
-#            $class->diag_print(2, "error Widget $name has parent '$parent'".
-#                " that can not emit a 'button_press_event'".
-#                " so accelerator NOT added in $me");
-#        }
-#        $class->add_to_UI( $depth, "${current_form}\{accelgroup}->add(".
-#            "'".ord(lc($accel_key))."', ['mod1_mask'], ['visible', 'locked'], ".
-#            "\$widgets->{'$name'}, 'activate');");
-    }
 #use Data::Dumper; print Dumper($proto);
 #    $class->add_to_UI( -$depth, "\$widgets->{'$name'}->set_accel_widget(".
 #        "$current_form\{$proto->{'signal'}{'object'}});" );
@@ -161,7 +145,6 @@ sub new_GtkAdjustment {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkAdjustment";
     my $name = $proto->{'name'};
-# These are Range
     my $hvalue   = $class->use_par($proto, 'hvalue',       $DEFAULT,    0 );
     my $hlower   = $class->use_par($proto, 'hlower',       $DEFAULT,    0 );
     my $hupper   = $class->use_par($proto, 'hupper',       $DEFAULT,    0 );
@@ -274,6 +257,16 @@ sub new_GtkButton {
             }
         }
         $class->pack_widget($parent, $name, $proto, $depth );
+        if (_($label) =~ /_/) {
+            $class->add_to_UI( $depth,
+                "$current_form\{'$name-key'} = ".
+                    "$current_form\{'$name'}->child->parse_uline(_('$label') );");
+            $class->add_to_UI( $depth,
+                "$current_form\{'$name'}->add_accelerator(".
+                    "'clicked', $current_form\{'accelgroup'}, ". 
+                    "$current_form\{'$name-key'}, 'mod1_mask', ['visible', 'locked'] );");
+            $class->add_to_UI( $depth, "undef \$widgets->{'$name-key'};");
+        }
     }
 
     return $widgets->{$name};
@@ -328,6 +321,16 @@ sub new_GtkCheckButton {
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_state($active );" );
 
     $class->pack_widget($parent, $name, $proto, $depth );
+    if (_($label) =~ /_/) {
+        $class->add_to_UI( $depth,
+            "$current_form\{'$name-key'} = ".
+                "$current_form\{'$name'}->child->parse_uline(_('$label') );");
+        $class->add_to_UI( $depth,
+            "$current_form\{'$name'}->add_accelerator(".
+                "'clicked', $current_form\{'accelgroup'}, ". 
+                "$current_form\{'$name-key'}, 'mod1_mask', ['visible', 'locked'] );");
+        $class->add_to_UI( $depth, "undef \$widgets->{'$name-key'};");
+    }
     return $widgets->{$name};
 }
 
@@ -341,6 +344,7 @@ sub new_GtkCheckMenuItem {
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = ".
         "new_with_label Gtk::CheckMenuItem(_('$label'));" );
+
     if ($class->use_par($proto, 'right_justify',    $BOOL, 'False' )) {
         $class->add_to_UI( $depth, "\$widgets->{'$name'}->right_justify;" );
     }
@@ -348,6 +352,22 @@ sub new_GtkCheckMenuItem {
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_show_toggle($always_show_toggle );" );
 
     $class->pack_widget($parent, $name, $proto, $depth );
+    if (_($label) =~ /_/) {
+        $class->add_to_UI( $depth,
+            "$current_form\{'$name-key'} = ".
+                "$current_form\{'$name'}->child->parse_uline(_('$label') );");
+        $class->add_to_UI( $depth,
+            "$current_form\{'$name'}->add_accelerator(".
+                "'activate', $current_form\{'accelgroup'}, ". 
+                "$current_form\{'$name-key'}, 'mod1_mask', ['visible', 'locked'] );");
+        $class->add_to_UI( $depth, "undef \$widgets->{'$name-key'};");
+#        $class->add_to_UI( $depth,  "$current_form\{'$name-pattern'} = ".
+#            "_('$label');" );
+#        $class->add_to_UI( $depth,  "$current_form\{'$name-pattern'} =~ ".
+#            "tr/_/ /c;" );
+#        $class->add_to_UI( $depth,  "$current_form\{'$name'}->child->".
+#            "set_pattern($current_form\{'$name-pattern'});" );
+    }
     return $widgets->{$name};
 }
 
@@ -770,7 +790,6 @@ sub new_GtkHScale {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkHScale";
     my $name = $proto->{'name'};
-# These are Range
     my $pre = '';
     $pre = 'h' if $proto->{'hlower'}; # cater for Glade <= 0.5.1
     my $lower     = $class->use_par($proto, $pre.'lower',     $DEFAULT, 0 );
@@ -779,11 +798,9 @@ sub new_GtkHScale {
     my $page      = $class->use_par($proto, $pre.'page',      $DEFAULT, 10 );
     my $page_size = $class->use_par($proto, $pre.'page_size', $DEFAULT, 10 );
     my $value     = $class->use_par($proto, $pre.'value',     $DEFAULT, 0 );
-#-------------
     my $policy     = $class->use_par($proto, 'policy',     $LOOKUP, 'continuous' );
     my $draw_value = $class->use_par($proto, 'draw_value', $BOOL,    'True' );
     my $digits     = $class->use_par($proto, 'digits',     $DEFAULT, 1 );
-#    my $numeric    = $class->use_par($proto, 'numeric',    $BOOL,    'False' );
     my $value_pos  = $class->use_par($proto, 'value_pos',  $LOOKUP, 'top' );
 
     $class->add_to_UI( $depth,  "\$work->{'$name-adj'} = new Gtk::Adjustment(".
@@ -806,7 +823,6 @@ sub new_GtkHScrollbar {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkHScrollbar";
     my $name = $proto->{'name'};
-# These are Range
     my $pre = '';
     $pre = 'h' if $proto->{'hlower'}; # Glade <= 0.5.1
     my $lower     = $class->use_par($proto, $pre.'lower',     $DEFAULT, 0 );
@@ -815,7 +831,6 @@ sub new_GtkHScrollbar {
     my $page      = $class->use_par($proto, $pre.'page',      $DEFAULT, 10 );
     my $page_size = $class->use_par($proto, $pre.'page_size', $DEFAULT, 10 );
     my $value     = $class->use_par($proto, $pre.'value',     $DEFAULT, 0 );
-#-------------
     my $policy     = $class->use_par($proto, 'policy',     $LOOKUP, 'continuous' );
 
     $class->add_to_UI( $depth,  "\$work->{'$name-adj'} = new Gtk::Adjustment(".
@@ -880,8 +895,14 @@ sub new_GtkLabel {
     my $justify = $class->use_par($proto, 'justify', $LOOKUP,  'center' );
     my $wrap    = $class->use_par($proto, 'wrap', $BOOL, 'False' );
 
-    $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::Label(".
-        "_('$label'));" );
+    if ($label =~ /_/) {
+        $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::Label('');" );
+        $class->add_to_UI( $depth, "\$widgets->{'$name'}->parse_uline(".
+            "_('$label') );" );
+    } else {
+        $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::Label(".
+            "_('$label'));" );
+    }
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_justify('$justify' );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_line_wrap($wrap );" );
 
@@ -929,7 +950,6 @@ sub new_GtkList {
         "'$selection_mode' );" );
 
     $class->pack_widget($parent, $name, $proto, $depth );
-    # cf $widg->set_menu
     return $widgets->{$name};
 }
 
@@ -977,7 +997,6 @@ sub new_GtkMenuItem {
     my $label = $class->use_par($proto, 'label', $DEFAULT, '' );
     my $right_justify = $class->use_par($proto, 'right_justify', $BOOL, 'False' );
 
-# FIXME - decide how to mix accellabels and labels with visible accelerators
     if ($proto->{'stock_item'}) {
 # FIXME - this is a Gnome stock menu item and should be in UIExtra
 # FIXME convert this to do a proper lookup (maybe with new sub)
@@ -992,46 +1011,25 @@ sub new_GtkMenuItem {
 #            "Gnome::Stock->menu_item('$stock_item', '$stock_item');" );
     } 
     if ($label) {
-        my $pattern = $label;
-        # The line below replaces Gtk+ function gtk_label_parse_uline
-# FIXME this only does uline for first char
-        if ($label =~ s/_(.)/$1/) {
-            # We have an accelerator key indicated by $1
-            my $accel_key = $1;
-            # Replace chars with spaces (except '_')
-            $pattern =~ tr/_/ /c;   # complementary (opposite) 
-            $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
-                "new Gtk::MenuItem;" );
-            if ($right_justify) { 
-                $class->add_to_UI( $depth, "\$widgets->{'$name'}->right_justify;" );
-            }
-            $class->add_to_UI( $depth, "\$widgets->{'$name-accel'} = ".
-                "new Gtk::AccelLabel( _('$label'));" );
-            $class->add_to_UI( $depth, "\$widgets->{'$name-accel'}->show;");
-            $class->add_to_UI( $depth, "\$widgets->{'$name'}->add(".
-                "\$widgets->{'$name-accel'});" );
-#            $class->add_to_UI( $depth, "\$widgets->{'$name-accel'}->parse_uline;" );
-            $class->add_to_UI( $depth, "\$widgets->{'$name-accel'}->set_pattern(".
-                "'$pattern');", undef, 'NOTABS' );
-            $class->add_to_UI( $depth, "${current_form}\{accelgroup}->add(".
-                ord(lc($accel_key)).", ['mod1_mask'], ['visible', 'locked'], ".
-                "\$widgets->{'$name'}, 'activate_item');");
-            $class->add_to_UI( $depth, "${current_form}\{'$name-accel'} = ".
-                "\$widgets->{'$name-accel'};" );
-            delete $widgets->{"$name-accel"};
-
-        } else {
-            # There is no '_' underline accelerator
-            $class->add_to_UI($depth, "\$widgets->{'$name'} = new Gtk::MenuItem(".
-                "_('$label'));" );
-            if ($right_justify) { 
-                $class->add_to_UI( $depth, "\$widgets->{'$name'}->right_justify;" );
-            }
-        }
+        $class->add_to_UI($depth, "\$widgets->{'$name'} = new Gtk::MenuItem(".
+            "_('$label'));" );
     } else {
         $class->add_to_UI($depth, "\$widgets->{'$name'} = new Gtk::MenuItem;" );
     }
+    if ($right_justify) { 
+        $class->add_to_UI( $depth, "\$widgets->{'$name'}->right_justify;" );
+    }
     $class->pack_widget($parent, $name, $proto, $depth );
+    if (_($label) =~ /_/) {
+        $class->add_to_UI( $depth,
+            "$current_form\{'$name-key'} = ".
+                "$current_form\{'$name'}->child->parse_uline(_('$label') );");
+        $class->add_to_UI( $depth,
+            "$current_form\{'$name'}->add_accelerator(".
+                "'activate_item', $current_form\{'accelgroup'}, ". 
+                "$current_form\{'$name-key'}, 'mod1_mask', ['visible', 'locked'] );");
+        $class->add_to_UI( $depth, "undef \$widgets->{'$name-key'};");
+    }
     return $widgets->{$name};
 }
 
@@ -1099,19 +1097,18 @@ sub new_GtkOptionMenu {
         @items = split(/\n/, $items );
         foreach $item (@items) {
             if ($item) {
-#                $class->add_to_UI( $depth,  "\$widgets->{'${name}_$item'} = ".
-                $class->add_to_UI( $depth,  "\$widgets->{${name}_item$count} = ".
+                $class->add_to_UI( $depth,  "\$widgets->{'${name}_item$count'} = ".
                     "new Gtk::MenuItem('$item' );" );
                 $class->pack_widget("${name}_menu", "${name}_item$count", $proto, $depth+1 );
                 if ($count == $initial_choice) {
                     $class->add_to_UI( $depth, 
-                        "${current_form}\{${name}_item$count}\->activate;" );
+                        "${current_form}\{'${name}_item$count'}\->activate;" );
                 }
                 $count++;
             }
         }
         $class->add_to_UI( $depth, 
-            "${current_form}\{$name}->set_history( $initial_choice );" );
+            "${current_form}\{'$name'}->set_history( $initial_choice );" );
     }
     return $widgets->{$name};
 }
@@ -1150,9 +1147,6 @@ sub new_GtkPixmap {
             "'%s' so we are using the project logo instead", $name);
         $filename = $Glade_Perl->logo;
     }
-#    $filename = $class->full_Path(
-#        $filename, 
-#        $Glade_Perl->pixmaps_directory );
     $filename = "${Glade::PerlRun::pixmaps_directory}/$filename";
     $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
         "\$class->create_pixmap($current_window, '$filename' );" );
@@ -1255,6 +1249,16 @@ sub new_GtkRadioButton {
                 "new Gtk::RadioButton(_('$label') );" );
         }
         $class->pack_widget($parent, $name, $proto, $depth );
+        if (_($label) =~ /_/) {
+            $class->add_to_UI( $depth,
+                "$current_form\{'$name-key'} = ".
+                    "$current_form\{'$name'}->child->parse_uline(_('$label') );");
+            $class->add_to_UI( $depth,
+                "$current_form\{'$name'}->add_accelerator(".
+                    "'clicked', $current_form\{'accelgroup'}, ". 
+                    "$current_form\{'$name-key'}, 'mod1_mask', ['visible', 'locked'] );");
+            $class->add_to_UI( $depth, "undef \$widgets->{'$name-key'};");
+        }
     }
     
     $class->add_to_UI( $depth, "$current_form\{'$name'}->set_mode(".
@@ -1299,6 +1303,22 @@ sub new_GtkRadioMenuItem {
         "$always_show_toggle );" );
 
     $class->pack_widget($parent, $name, $proto, $depth );
+    if (_($label) =~ /_/) {
+        $class->add_to_UI( $depth,
+            "$current_form\{'$name-key'} = ".
+                "$current_form\{'$name'}->child->parse_uline(_('$label') );");
+        $class->add_to_UI( $depth,
+            "$current_form\{'$name'}->add_accelerator(".
+                "'activate', $current_form\{'accelgroup'}, ". 
+                "$current_form\{'$name-key'}, 'mod1_mask', ['visible', 'locked'] );");
+        $class->add_to_UI( $depth, "undef \$widgets->{'$name-key'};");
+#        $class->add_to_UI( $depth,  "$current_form\{'$name-pattern'} = ".
+#            "_('$label');" );
+#        $class->add_to_UI( $depth,  "$current_form\{'$name-pattern'} =~ ".
+#            "tr/_/ /c;" );
+#        $class->add_to_UI( $depth,  "$current_form\{'$name'}->child->".
+#            "set_pattern($current_form\{'$name-pattern'});" );
+    }
     return $widgets->{$name};
 }
 
@@ -1333,14 +1353,12 @@ sub new_GtkSpinButton {
     my $name = $proto->{'name'};
     my $pre = '';
     $pre = 'h' if $proto->{'hlower'}; # cater for Glade <= 0.5.1
-# These are Range
     my $lower     = $class->use_par($proto, $pre.'lower',     $DEFAULT, 0 );
     my $upper     = $class->use_par($proto, $pre.'upper',     $DEFAULT, 100 );
     my $step      = $class->use_par($proto, $pre.'step',      $DEFAULT, 1 );
     my $page      = $class->use_par($proto, $pre.'page',      $DEFAULT, 10 );
     my $page_size = $class->use_par($proto, $pre.'page_size', $DEFAULT, 10 );
     my $value     = $class->use_par($proto, $pre.'value',     $DEFAULT, 0 );
-#-------------
     my $climb_rate    = $class->use_par($proto, 'climb_rate',    $DEFAULT, 1 );
     my $digits        = $class->use_par($proto, 'digits',        $DEFAULT, 1 );
     my $numeric       = $class->use_par($proto, 'numeric',       $BOOL,    'False' );
@@ -1454,6 +1472,16 @@ sub new_GtkToggleButton {
         $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gtk::ToggleButton(".
             "_('$label') );" );
         $class->pack_widget($parent, $name, $proto, $depth );
+        if (_($label) =~ /_/) {
+            $class->add_to_UI( $depth,
+                "$current_form\{'$name-key'} = ".
+                    "$current_form\{'$name'}->child->parse_uline(_('$label') );");
+            $class->add_to_UI( $depth,
+                "$current_form\{'$name'}->add_accelerator(".
+                    "'clicked', $current_form\{'accelgroup'}, ". 
+                    "$current_form\{'$name-key'}, 'mod1_mask', ['visible', 'locked'] );");
+            $class->add_to_UI( $depth, "undef \$widgets->{'$name-key'};");
+        }
     }
     $class->add_to_UI( $depth, "$current_form\{'$name'}->active(".
         "$active );" );
@@ -1620,7 +1648,6 @@ sub new_GtkVScale {
     my $name = $proto->{'name'};
     my $pre = '';
     $pre = 'v' if $proto->{'vlower'}; # cater for Glade <= 0.5.1
-# These are Range
     my $lower     = $class->use_par($proto, $pre.'lower',     $DEFAULT, 0 );
     my $upper     = $class->use_par($proto, $pre.'upper',     $DEFAULT, 100 );
     my $step      = $class->use_par($proto, $pre.'step',      $DEFAULT, 1 );
@@ -1656,7 +1683,6 @@ sub new_GtkVScrollbar {
     my $name = $proto->{'name'};
     my $pre = '';
     $pre = 'v' if $proto->{'vlower'}; # cater for Glade <= 0.5.1
-# These are Range
     my $lower     = $class->use_par($proto, $pre.'lower',     $DEFAULT, 0 );
     my $upper     = $class->use_par($proto, $pre.'upper',     $DEFAULT, 100 );
     my $step      = $class->use_par($proto, $pre.'step',      $DEFAULT, 1 );

@@ -24,12 +24,10 @@ BEGIN {
                             $enums
                           );
     $PACKAGE =          __PACKAGE__;
-    $VERSION            = q(0.52);
+    $VERSION            = q(0.53);
     # These cannot be looked up in the include files
     $enums =      {
-        'GNOME_ANIMATOR_LOOP_NONE'      => 'none',
-        'GNOME_ANIMATOR_LOOP_RESTART'   => 'restart',
-        'GNOME_ANIMATOR_LOOP_PING_PONG' => 'ping_pong',
+        'GNOME_MENU_SAVE_AS_STRING'     => 'Save _As...',
     };
 }
 
@@ -39,7 +37,6 @@ BEGIN {
 sub lookup {
     my ($class, $self) = @_;
     my $me = __PACKAGE__."->lookup";
-#print "$indent- Trying to convert '$self' in $me\n";
     # Check cached enums first
     my $lookup = $enums->{$self};
 
@@ -50,7 +47,7 @@ sub lookup {
             'GNOME_FONT_PICKER_MODE',
             'GNOME_PREFERENCES',  
             'GNOME_DOCK',               
-#            'GNOMEUIINFO_MENU',
+            'GNOME_ANIMATOR_LOOP',
             ) {
             # Remove leading GTK type
             if ($work =~ s/^${type}_//) {
@@ -85,27 +82,18 @@ sub lookup {
             }
 
             $command = "\$grep = `grep -h \"define.*\\\\b$lookup\\\\b\" $gnome_incs/$hfiles`";
-#print "$command\n";
             eval $command;
-#print "Looking for '$self' grep returned '$grep'\n";
             if ($grep) {
-#                $class->diag_print(2, "warn  Unable to find '$lookup' ".
-#                    "in Gnome header file(s) $gnome_incs/$hfiles");
-#                return undef;
-#            }
                 $grep =~ s/.*$lookup\s+//g;   # Remove upto and including our enum name
                 $grep =~ s/^D_*//g;         # Strip leading D_ gettext call
                 $grep =~ s/^[\'\"\s\(]*//g; # Strip leading spaces brackets or quotes
                 $grep =~ s/[\'\"\s\)]*$//g; # Strip trailing spaces brackets or quotes
-#print "grep grepped to '$grep'\n";
             }
             $lookup = $grep;
         }
     }
     # Cache this enum for later use
     $enums->{$self} = $lookup;
-#    $class->diag_print(2, $Glade::PerlUIExtra::gnome_enums);
-#print "$indent- I have converted from '$self' to '$lookup' in $me\n" unless $lookup;
     return $lookup;
 }
 
@@ -119,8 +107,6 @@ sub frig_Gnome_Dialog_buttons {
     my ($can_default, $has_default, $can_focus, $has_focus);
     my ($key, $work, $subkey, $subwork);
     my $current_button = 0;
-    use Data::Dumper; 
-#print Dumper(\@_);
     foreach $key (keys %{$proto}) {
         $work = $proto->{$key};
         next unless ref $work;
@@ -177,10 +163,6 @@ sub new_GnomeAbout {
     my $copyright = $class->use_par($proto, 'copyright', $DEFAULT, S_("Copyright")." $Glade_Perl->{'options'}{'date'}" );
     my $authors   = $class->use_par($proto, 'authors',   $DEFAULT, $Glade_Perl->{'options'}{'author'} );
     my $comments  = $class->use_par($proto, 'comments',  $DEFAULT, $Glade_Perl->{'options'}{'copying'} );
-#    $logo = $class->full_Path(
-#            $logo, 
-#            $Glade_Perl->{'pixmaps_directory'}, 
-#            '' );
     $logo = "\"\$Glade::PerlRun::pixmaps_directory/$logo\"";
 
     $class->add_to_UI( $depth, "\$widgets->{'$name'} = new Gnome::About(".
@@ -349,7 +331,6 @@ sub new_GnomeDialog {
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_close(".
         "$auto_close );" );
 
-#use Data::Dumper; print Dumper($widgets->{$name}->buttons);
     $class->set_window_properties($parent, $name, $proto, $depth );
 
     return $widgets->{$name};
@@ -745,9 +726,6 @@ sub new_GnomePixmap {
         $filename = $Glade_Perl->logo;
     }
     $filename = "\"\$Glade::PerlRun::pixmaps_directory/$filename\"";
-#    $filename = $class->full_Path(
-#        $filename, 
-#        $Glade_Perl->pixmaps_directory );
     my $scaled_width   = $class->use_par($proto, 'scaled_width',  $DEFAULT, 0);
     my $scaled_height  = $class->use_par($proto, 'scaled_height', $DEFAULT, 0);
     if ($scaled_width) {
@@ -875,113 +853,95 @@ sub new_GtkPixmapMenuItem {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GtkPixmapMenuItem";
     my $name = $proto->{name};
-    my $work;
+    my ($work, $mod);
+    my $icon = $class->use_par($proto, 'icon', $DEFAULT, '' );
     my $stock_item = uc($class->use_par($proto, 'stock_item', $DEFAULT, '' ));
     my $stock_icon = $class->use_par($proto, 'stock_icon', $LOOKUP, '' );
     my $label = $class->use_par($proto, 'label', $DEFAULT, '' );
     my $right_justify = $class->use_par($proto, 'right_justify', $BOOL, 'False' );
-#    $class->diag_print(2, $Glade::PerlUIExtra::gnome_enums);
-# FIXME - decide how to mix accellabels and labels with visible accelerators
-# with menuitems. pixmapmenuitems and stock_icons
-# FIXME parse_uline
+# FIXME possibly make this add to a Gnome::UIInfo structure for later use by 
+#   Gnome->create_menus() - see also toolbars
     if ($stock_item) {
         $stock_item =~ s/GNOMEUIINFO_MENU_(.*)_ITEM/$1/;
-        $label = __PACKAGE__->lookup("GNOME_MENU_$stock_item\_STRING") unless $label;
+        $label = __PACKAGE__->lookup("GNOME_MENU_$stock_item\_STRING") 
+            unless $label;
+        # If we still don't have a label synthesise one from stock_item
         $label = ucfirst(lc($stock_item)) unless $label;
         $stock_icon = __PACKAGE__->lookup("GNOME_STOCK_PIXMAP_$stock_item");
         $stock_item =~ s/^PROPERTIES$/PROP/;    # What is this shit?
         $stock_item =~ s/^PREFERENCES$/PREF/;   # What is this shit?
         $work->{'sim'} = __PACKAGE__->lookup("GNOME_STOCK_MENU_$stock_item");
     }
-    if ($work->{'sim'}) {
-#        $work->{'sip'} = __PACKAGE__->lookup("GNOME_STOCK_PIXMAP_$stock_item");
-        $work->{'ak'}  = __PACKAGE__->lookup("GNOME_KEY_NAME_$stock_item");
-        $work->{'am'}  = __PACKAGE__->lookup("GNOME_KEY_MOD_$stock_item");
-#        $stock_item = $gnome_enums->{"GNOME_STOCK_PIXMAP_$stock_item"};
-#use Data::Dumper;print Dumper($work);
-# FIXME make this add to a Gnome::UIInfo structure for later use by 
-#   Gnome->create_menus() - see also toolbars
-#   GNOME_KEY_NAME_$stock_item and GNOME_KEY_MOD_$stock_item
 
-        my ($ac_mods, @ac_mods);
-        my $accel_flags = "['visible', 'locked']";
+    if ($work->{'sim'}) {
         if ($work->{'sim'}) {
+            my ( @ac_mods);
+            my $accel_flags = "['visible', 'locked']";
+            $work->{'ak'}  = __PACKAGE__->lookup("GNOME_KEY_NAME_$stock_item");
+            $work->{'am'}  = __PACKAGE__->lookup("GNOME_KEY_MOD_$stock_item");
+
             $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
                 "Gnome::Stock->menu_item('$work->{'sim'}', _('$label'));" );
+            $work->{'ak'} =~ s/GDK_//;
+            $work->{'ak'} = $Gtk::Keysyms{$work->{'ak'}} if $work->{'ak'};
 
-        } else {
-            $stock_item = ucfirst(lc($stock_item));
-            $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
-                "new Gtk::MenuItem('$stock_item');" );
-        }            
-#        use Data::Dumper; print Dumper($widgets->{$name}->child->children->[1]->parse_uline);
+            my $ac_mods = $class->use_par($proto, 'ac_mods', $DEFAULT, '0' ) ||
+                $work->{'am'};
+            foreach $mod (split(/\|/, $ac_mods)) {
+                push @ac_mods, Glade::PerlUIGtk->lookup($mod);
+            }
+            $ac_mods = $#ac_mods >= 0 ? join("', '", @ac_mods) : '';
 
-#        my $accelerator_key = __PACKAGE__->lookup($work->{'ak'});
-        my $accelerator_key = $work->{'ak'};
-        $accelerator_key =~ s/GDK_//;
-        $accelerator_key = $Gtk::Keysyms{$accelerator_key} if $accelerator_key;
-
-        my $work = $class->use_par($proto, 'ac_mods', $DEFAULT, '0' ) ||
-            $work->{'am'};
-        foreach $work (split(/\|/, $work)) {
-            push @ac_mods, Glade::PerlUIGtk->lookup($work);
-        }
-        $ac_mods = '';
-        $ac_mods = join("', '", @ac_mods) if $#ac_mods >= 0;
-
-        if ($accelerator_key || $ac_mods) {
-#print "Found accelerator_key of '$accelerator_key' and ac_mods of '$ac_mods'\n\n";
-            $class->add_to_UI( $depth, "${current_form}\{accelgroup}->add(".
-                "$accelerator_key, \['$ac_mods'\], $accel_flags, ".
-                "\$widgets->{'$name'}, 'activate');");
+            if ($work->{'ak'} || $ac_mods) {
+                $class->add_to_UI( $depth, "${current_form}\{accelgroup}->add(".
+                    "$work->{'ak'}, \['$ac_mods'\], $accel_flags, ".
+                    "\$widgets->{'$name'}, 'activate');");
+            }
+            if (_($label) =~ /_/) {
+                $class->add_to_UI( $depth,
+                    "\$widgets->{'$name-key'} = ".
+                        "(\$widgets->{'$name'}->child->children)[1]->widget->parse_uline(_('$label') );");
+                $class->add_to_UI( $depth,
+                    "\$widgets->{'$name'}->add_accelerator(".
+                        "'activate_item', $current_form\{'accelgroup'}, ". 
+                        "\$widgets->{'$name-key'}, 'mod1_mask', ".
+                        "['visible', 'locked'] );");
+                $class->add_to_UI( $depth, "undef \$widgets->{'$name-key'};");
+            }
+        
         }
 
     } elsif ($stock_icon) {
-        $stock_icon = ucfirst($stock_icon);
-        # Remove any underline accelerators
-        if ($label =~ s/_(.)/$1/) {
-            $class->diag_print(2, 
-                "warn  underline accelerator removed from '%s' in %s",
-                $name, $me);
-        }
-#        $stock_icon = $gnome_enums->{$stock_icon};
         $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
             "Gnome::Stock->menu_item('$stock_icon', _('$label'));" );
-            
+        if (_($label) =~ /_/) {
+            $class->add_to_UI( $depth,
+                "\$widgets->{'$name-key'} = ".
+                    "(\$widgets->{'$name'}->child->children)[1]->widget->parse_uline(_('$label') );");
+            $class->add_to_UI( $depth,
+                "\$widgets->{'$name'}->add_accelerator(".
+                    "'activate_item', $current_form\{'accelgroup'}, ". 
+                    "\$widgets->{'$name-key'}, 'mod1_mask', ".
+                    "['visible', 'locked'] );");
+            $class->add_to_UI( $depth, "undef \$widgets->{'$name-key'};");
+        }
+        
     } elsif ($label) {
-        my $pattern = $label;
-        # The line below replaces Gtk+ function gtk_label_parse_uline
-        if ($label =~ s/_(.)/$1/) {
-            # We have an accelerator key indicated by $1
-            my $accel_key = $1;
-            # Replace chars with spaces (except '_')
-            $pattern =~ tr/_/ /c;
-            if ($stock_icon) {
-#                $stock_icon = $gnome_enums->{$stock_icon};
-                $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
-                    "Gnome::Stock->menu_item('$stock_icon', _('$label'));" );
-             } else {
-                $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
-                    "new Gtk::PixmapMenuItem;" );
-            }
+        $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
+            "new Gtk::PixmapMenuItem(_('$label') );" );
+        if (_($label) =~ /_/) {
+            $class->add_to_UI( $depth,
+                "\$widgets->{'$name-key'} = ".
+                    "\$widgets->{'$name'}->child->parse_uline(_('$label') );");
+            $class->add_to_UI( $depth,
+                "\$widgets->{'$name'}->add_accelerator(".
+                    "'activate_item', $current_form\{'accelgroup'}, ". 
+                    "\$widgets->{'$name-key'}, 'mod1_mask', ".
+                    "['visible', 'locked'] );");
+            $class->add_to_UI( $depth, "undef \$widgets->{'$name-key'};");
             if ($right_justify) { 
                 $class->add_to_UI( $depth, "\$widgets->{'$name'}->right_justify;" );
             }
-            # Underline accelerators - uuurrrggghhh
-            $class->add_to_UI( $depth, "\$widgets->{'$name-accel'} = ".
-                "new Gtk::AccelLabel( _('$label') );" );
-            $class->add_to_UI( $depth, "\$widgets->{'$name-accel'}->show;");
-            $class->add_to_UI( $depth, "\$widgets->{'$name'}->add(".
-                "\$widgets->{'$name-accel'});" );
-#            $class->add_to_UI( $depth, "\$widgets->{'$name-accel'}->parse_uline;" );
-            $class->add_to_UI( $depth, "\$widgets->{'$name-accel'}->set_pattern(".
-                "'$pattern');" );
-            $class->add_to_UI( $depth, "${current_form}\{accelgroup}->add(".
-                ord(lc($accel_key)).", ['mod1_mask'], ['visible', 'locked'], ".
-                "\$widgets->{'$name'}, 'activate_item');");
-            $class->add_to_UI( $depth, "${current_form}\{'$name-accel'} = ".
-                "\$widgets->{'$name-accel'};" );
-            delete $widgets->{"$name-accel"};
 
         } else {
             # There is no '_' underline accelerator
@@ -991,15 +951,26 @@ sub new_GtkPixmapMenuItem {
                 $class->add_to_UI( $depth, "\$widgets->{'$name'}->right_justify;" );
             }
         }
+
     } else {
         # There is no label
-        $class->add_to_UI($depth, "\$widgets->{'$name'} = new Gtk::PixmapMenuItem;" );
+        $class->add_to_UI($depth, "\$widgets->{'$name'} = ".
+            "new Gtk::PixmapMenuItem;" );
     }
     if ($right_justify) { 
         $class->add_to_UI( $depth, "\$widgets->{'$name'}->right_justify;" );
     }
 
     $class->pack_widget($parent, $name, $proto, $depth );
+    if ($icon) {
+        $class->add_to_UI( $depth,
+            "$current_form\{'$name-pixmap'} = \$class->create_pixmap(".
+                "$current_window, '$icon');");
+# FIXME find out how to achieve this
+        $class->add_to_UI( -$depth,
+            "#$current_form\{'$name'}->set_pixmap(".
+                "$current_form\{'$name-pixmap'});");
+    }
     return $widgets->{$name};
 }
 

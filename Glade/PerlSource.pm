@@ -38,6 +38,7 @@ BEGIN {
                         $PARTYPE $LOOKUP $BOOL $DEFAULT $KEYSYM $LOOKUP_ARRAY
 
                         $Glade_Perl
+                        $encoding
                         $widgets 
                         $data
                         $forms 
@@ -61,7 +62,7 @@ BEGIN {
                         $first_form
                       );
     $PACKAGE      = __PACKAGE__;
-    $VERSION        = q(0.52);
+    $VERSION        = q(0.53);
     @VARS         = qw( 
                         $VERSION
                         $AUTHOR
@@ -69,6 +70,7 @@ BEGIN {
                         $PARTYPE $LOOKUP $BOOL $DEFAULT $KEYSYM $LOOKUP_ARRAY
 
                         $Glade_Perl
+                        $encoding
                         $widgets 
                         $data
                         $forms 
@@ -122,6 +124,10 @@ BEGIN {
 #   our inherited super-constructor (or overload)
     USERDATA    => undef,
 );
+
+sub DESTROY {
+    # This sub will be called on object destruction
+} # End of sub DESTROY
 
 sub new {
     my $that  = shift;
@@ -737,6 +743,10 @@ ${indent}\$window->TOPLEVEL->show;
 ${indent}Gtk->main;
 } # ".S_("End of sub")." run
 
+sub DESTROY {
+${indent}# This sub will be called on object destruction
+} # ".S_("End of sub")." DESTROY
+
 sub new {
 #
 # ".S_("This sub will create the UI window")."
@@ -998,6 +1008,10 @@ ${indent}USERDATA    => undef,
 ${indent}VERSION     => '0.01',
 );
 
+sub DESTROY {
+${indent}# This sub will be called on object destruction
+} # ".S_("End of sub")." DESTROY
+
 #==============================================================================
 #=== ".S_("Below are the overloaded class constructors")."
 #==============================================================================
@@ -1172,6 +1186,10 @@ ${indent}\$Glade::PerlRun::pixmaps_directory ||= '$Glade_Perl->{'options'}{'glad
 ${indent}USERDATA    => undef,
 ${indent}VERSION     => '0.01',
 );
+
+sub DESTROY {
+${indent}# This sub will be called on object destruction
+} # ".S_("End of sub")." DESTROY
 
 #==============================================================================
 #=== ".S_("Below are the class constructors")."

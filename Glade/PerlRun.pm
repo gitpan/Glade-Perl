@@ -39,9 +39,9 @@ BEGIN {
     # Tell interpreter who we are inheriting from
     @ISA          = qw( Exporter );
     $PACKAGE      = __PACKAGE__;
-    $VERSION      = q(0.52);
+    $VERSION      = q(0.53);
     $AUTHOR       = q(Dermot Musgrove <dermot.musgrove\@virgin.net>);
-    $DATE         = q(Fri Mar 31 16:44:38 BST 2000);
+    $DATE         = q(Tue Apr 11 15:45:29 BST 2000);
     $widgets      = {};
     $all_forms    = {};
     $pixmaps_directory = "pixmaps";

@@ -6,7 +6,7 @@ BEGIN     {
     use Glade::PerlGenerate;
     }
 
-my $VERSION = "0.52";
+my $VERSION = "0.53";
 
 # We expect to be supplied with parameter
 #   $_[0] is name of a Glade <GTK-Interface> XML file
@@ -37,7 +37,7 @@ sub main {
     print "Test 2..3 Generating source code for the example Glade file\n";
     $Glade::PerlSource::first_form = '';
     $Glade::PerlRun::Glade_Perl = {};
-    $Glade::PerlRun::Glade_Perl = {};
+    $Glade::PerlRun::Glade_Perl = {}; # repeated so as not to throw warning
     chdir "Example";
     &file_test || print "Not ";
     print "Test 2..3 OK\n\n";

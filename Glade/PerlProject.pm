@@ -35,7 +35,7 @@ BEGIN {
                             $xAUTOLOAD
                        );
     $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.52);
+    $VERSION        = q(0.53);
     # Tell interpreter who we are inheriting from
     @ISA            = qw( 
                             Glade::PerlXML 
@@ -44,10 +44,6 @@ BEGIN {
 }
 
 my %fields = (
-    # These are the data fields that you can set/get using
-    # the dynamic calls provided by AUTOLOAD.
-    # eg $class->UI($new_value);        sets the value of UI
-    #    $current_value = $class->UI;   gets the current value of UI
 # Project
 #--------
     'author'            => undef,   # Name to appear in generated source
@@ -58,12 +54,16 @@ my %fields = (
     'description'       => undef,   # Description for About box etc.
     'use_modules'       => undef,   # Existing signal handler modules
     'allow_gnome'       => undef,   # Dont allow gnome widgets
-    'gettext'           => undef,   # Do we want gettext type code
     'start_time'        => undef,   # Time that this run started
     'project_options'   => undef,   # Dont read or save options in disk file
 #    'options_filename'  => undef,   # Dont read or save options in disk file
     'options_set'       => 'DEFAULT', # Who set the options
-
+    'glade_encoding'    => 'ISO-8859-1',
+                                    # Character encoding eg ('ISO-8859-1') 
+                                    # of Glade file 
+    'glade2perl_encoding' => undef, # Character encoding eg ('ISO-8859-1') 
+                                    # of glade2perl.xml options files
+    
 # UI
 #---
     'glade_proto'       => undef,
@@ -95,14 +95,12 @@ my %fields = (
 #------------
     'verbose'           => 2,       # Show errors and main diagnostics
     'diag_wrap'         => 0,       # Max diagnostic line length (approx)
-    'diag_file'         => undef,   # Diagnostics log file name
     'autoflush'         => undef,   # Dont change the policy
     'benchmark'         => undef,   # Dont add time to the diagnostic messages
     'log_file'          => undef,   # Write diagnostics to STDOUT 
                                     # or Filename to write diagnostics to
     'diag_LANG'         => ($ENV{'LANG'} || ''),
                                     # Which language we want the diagnostics
-#    'debug'             => 'True',  # For my testing and debugging.
 
 # Distribution
 #--------------
@@ -122,6 +120,10 @@ my %fields = (
                                     # '1.0.8'    we have release 1.0.8 (or equivalent)
                                     # '19990901' we have CVS version of 1st Sep 1999
 );
+
+sub DESTROY {
+    # This sub will be called on object destruction
+} # End of sub DESTROY
 
 sub new {
   my $that  = shift;
@@ -337,7 +339,7 @@ sub save_options {
     my ($class, $filename) = @_;
 #use Data::Dumper; print Dumper(\@_);print Dumper($Glade_Perl);
     my $me = __PACKAGE__."->save_options";
-    my ($user_options, $site_options, $key, $default);
+    my ($user_options, $site_options, $key, $default, $encoding);
     # Take a copy of the options supplied and work on that (for deleting keys)
     # so that we still have some options to use (verbode etc) :)
     my %options = %{$class};
@@ -346,8 +348,8 @@ sub save_options {
         # Only save options that are different to user_options in file
 #        $site_options = $class->simple_Proto_from_File(
 #             $site_filename, '')->{'G2P-Options'};
-        $site_options = $class->Proto_from_File(
-             $site_filename, '', '');
+        ($encoding, $site_options) = $class->Proto_from_File(
+             $site_filename, '', '', $class->glade2perl_encoding);
         $class->diag_print(4, $site_options, "Site options");
     }
 
@@ -356,8 +358,8 @@ sub save_options {
         # Only save options that are different to user_options in file
 #        $user_options = $class->simple_Proto_from_File(
 #             $user_filename, '')->{'G2P-Options'};
-        $user_options = $class->Proto_from_File(
-             $user_filename, '', '');
+        ($encoding, $user_options) = $class->Proto_from_File(
+             $user_filename, '', '', $class->glade2perl_encoding);
         $class->diag_print(4, $user_options, "User options");
     }
 
@@ -398,6 +400,14 @@ sub save_options {
     open OPTIONS, ">".($filename) or 
         die sprintf("error %s - can't open file '%s' for output", 
             $me, $filename);
+    if ($Glade_Perl->{'options'}->glade2perl_encoding) {
+        print OPTIONS 
+            "<?xml version=\"1.0\" encoding=\"".
+            $Glade_Perl->{'options'}->glade2perl_encoding."\"?>\n";
+    } else {
+        print OPTIONS 
+            "<?xml version=\"1.0\"?>\n";
+    }
     print OPTIONS $xml;
     close OPTIONS or
         die sprintf("error %s - can't close file '%s'", 
@@ -425,11 +435,13 @@ sub options {
                 # Override the defaults with values from the options file
 #                $file_options = $class->simple_Proto_from_File(
 #                    $filename, '')->{'G2P-Options'};
-                $file_options = $class->Proto_from_File($file, '', '');
+                ($encoding, $file_options) = $class->Proto_from_File(
+                    $file, '', '', $options->glade2perl_encoding);
                 $class->add_to_hash_from($options, $file_options);
             }
         }
     }
+    $options->{'glade2perl_encoding'} ||= $options->glade_encoding;
 #use Data::Dumper; print Dumper($options);
     # merge in the supplied arg options
     $class->add_to_hash_from($options, \%params);
@@ -438,9 +450,10 @@ sub options {
         open STDOUT, ">/dev/null"; 
     } else {
         # Load the diagnostics gettext translations
-#        $class->load_translations('Glade-Perl', $options->diag_LANG, undef, undef, '__D', undef);
         $class->load_translations('Glade-Perl', $options->diag_LANG, undef, 
-            '/home/dermot/Devel/Glade-Perl/ppo/en.mo', '__D', undef);
+            undef, '__D', undef);
+#        $class->load_translations('Glade-Perl', $options->diag_LANG, undef, 
+#            '/home/dermot/Devel/Glade-Perl/ppo/en.mo', '__D', undef);
 #        $class->check_gettext_strings("__D");
     }
     unless ($options->my_perl_gtk &&
@@ -451,7 +464,6 @@ sub options {
         die "$me - Much as I like an easy life, please alter options ".
             "to, at least, show_UI or write_source\n    Run abandoned";
     }
-#    if ($options->{'debug'}) {$options->verbose(0);}
     $indent = $options->indent; 
     $tab = (' ' x $options->tabwidth);
     if ($options->diag_wrap == 0) {
@@ -502,6 +514,7 @@ sub use_Glade_Project {
     my $me = "$class->use_Glade_Project";
     $class->diag_print(6, $glade_proto->{'project'}, "Input Proto project");
     my $options = $Glade_Perl->{'options'};
+
     # Ensure that the options are set (use defaults, site, user, project)
     $options->options_set($me);
     my $project_options = {};
@@ -510,15 +523,14 @@ sub use_Glade_Project {
     $options->allow_gnome(
         ($glade_proto->{'project'}{'gnome_support'} || 'True')
             eq 'True');
-    $options->gettext(
-        ($glade_proto->{'project'}{'output_translatable_strings'} || 'False') 
-            eq 'True');
     $class->get_versions($options);
-#    $options = $class->get_versions($options;
+
     # Glade assumes that all directories are named relative to the Glade 
     # project (.glade) file (not <directory>) !
     my $glade_file_dirname = dirname($options->{'glade_filename'});
-    # Replace any spaces with underlines
+
+    # Remove any spaces, dots or minuses in the project name
+    # These are invalid in perl package name
     my $replaced = $glade_proto ->{'project'}{'name'} =~ s/[ -\.]//g;
     if ($replaced) {
         $class->diag_print(2, "%s- %s Space(s), minus(es) or dot(s) ".

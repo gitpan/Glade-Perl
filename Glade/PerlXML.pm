@@ -47,7 +47,9 @@ sub QuoteXMLChars {
     # Suggested by Eric Bohlman <ebohlman@netcom.com> on perl-xml mailling list
     my %ents=('&'=>'amp','<'=>'lt','>'=>'gt',"'"=>'apos','"'=>'quot');
     $text =~ s/([&<>'"])/&$ents{$1};/g;
-    $text =~ s/([\x80-\xFF])/&XmlUtf8Encode(ord($1))/ge;
+    # Uncomment the line below if you don't want to use European characters in 
+    # your project options
+#    $text =~ s/([\x80-\xFF])/&XmlUtf8Encode(ord($1))/ge;
     return $text;
 }
 
@@ -88,29 +90,32 @@ sub XmlUtf8Encode {
 }
 
 sub Proto_from_File {
-    my ($class, $filename, $repeated, $special) = @_;
+    my ($class, $filename, $repeated, $special, $encoding) = @_;
     my $me = "$class->Proto_from_File";
-    my $tree = new XML::Parser(
-        Style =>'Tree', 
-        ProtocolEncoding => 'ISO-8859-1',
-        ErrorContext => 2)->parsefile($filename );
-    return $class->Proto_from_XML_Parser_Tree(
-        $tree->[1], 0, $repeated, $special );
+    my $xml = $class->string_from_File($filename);
+    return $class->Proto_from_XML($xml, $repeated, $special, $encoding );
 }
 
 sub Proto_from_XML {
-    my ($class, $xml, $repeated, $special) = @_;
+    my ($class, $xml, $repeated, $special, $encoding) = @_;
     my $me = "$class->Proto_from_XML";
+    my $xml_encoding;
+    if ($xml =~ s/\<\?xml.*\s*encoding\=["'](.*?)['"]\?\>\n*//) {
+        $xml_encoding = $1
+    } else {
+        $xml_encoding = $encoding;
+    }
     my $tree = new XML::Parser(
         Style =>'Tree', 
-        ProtocolEncoding => 'ISO-8859-1',
+        ProtocolEncoding => $xml_encoding,
         ErrorContext => 2)->parse($xml );
-    return $class->Proto_from_XML_Parser_Tree(
-        $tree->[1], 0, $repeated, $special );
+    my $proto = $class->Proto_from_XML_Parser_Tree(
+        $tree->[1], 0, $repeated, $special, $xml_encoding );
+    return $xml_encoding, $proto;
 }
 
 sub Proto_from_XML_Parser_Tree {
-    my ($class, $self, $depth, $repeated, $special) = @_;
+    my ($class, $self, $depth, $repeated, $special, $encoding) = @_;
     my $me = "$class->Proto_from_XML_Parser_Tree";
     # Tree[0]      contains fileelement name
     # Tree[1]      contains fileelement contents
@@ -128,6 +133,9 @@ sub Proto_from_XML_Parser_Tree {
     #        recursed
     
     # Tree[3] cannot exist since the fileelement must enclose everything
+    if ($encoding && ($encoding eq 'ISO-8859-1')) {
+        eval "use Unicode::String qw(utf8 latin1)";
+    }
     my ($tk, $i, $ilimit );
     my ($count, $np, $key, $work );
     my $limit = scalar(@$self);
@@ -147,7 +155,7 @@ sub Proto_from_XML_Parser_Tree {
             } else {
                 # call ourself to expand nested xml but use sequence no
                 $work = $class->Proto_from_XML_Parser_Tree($self->[$count + 1], 
-                    ++$depth, $repeated, $special );
+                    ++$depth, $repeated, $special, $encoding );
                 $work->{&typeKey} = $self->[$count];
                 # prefix with tilde to force to end (alphabetically)
                 $tk = "~$self->[$count]-".sprintf(&keyFormat, $key, $self->[$count] );
@@ -155,10 +163,10 @@ sub Proto_from_XML_Parser_Tree {
             }
 
         } elsif (" $special " =~ / $self->[$count] /) {
-            # this is a unique container definition so just
-            # expand and store it with no sequence no
+            # this is a unique container definition (eg Glade <project>) 
+            # so just expand and store it without a sequence no
             $work = $class->Proto_from_XML_Parser_Tree($self->[$count + 1], 
-                ++$depth, $repeated, $special );
+                ++$depth, $repeated, $special, $encoding );
             $work->{&typeKey} = $self->[$count];
             $np->{$self->[$count]} = $work;
 
@@ -174,13 +182,20 @@ sub Proto_from_XML_Parser_Tree {
                 sprintf(&keyFormat, $key, $self->[$count] );
             $np->{$tk} = $work;
 
+        } elsif ($ilimit == 1) {
+            # this is an empty (nul string) element
+            $np->{$self->[$count]} = '';
+
         } else {
             # this is a simple element to add with 
             # key in $self->[$count] and val in $self->[$count+1][2]
-            # Comment out the line below if you are using european characters
-            $np->{$self->[$count]} = $self->[$count+1][2];
-            # Uncomment the line below if you are using european characters
-#            $np->{$self->[$count]} = &utf8($self->[$count+1][2])->latin1;
+            if ($encoding && ($encoding eq 'ISO-8859-1')) {
+                # Uncomment the line below if you are using european characters
+                $np->{$self->[$count]} = &utf8($self->[$count+1][2])->latin1;
+            } else {
+                # Comment out the line below if you are using european characters
+                $np->{$self->[$count]} = $self->[$count+1][2];
+            }
         }
     }
     return $np;
@@ -232,9 +247,9 @@ sub XML_from_Proto {
 	return $xml
 }
 	
-sub simple_Proto_from_File {
-    my ($class, $filename, $repeated) = @_;
-    my $me = __PACKAGE__."->new_Proto_from_File";
+sub string_from_File {
+    my ($class, $filename) = @_;
+    my $me = __PACKAGE__."->string_from_File";
     my $save = $/;
     undef $/;
     open GLADE, $filename or 
@@ -246,7 +261,14 @@ sub simple_Proto_from_File {
     close GLADE;
     $/ = $save;
 #print $xml."\n";
+    return $xml;
+}
+
+sub simple_Proto_from_File {
+    my ($class, $filename, $repeated) = @_;
+    my $me = __PACKAGE__."->new_Proto_from_File";
     my $pos = -1;
+    my $xml = $class->string_from_File($filename);
     return $class->simple_Proto_from_XML(\$xml, 0, \$pos, $repeated);
 }
 

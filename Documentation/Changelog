@@ -1,29 +1,58 @@
 Revision history for Perl module Glade::PerlGenerate development branch.
+Tue Apr 11 15:45:29 BST 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
+  - Version 0.53
+  - New FAQ about character encodings.
+  - PerlProject two new user options to handle character encodings.
+    <glade_encoding> to specify the Glade file character encoding.
+    <glade2perl_encoding> to specify the glade2perl.xml project options file
+    character encoding (defaults to glade_encoding).
+  - PerlXML->QuoteXMLChars() characters x80-xff not now encoded so project
+    options are saved without re-encoding eg european characters.
+  - PerlXML->save_options() extra declaration line with character encoding
+    eg <?xml version="1.0" encoding="ISO-8859-1"?> written to head of file.
+  - PerlUIGtk->new_GtkAccelLabel() underlines now parsed correctly.
+  - PerlUIGtk->new_GtkLabel() underlines now parsed correctly.
+  - PerlUIGtk->new_GtkButton() underlines now parsed correctly.
+  - PerlUIGtk->new_GtkCheckButton() underlines now parsed correctly.
+  - PerlUIGtk->new_GtkRadioButton() underlines now parsed correctly.
+  - PerlUIGtk->new_GtkToggleButton() underlines now parsed correctly.
+  - PerlUIGtk->new_GtkCheckMenuItem() underlines now parsed correctly.
+  - PerlUIGtk->new_GtkMenuItem() underlines now parsed correctly.
+  - PerlUIGtk->new_GtkRadioMenuItem() underlines now parsed correctly.
+  - PerlUIExtra->new_GtkPixmapMenuItem() much simplified and underlines 
+    now parsed correctly.
+  - Perl* all packages now have an empty DESTROY method to keep perl 5.006
+    happy when it is running cleanup with warnings enabled.
+  - PerlSource->perl_AUTOLOAD_top(), perl_SUBCLASS_top(), perl_LIBGLADE_top()
+    amended to write empty DESTROY() subs to generated classes (see above)
+  - PerlGenerate documentation - perldoc (and manpage) corrected and improved
+    to include all user options.
+  
 Fri Mar 31 16:44:38 BST 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
   - Version 0.52
   - PerlSource->check_gettext_strings() and write_gettext_strings() are
-    two new subs to help you spot missing translations and write the .pot file
+    two new subs to help you spot missing translations and write a .pot file
   - PerlRun->D_(), S_() moved to to PerlSource to remove run-time pollution.
-  - PerlSource->_() overrides PerlRun->_()  to allow for gettext string checking.
+  - PerlSource->_() overrides PerlRun->_()  for gettext string checking.
   - PerlSource added some commented lines to the generated sources to do the 
-    checking for the user.
-  - PerlSource->perl_LIBGLADE_top() added a file check and better explanation 
-    if the Glade file is missing in the generated run() sub.
+    gettext string checking for the user.
+  - PerlSource->perl_LIBGLADE_top() added a file check and better 
+    explanation if the Glade file is missing in the generated run() sub.
   - ppo/Glade-Perl.pot I have found some more strings to be translated :(
-  - PerlSource all subs now generated with '} # End of sub %name' as last line
+  - PerlSource all subs now have '} # End of sub %name' as last line
   - PerlUI->set_widget_properites() finally implemented set_events() and
     set_extension_events() generation.
-  - PerlGenerate->Form_from_Glade_file() and Form_from_XML() amended to create
-    proto to allow multiple accelerators for a widget.
-  - Perl* all subs that use Glade-Perl user options improved. The defaults are 
-    now more correctly determined and fewer options should be saved in the 
-    project_options file 
+  - PerlGenerate->Form_from_Glade_file() and Form_from_XML() amended to 
+    create proto to allow multiple accelerators for a widget.
+  - Perl* all subs that use Glade-Perl user options improved. The defaults 
+    are now more correctly determined and fewer options should be saved in 
+    the project_options file 
   - PerlGenerate->Form_from_XML() fixed to do what it should again.
-  - PerlUIGtk->new_GtkVPaned() fixed to supply a default position. This seems
-    to be caused because Glade-0.5.7 doesn't save default values any more.
+  - PerlUIGtk->new_GtkVPaned() fixed to supply a default position. This 
+    seems to be caused because Glade-0.5.7 doesn't save all default values.
     Most other defaults also now supplied in case of further changes.
     Thanks to Ned Konz <ned@bike-nomad.com> for the report
-  - Popup menus with keyboard accelerators and tooltips now generated correctly
+  - Popup menus with keyboard accelerators and tooltips generated correctly
     Thanks to Skywolf Lu <skywolf@ms21.hinet.net> for the report
   - PerlGenerate->unused_widgets() now only warns (verbose >= 4) when C++
     specific widget properties are encountered (they are currently ignored).

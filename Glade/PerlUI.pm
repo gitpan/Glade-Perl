@@ -40,7 +40,7 @@ BEGIN {
         $cxx_properties
         );
     $PACKAGE =          __PACKAGE__;
-    $VERSION        = q(0.52);
+    $VERSION        = q(0.53);
 
     $ignored_widgets = 0;
     $missing_widgets = 0;
@@ -730,7 +730,8 @@ sub internal_pack_widget {
                             "new Gtk::Label('$message');");
                     $class->add_to_UI( $depth, 
                         "${current_form}\{'Placeholder_label'}->show;");
-                    $nb->{$parentname}{'panes'}[$nb->{$parentname}{'tab'}] = 'Placeholder_label';
+                    $nb->{$parentname}{'panes'}[$nb->{$parentname}{'tab'}] = 
+                        'Placeholder_label';
                 }
 #                $class->diag_print(2, $proto);
                 $class->add_to_UI( $depth, 

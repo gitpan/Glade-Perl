@@ -16,9 +16,13 @@ Glade-Perl - perl source code generator
 
 TODO
 ----
-*   Spread all pod documentation throughout the files so that they get updated
-    more regularly (eg user options). Perhaps PerlGenerate and PerlProject 
-    should be combined into PerlGenerate for this reason among others.
+*   Perhaps require at least Gtk-Perl-0.7000 (CVS version after 20000102)
+    then I could remove all version checks for any prior versions.
+    
+*   Improve the documentation. Find a way to keep perl source, perldoc
+    tooltips, help text, README, web page etc in step and up to date.
+    Perhaps embed XML in the source - or even source in XML and generate
+    everything from that? Please email me if you know how it should be done.
     
 *   Make better Examples/tests with docs.
     1) Simple 'getting started' project, signal handlers and subclass
@@ -42,15 +46,9 @@ TODO
     
 *   Make dist files eg Makefile.PL, MANIFEST, Changelog etc etc
 
-*   Rewrite GtkMenuItem and PixmapMenuItem constructors to simplify and reuse
-    code and to handle underline accelerators properly.
-    
 *   Sort out Gnome::App accelerators and signals properly Probably it
     would be best to implement the gnome-app-helper methods and use those when
     they are available.
-    
-*   Fix accel key handling so that parse_uline is in generated code so it works
-    after the string is found with gettext.
     
 *   Fix the signal handling for AccelLabels and pixmaps. Which widget should
     the signal be connected to?
@@ -60,12 +58,6 @@ TODO
     would be in Generated/fileselection1.pm. You could then use() and new()
     previously generated forms without having to write handlers and so on.
     This is possible now by use()ing several generated UI files but inefficient
-    
-*   Improve the documentation. Find a way to keep perl source, perldoc
-    tooltips, help text, README, web page etc in step and up to date.
-    Perhaps embed XML in the source - or even source in XML and generate
-    everything from that? Please email me if you know how it should be done.
-    Investigate (lib)Guide for all docs and trouble-shooting.
     
 *   Check all evals for proper exception handling.
 
@@ -77,14 +69,14 @@ TODO
     However, I am not sure that 'evals' are a proper way to go but it is
     probably too late to change now.
 
-*   It is still inefficient. I construct an XML::Parser 'Tree' 
+*   It is still relatively inefficient. I construct an XML::Parser 'Tree' 
     and then build a proto hash. Then I recurse through the proto 
     hash and build the UI and write the perl source. Apart
-    from converting it all to Java and back again I can't 
-    think how to slow it down any more :-). But I must shorten 
-    the journey between XML and constructors, perhaps the libglade
-    bindings from Philippe GIACINTI <philippe@giacinti.com> will
-    help here. 
+    from converting it all to Java and back again I can't think how to slow 
+    it down any more :-). 
+    
+    But I could shorten the journey between XML and constructors, perhaps 
+    libxml would help here although the time spent in XML::Parser is not great.
     
     Or perhaps use a streaming approach. I don't think that it is possible to 
     show the dialog until it is completely constructed so it will just speed 
@@ -92,10 +84,6 @@ TODO
     
     Or perhaps write my own simple parser using regexps.
 
-    Or perhaps use libxml
-
-    Profile the whole process and remove any time-consuming diagnostics
-    
 *   Much inefficiency in the number of diagnostics that can be produced.
     When it is stable I should comment out the most frequent and expensive 
     calls to Glade::PerlProject->diag_print() and ->use_par().
@@ -115,6 +103,18 @@ TODO
 
 DONE
 ----
+*   Spread all pod documentation throughout the files so that they get updated
+    more regularly (eg user options). Perhaps PerlGenerate and PerlProject 
+    should be combined into PerlGenerate for this reason among others.
+    The perldoc is still at the end of Glade::PerlGenerate but at least it is
+    complete and up-to-date.
+    
+*   Rewrite GtkMenuItem and PixmapMenuItem constructors to simplify and reuse
+    code and to handle underline accelerators properly.
+    
+*   Fix accel key handling so that parse_uline is in generated code so it works
+    after the string is found with gettext.
+    
 *   Internationalise every stage but particularly the source code generation
     of Gnome::App and Stock stuff
     

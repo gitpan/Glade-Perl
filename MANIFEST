@@ -11,7 +11,7 @@ Documentation/TODO                  # What still must be done <sigh>
 Documentation/README                # Some documentation
 Documentation/ROADMAP               # Where will the module go?
 Documentation/TODO                  # What still must be done <sigh>
-Documentation/User-Options.html     # Glade-Perl user options
+#Documentation/User-Options.html     # Glade-Perl user options
 #Documentation/apps.html             # Some apps developed using Glade-Per
 #Documentation/index.html            # Glade-Perl home page
 Glade/PerlGenerate.pm               # Perl Generator toplevel

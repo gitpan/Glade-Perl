@@ -74,8 +74,8 @@ REQUIREMENTS (what I use but older versions may well work)
 Package     my version	available from
 -------     ----------  --------------
 Glade       0.5.6       http://glade.pn.org/
-Glib/Gtk+   1.2.6       ftp://ftp.gimp.org/pub/gtk/
-gnome-libs  1.0.54      Gnome mirrors or Gnome.org CVS 
+Glib/Gtk+   1.2.7       ftp://ftp.gimp.org/pub/gtk/
+gnome-libs  1.0.58      Gnome mirrors or Gnome.org CVS 
                         If you use RPMs you will need gnome-libs-devel too but 
                         you probably worked this out while building Glade and 
                         Gtk-Perl :)
