@@ -11,6 +11,17 @@ To install
     su
     make install (if test was OK)
         
+TO BUILD RPMS
+-------------
+Build the RPMs by calling
+    rpm -ta Glade-Perl-0.58.tar.gz
+
+TO INSTALL RPMS
+---------------
+Install the files by calling (default location on my Redhat based distro)
+    rpm -Uvh /usr/src/redhat/RPMS/noarch/Glade-Perl-0.58-1.noarch.rpm
+
+
 TO RUN FROM GLADE
 -----------------
 If you use Glade >= 0.5.0 you can set the project language to Perl and
@@ -31,8 +42,9 @@ Glade if you want to edit the interface files.
 
     glade2perl Project1.glade
     
-    perl -e 'use src::Project1; window1->run'
-OR  perl -e 'use src::SubProject1; Subwindow1->run'
+Then to run the app:
+    perl -e 'use src::Project1; window1->app_run'
+OR  perl -e 'use src::SubProject1; Subwindow1->app_run'
 
 (Obviously change the project name and window name to whatever you defined
 in your Glade project)

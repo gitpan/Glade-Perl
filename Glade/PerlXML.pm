@@ -20,6 +20,7 @@ require 5.000; use strict 'vars', 'refs', 'subs';
 
 BEGIN {
     use XML::Parser   qw(  );               # for new, parse, parsefile
+    use Glade::PerlRun qw(:METHODS :VARS);
     # Uncomment the line below if you are using european characters 
     # NB you will also have to uncomment line 183 and comment out line 181
 #    use Unicode::String qw(utf8 latin1);    # To read ISO-8859-1 chars
@@ -27,74 +28,19 @@ BEGIN {
                             @ISA 
                             @EXPORT @EXPORT_OK %EXPORT_TAGS 
                             $PACKAGE $VERSION $AUTHOR $DATE
-                            $seq
                        );
-    $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.57);
-    $AUTHOR         = q(Dermot Musgrove <dermot.musgrove\@virgin.net>);
-    $DATE           = q(30 June 1999);
     # Tell interpreter who we are inheriting from
-    @ISA            = qw(  );
+    @ISA            = qw( Glade::PerlRun );
 }
-$seq = 1;
+#$seq = 1;
 #===============================================================================
 #=========== Utilities to read XML and build the Proto                ==========
 #===============================================================================
-sub typeKey     { return ' type'; }
-#sub keyFormat  { if (shift) {return '%04u-%s' } else {return '%04u' } }
-sub keyFormat   { return '%04u' } 
-
-sub QuoteXMLChars {
-    my $text = shift;
-    # Suggested by Eric Bohlman <ebohlman@netcom.com> on perl-xml mailling list
-    my %ents=('&'=>'amp','<'=>'lt','>'=>'gt',"'"=>'apos','"'=>'quot');
-    $text =~ s/([&<>'"])/&$ents{$1};/g;
-    # Uncomment the line below if you don't want to use European characters in 
-    # your project options
-#    $text =~ s/([\x80-\xFF])/&XmlUtf8Encode(ord($1))/ge;
-    return $text;
-}
-
-sub UnQuoteXMLChars {
-    my $text = shift;
-    my %ents=('&lt;'=>'<','&gt;'=>'>','&apos;'=>"'",'&quot;'=>'"', '&amp;'=>'&');
-    $text =~ s/(&lt;|&gt;|&apos;|&quot;|&amp;)/$ents{$1}/g;
-    return $text;
-}
-
-sub XmlUtf8Encode {
-    # This was ripped from XML::DOM - thanks to
-    # Enno Derksen (official maintainer), enno@att.com
-    # and Clark Cooper, coopercl@sch.ge.com
-    my $n = shift;
-    my $me = "XmlUtf8Encode";
-    if ($n < 0x80)    { 
-        return chr ($n);
-
-    } elsif ($n < 0x800) {
-        return pack ("CC", (($n >> 6) | 0xc0), 
-                    (($n & 0x3f) | 0x80));
-
-    } elsif ($n < 0x10000) {
-        return pack ("CCC", (($n >> 12) | 0xe0), 
-                    ((($n >> 6) & 0x3f) | 0x80),
-                     (($n & 0x3f) | 0x80));
-
-    } elsif ($n < 0x110000) {
-        return pack ("CCCC", (($n >> 18) | 0xf0), 
-                    ((($n >> 12) & 0x3f) | 0x80),
-                     ((($n >> 6) & 0x3f) | 0x80), 
-                      (($n & 0x3f) | 0x80));
-    }
-    __PACKAGE__->diag_print(1, 
-        "error Number is too large for Unicode [%s] in %s ", $n, $me);
-    return "#";
-}
-
 sub Proto_from_File {
     my ($class, $filename, $repeated, $special, $encoding) = @_;
     my $me = "$class->Proto_from_File";
     my $xml = $class->string_from_File($filename);
+#print "$filename - $xml\n";
     return $class->Proto_from_XML($xml, $repeated, $special, $encoding );
 }
 
@@ -206,117 +152,6 @@ sub Proto_from_XML_Parser_Tree {
         }
     }
     return $np;
-}
-
-sub XML_from_Proto {
-    # usage my $xmlstring = 
-    #   XML::UTIL->XML_from_Proto($prefix, '  ', $tag, $protohashref);
-    # This proc will compose XML from a proto hash in 
-    #   Proto_from_XML's return format
-    my ($class, $prefix, $tab, $tag, $proto) = @_;
-	my $me = "$class->XML_from_Proto";
-	my ($key, $val, $xml, $limit);
-	my $typekey = &typeKey;
-	my $contents = '';
-	my $newprefix = "$tab$prefix";
-
-	# make up the start tag 
-	foreach $key (sort keys %$proto) {
-		unless ($key eq $typekey) {
-			if (ref $proto->{$key}) {
-				# call ourself to expand nested xml
-				$contents .= "\n".$class->XML_from_Proto($newprefix, $tab, 
-                    $proto->{$key}{$typekey}, $proto->{$key})."\n";
-			} else {
-				# this is a vanilla string so trim and add to output
-				if (defined $proto->{$key}) {
-                    $contents .= "\n$newprefix<$key>".&QuoteXMLChars($proto->{$key})."</$key>";
-				} else {
-					$contents .= "\n$newprefix<$key></$key>";
-#					$contents .= "\n$newprefix<$key />";
-				}
-			}
-		}
-	}
-
-	# make up the string to return
-	if ($contents eq '') {
-		if ($tag ne '') {
-			$xml .= "\n$prefix<$tag />";
-		}
-	} else {
-		if ($tag ne '') {
-			$xml .= "$prefix<$tag>$contents\n$prefix</$tag>";
-		} else {
-			$xml .= "\n$contents\n";
-		}
-	}
-	return $xml
-}
-	
-sub string_from_File {
-    my ($class, $filename) = @_;
-    my $me = __PACKAGE__."->string_from_File";
-    my $save = $/;
-    undef $/;
-    open GLADE, $filename or 
-        die sprintf((
-            "error %s - can't open file '%s' for input"),
-            $me, $filename);    
-    undef $/;
-    my $xml = <GLADE>;
-    close GLADE;
-    $/ = $save;
-#print $xml."\n";
-    return $xml;
-}
-
-sub simple_Proto_from_File {
-    my ($class, $filename, $repeated) = @_;
-    my $me = __PACKAGE__."->new_Proto_from_File";
-    my $pos = -1;
-    my $xml = $class->string_from_File($filename);
-    return $class->simple_Proto_from_XML(\$xml, 0, \$pos, $repeated);
-}
-
-sub simple_Proto_from_XML {
-    my ($class, $xml, $depth, $pos, $repeated) = @_;
-    my ($self, $tag, $use_tag, $prev_contents, $work);
-    my $new_pos;
-    while (($new_pos = index($$xml, "<", $$pos)) > -1) {
-        $prev_contents = substr($$xml, $$pos, $new_pos-$$pos);
-        $$pos = $new_pos;
-        $new_pos = index($$xml, ">", $$pos);
-        $tag = substr($$xml, $$pos+1, $new_pos-$$pos-1);
-        $$pos = $new_pos+1;
-        next if $tag =~ /^\?/;
-        if ($tag =~ s|^/||) {
-            # We are an endtag so return the $prev_contents
-            if  (ref $self) {
-                return $self;
-
-            } else {
-                return &UnQuoteXMLChars($prev_contents);
-            }
-
-        } else {
-            # We are a starttag so recurse
-            $work = $class->simple_Proto_from_XML(
-                $xml, $depth + 1, $pos, $repeated);
-            if (" $repeated " =~ / $tag /) {
-                # Store as a numbered key
-                $use_tag = "~$tag-".sprintf(&keyFormat, $seq++);
-            } else {
-                # Store as key
-                $use_tag = $tag;
-            }
-            $self->{$use_tag} = $work;
-            if (ref $work eq 'HASH') {
-                $self->{$use_tag}{&typeKey} = $tag ;
-            }
-        }
-    }
-    return $self;
 }
 
 1;

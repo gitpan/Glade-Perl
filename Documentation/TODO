@@ -1,5 +1,5 @@
 Glade-Perl - perl source code generator
-# Copyright (c) 1999 Dermot Musgrove <dermot.musgrove@virgin.net>
+# Copyright (c) 1999 Dermot Musgrove <dermot.musgrove at virgin.net>
 #
 # This library is released under the same conditions as Perl, that
 # is, either of the following:
@@ -14,17 +14,12 @@ Glade-Perl - perl source code generator
 # but not required, to pay what you feel is a reasonable fee to perl.org
 # to ensure that useful software is available now and in the future. 
 #
-# (visit http://www.perl.org/ or email donors@perlmongers.org for details)
+# (visit http://www.perl.org/ or email donors at perlmongers.org for details)
 
 TODO
 ----
 *   Implement GnomeDb widgets when they are available in Gtk-Perl
 
-*   Improve options handling
-
-*   Perhaps require at least Gtk-Perl-0.7000 (CVS version after 20000102)
-    then I could remove all version checks for any prior versions.
-    
 *   Make better Examples/tests with docs.
     1) Simple 'getting started' project, signal handlers and subclass
     2) UI from string (exists already)
@@ -34,16 +29,14 @@ TODO
     6) Hierarchical widget structure
     7) I18N example of gettext app
         
+*   Document, internally, Glade::PerlRun for app developers
+
 *   Generate extract and display subs to give examples of how to set and get
     widget data. Perhaps not necessary.
 
-*   Cut out all checks and diagnostics if verbose == 0
-
-*   Clean all the debugging stuff out and tidy the code properly.
-
 *   Recombine into fewer .pm files, possibly fewer packages
 
-*   Possibly move PerlUI subs to PerlGenerate
+    Possibly move PerlUI subs to PerlGenerate
     
 *   Make dist files eg Makefile.PL, MANIFEST, Changelog etc etc
 
@@ -79,13 +72,17 @@ TODO
     When it is stable I should comment out the most frequent and expensive 
     calls to Glade::PerlProject->diag_print() and ->use_par().
     
+*   Cut out all checks and diagnostics if verbose == 0
+
+    Clean all the debugging stuff out and tidy the code properly.
+
+    Possibly cut out all consistency checks unless 'testing' is set.
+    
 *   Make all my modules object-oriented and remove all the Exporter() stuff.
     
-*   Investigate using closures in generated code and allow user_option to
-    select the type of code generated. User option 'style' is implemented for
-    AUTOLOAD and Libglade.
+*   Investigate using closures in generated code if 'style' => 'closure'
 
-*   Improve the Glade source code generation process - Make Glade::PerlHelper 
+*   Improve the Glade source code generation process - Make Glade::Helper 
     UI to allow users more control of the whole shebang.
 
 *   Do not generate run() or destroy_Form() subs for the classes, they only
@@ -94,6 +91,11 @@ TODO
 
 DONE
 ----
+*   Improve options handling
+
+*   Perhaps require at least Gtk-Perl-0.7000 (CVS version after 20000102)
+    then I could remove all version checks for any prior versions.
+    
 *   Look at writing one perl file for each module/class so that, for instance
     ReferenceForm would be in file Generated/ReferenceForm.pm and fileselection1
     would be in Generated/fileselection1.pm. You could then use() and new()
@@ -105,6 +107,9 @@ DONE
     the same way as Glade.
     Cater for new Gtk::Button/Gtk::ToggleButton->{'relief'}
     Cater for (now unused) Gnome::MessageBox->{'type'}
+    
+*   Allow user_option to select the type of code generated. 
+    User option 'style' is implemented for AUTOLOAD, Libglade and split.
     
 *   Move all handlers to ProjectSIGS.pm and Project.pm (so that run() and
     about_Form() are editable and easily seen. This needs to be carefully

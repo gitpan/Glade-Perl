@@ -21,12 +21,12 @@ require 5.000; use strict 'vars', 'refs', 'subs';
 BEGIN {
     use Glade::PerlSource qw( :VARS :METHODS );
     use vars              qw( 
-                            $PACKAGE
-                            $VERSION
                             $enums
                           );
-    $PACKAGE =          __PACKAGE__;
-    $VERSION            = q(0.57);
+#                            $PACKAGE
+#                            $VERSION
+#    $PACKAGE =          __PACKAGE__;
+#    $VERSION            = q(0.58);
     # These cannot be looked up in the include files
     $enums =      {
         'GNOME_MENU_SAVE_AS_STRING'     => 'Save _As...',
@@ -141,7 +141,7 @@ sub frig_Gnome_Dialog_buttons {
                         $depth, $current_button);
                     
                 } elsif ($subwork->{$typekey} eq 'signal') {
-                    $class->diag_print(1, "warn  You have specified a signal".
+                    $Glade_Perl->diag_print(1, "warn  You have specified a signal".
                         "'%s' (handler '%s') for Gnome::Dialog button '%s' ".
                         "but Gtk-Perl cannot add it and it has been ignored",
                         $subwork->{'name'}, $subwork->{'handler'},
@@ -159,12 +159,12 @@ sub new_GnomeAbout {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeAbout";
     my $name = $proto->{name};
-    my $title     = $class->use_par($proto, 'title',     $DEFAULT, $Glade_Perl->{'options'}{'name'} );
-    my $version   = $class->use_par($proto, 'version',   $DEFAULT, $Glade_Perl->{'options'}{'version'} );
-    my $logo      = $class->use_par($proto, 'logo',      $DEFAULT, $Glade_Perl->{'options'}{'logo'} );
-    my $copyright = $class->use_par($proto, 'copyright', $DEFAULT, S_("Copyright")." $Glade_Perl->{'options'}{'date'}" );
-    my $authors   = $class->use_par($proto, 'authors',   $DEFAULT, $Glade_Perl->{'options'}{'author'} );
-    my $comments  = $class->use_par($proto, 'comments',  $DEFAULT, $Glade_Perl->{'options'}{'copying'} );
+    my $title     = $class->use_par($proto, 'title',     $DEFAULT, $Glade_Perl->app->name );
+    my $version   = $class->use_par($proto, 'version',   $DEFAULT, $Glade_Perl->app->version );
+    my $logo      = $class->use_par($proto, 'logo',      $DEFAULT, $Glade_Perl->app->logo );
+    my $copyright = $class->use_par($proto, 'copyright', $DEFAULT, S_("Copyright")." ".$Glade_Perl->app->date );
+    my $authors   = $class->use_par($proto, 'authors',   $DEFAULT, $Glade_Perl->app->author );
+    my $comments  = $class->use_par($proto, 'comments',  $DEFAULT, $Glade_Perl->app->copying );
     $logo = "\"\$Glade::PerlRun::pixmaps_directory/$logo\"";
 
     $class->add_to_UI( $depth, "\$widgets->{'$name'} = new Gnome::About(".
@@ -202,16 +202,14 @@ sub new_GnomeApp {
     my ($class, $parent, $proto, $depth) = @_;
     my $me = "$class->new_GnomeApp";
     my $name = $proto->{name};
-    my $appname   = $class->use_par($proto, 'title',  $DEFAULT,  $Glade_Perl->{'options'}{'name'}  );
-    my $title     = $class->use_par($proto, 'title',  $DEFAULT,  $Glade_Perl->{'options'}{'name'}  );
+    my $appname   = $class->use_par($proto, 'title',  $DEFAULT,  $Glade_Perl->app->name  );
+    my $title     = $class->use_par($proto, 'title',  $DEFAULT,  $Glade_Perl->app->name  );
     my $enable_layout_config = $class->use_par($proto, 'enable_layout_config',  $BOOL, 'True'  );
 
     $class->add_to_UI( $depth, "\$widgets->{'$name'} = new Gnome::App(".
         "'$appname', _('$title'));" );
-    if ($class->my_perl_gtk_can_do('gnome_app_enable_layout_config')) {
-        $class->add_to_UI( $depth, "\$widgets->{'$name'}->enable_layout_config(".
-            "$enable_layout_config );" );
-    }
+    $class->add_to_UI( $depth, "\$widgets->{'$name'}->enable_layout_config(".
+        "$enable_layout_config );" );
     
     $class->set_window_properties($parent, $name, $proto, $depth );
     return $widgets->{$name};
@@ -634,15 +632,8 @@ sub new_GnomeIconList {
     my $text_static    = $class->use_par($proto, 'text_static',    $BOOL,   'False' );
     my $flags = $text_editable + 2 * $text_static;
 # FIXME possibly use new_flags() ?
-    if ($class->my_perl_gtk_can_do('gnome_iconlist_new_undef')) {
-        $class->add_to_UI( $depth, "\$widgets->{'$name'} = new Gnome::IconList(".
-            "$icon_width, undef, $flags);" );    
-    } else {
-        $class->add_to_UI( $depth, "\$widgets->{'$name'} = new Gnome::IconList(".
-            "$icon_width, ".
-            "new Gtk::Adjustment( 0.0, 0.0, 101.0, 0.1, 1.0, 1.0), ".
-            "$flags);" );
-    }
+    $class->add_to_UI( $depth, "\$widgets->{'$name'} = new Gnome::IconList(".
+        "$icon_width, undef, $flags);" );    
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_row_spacing(".
         "$row_spacing );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_col_spacing(".
@@ -725,9 +716,9 @@ sub new_GnomePixmap {
     my $name = $proto->{name};
     my $filename = $class->use_par($proto, 'filename',  $DEFAULT, '' );
     unless ($filename) {
-        $class->diag_print(2, "warn  No pixmap file specified for GtkPixmap ".
+        $Glade_Perl->diag_print(2, "warn  No pixmap file specified for GtkPixmap ".
             "'%s' so we are using the project logo instead", $name);
-        $filename = $Glade_Perl->{'options'}->logo;
+        $filename = $Glade_Perl->app->logo;
     }
     $filename = "\"\$Glade::PerlRun::pixmaps_directory/$filename\"";
     my $scaled_width   = $class->use_par($proto, 'scaled_width',  $DEFAULT, 0);
@@ -815,10 +806,6 @@ sub new_GtkClock {
     my $interval = $class->use_par($proto, 'interval', $DEFAULT, 60 );
 
     $class->add_to_UI( $depth, "\$widgets->{'$name'} = new Gtk::Clock('$type');" );
-    unless ($class->my_gnome_libs_can_do('gtk_clock_new')) {
-        $class->diag_print(1, "warn  Your clock will start at 00:00 until ".
-            "you upgrade your gnome-libs");
-    }
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_format(_('$format' ));" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_seconds($seconds );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_update_interval($interval );" );
@@ -850,6 +837,7 @@ sub new_GtkDial {
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_update_policy('$update_policy' );" );
 
     $class->pack_widget($parent, $name, $proto, $depth );
+
     return $widgets->{$name};
 }
 
@@ -897,8 +885,9 @@ sub new_GtkPixmapMenuItem {
             $ac_mods = $#ac_mods >= 0 ? join("', '", @ac_mods) : '';
 
             if ($work->{'ak'} || $ac_mods) {
+#            if ($work->{'ak'} && $ac_mods) {
                 $class->add_to_UI( $depth, "${current_form}\{accelgroup}->add(".
-                    "$work->{'ak'}, \['$ac_mods'\], $accel_flags, ".
+                    ($work->{'ak'} || "''").", \['$ac_mods'\], $accel_flags, ".
                     "\$widgets->{'$name'}, 'activate');");
             }
             if (_($label) =~ /_/) {
@@ -931,7 +920,7 @@ sub new_GtkPixmapMenuItem {
         }
         
     } elsif ($label) {
-        if ($class->my_perl_gtk_can_do('gtk_pixmap_menu_item')) {
+        if ($class->my_gtk_perl_can_do('gtk_pixmap_menu_item')) {
             # We can use all the PixmapMenuItem methods
             $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
                 "new Gtk::PixmapMenuItem;" );
@@ -983,7 +972,7 @@ sub new_GtkPixmapMenuItem {
 
     $class->pack_widget($parent, $name, $proto, $depth );
     if ($icon) {
-        if ($class->my_perl_gtk_can_do('gtk_pixmap_menu_item')) {
+        if ($class->my_gtk_perl_can_do('gtk_pixmap_menu_item')) {
             $class->add_to_UI( $depth,
                 "$current_form\{'$name-pixmap'} = \$class->create_pixmap(".
                     "$current_window, '$icon');");

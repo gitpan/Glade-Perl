@@ -43,6 +43,13 @@ my @need_perl_modules = (
                    "Read the Gtk-Perl INSTALL file for details of how to do this.\n".
                    "Glade-Perl will still work but you will not be able to \n".
                    "use any Gnome widgets in your Glade projects"},
+
+    # Check for Unicode::String
+    {'name'     => 'Unicode::String',
+    'test'      => 'Unicode::String',
+    'version'   => '2.04',
+    'reason'    => "implements Unicode for I18N of all strings.\n".
+                    "The module is called Unicode::String on CPAN"},
     );
 #--- End Configuration - You should not have to change anything below this line
 

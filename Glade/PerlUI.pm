@@ -13,8 +13,10 @@ require 5.000; use strict 'vars', 'refs', 'subs';
 # b) the Artistic License.
 #
 # If you use this library in a commercial enterprise, you are invited,
-# but not required, to pay what you feel is a reasonable fee to the
-# author, who can be contacted at dermot.musgrove@virgin.net
+# but not required, to pay what you feel is a reasonable fee to perl.org
+# to ensure that useful software is available now and in the future. 
+#
+# (visit http://www.perl.org/ or email donors@perlmongers.org for details)
 
 BEGIN {
     use UNIVERSAL         qw( can );          # in lots of subs
@@ -27,32 +29,40 @@ BEGIN {
     use vars              qw( 
         @ISA 
         @EXPORT @EXPORT_OK %EXPORT_TAGS 
-        $PACKAGE
-        $VERSION
         @VARS @METHODS
 
+        $gnome_widgets
+        $gnome_db_widgets
         $gnome_libs_depends
-        $perl_gtk_depends
+        $gtk_perl_depends
+        $gtk_perl_cant_do
         $concept_widgets
         $ignore_widgets
         $ignored_widgets
         $missing_widgets
         $cxx_properties
+        $dialogs
+        $composite_widgets
+        $toplevel_widgets
         );
-    $PACKAGE =          __PACKAGE__;
-    $VERSION        = q(0.57);
 
     $ignored_widgets = 0;
     $missing_widgets = 0;
     @METHODS =          qw(  );
     @VARS =             qw(
+        $gnome_widgets
+        $gnome_db_widgets
         $gnome_libs_depends
-        $perl_gtk_depends
+        $gtk_perl_depends
+        $gtk_perl_cant_do
         $concept_widgets
         $ignore_widgets
         $ignored_widgets
         $missing_widgets
         $cxx_properties
+        $dialogs
+        $composite_widgets
+        $toplevel_widgets
         );
     # Tell interpreter who we are inheriting from
     @ISA            =   qw( Glade::PerlUIGtk Glade::PerlUIExtra );
@@ -70,28 +80,96 @@ BEGIN {
 #===============================================================================
 #=========== Constants and globals                                          ====
 #===============================================================================
-$ignore_widgets         = join (' ', 
-    'Placeholder',
-    'Custom',
-    );
-$cxx_properties    = join(' ',
+$gnome_libs_depends     = { 
+    'MINIMUM REQUIREMENTS'  => '1.2.0',
+    };
+
+$gtk_perl_depends       = { 
+    'MINIMUM REQUIREMENTS'  => '0.7000',
+    'LATEST_CPAN'           => '0.7007',
+    'LATEST_CVS'            => '20010601',
+    
+    '0.6123'                => '19990818',
+    '0.7000'                => '20000102',
+    '0.7001'                => '20000123',
+    '0.7002'                => '20000129',
+    '0.7003'                => '20000816',
+    '0.7004'                => '20001020',
+    '0.7005'                => '20010219',
+    '0.7006'                => '20010328',
+    '0.7007'                => '20010601',
+
+    # Those below don't work yet even in the latest CVS version
+    'GnomeDbGrid'           => '99999999',
+    'GnomeDbList'           => '99999999',
+    'GnomeDbCombo'          => '99999999',
+    'GnomeDbReport'         => '99999999',
+    'GnomeDbError'          => '99999999',
+    'GnomeDbLogin'          => '99999999',
+    'GnomeDbBrowser'        => '99999999',
+    'GnomeDbErrorDlg'       => '99999999',
+    'GnomeDbLoginDlg'       => '99999999',
+
+    # Those below work in the CPAN version after 0.7003 (CVS after 20000410)
+    'gtk_pixmap_menu_item'  => '20000410',
+    # Those below work in the CPAN version after 0.7003 (CVS after 20000301)
+    'gnome_dialog_append_button' 
+                            => '20000301',
+    # Those below work in the CPAN version after 0.7002 (CVS after 20000129)
+    'Gnome::UIInfo'         => '0.7002',
+
+    };
+
+$gtk_perl_cant_do       = { 
+    # Those below will NOT work in specific version
+    'GtkDial'             => '0.7005',
+};
+
+$cxx_properties = join(' ',
     'cxx_separate_class',
     'cxx_separate_file',
     'cxx_use_heap',
     'cxx_visibility',
     );
-my $gnome_db_widgets    = join( " ",
-    'GnomeDbGrid',
-    'GnomeDbList',
-    'GnomeDbCombo',
-    'GnomeDbReport',
-    'GnomeDbError',
-    'GnomeDbLogin',
-    'GnomeDbBrowser',
-    'GnomeDbErrorDlg',
-    'GnomeDbLoginDlg',
-);
-my $gnome_widgets       = join( " ",
+
+$ignore_widgets = join (' ', 
+    'Placeholder',
+    'Custom',
+    );
+
+$dialogs = join(' ',
+    'Gnome::About',
+    'Gnome::App',
+    'Gnome::Dialog',
+    'Gnome::MessageBox',
+    'Gnome::PropertyBox',
+    'Gtk::ColorSelectionDialog',
+    'Gtk::Dialog',
+    'Gtk::FileSelection',
+    'Gtk::FontSelectionDialog',
+    'Gtk::InputDialog',
+    );
+
+$toplevel_widgets = join(' ',
+    'Gnome::About',
+    'Gnome::App',
+    'Gnome::Dialog',
+    'Gnome::MessageBox',
+    'Gnome::PropertyBox',
+    'Gtk::Dialog',
+    'Gtk::InputDialog',
+    'Gtk::Window',
+    );
+
+$composite_widgets = join(' ',
+    'Gnome::Entry',
+    'Gnome::FileEntry',
+    'Gnome::NumberEntry',
+    'Gnome::PixmapEntry',
+    'Gtk::Combo',
+    );
+
+$gnome_widgets = join( " ",
     'GnomeAbout',
     'GnomeApp',
     'GnomeAppBar',
@@ -125,186 +203,112 @@ my $gnome_widgets       = join( " ",
     'GtkDial',
     'GtkPixmapMenuItem',
     );
-$gnome_libs_depends     = { 
-    'MINIMUM REQUIREMENTS' => '1.0.08',
-    'gtk_clock_new'         => '1.0.16',
-    'GnomeDruid'            => '1.0.50',
-    'GnomeDruidPageFinish'  => '1.0.50',
-    'GnomeDruidPageStandard'=> '1.0.50',
-    'GnomeDruidPageStart'   => '1.0.50',
-    };
-$perl_gtk_depends       = { 
-    '0.6123'                => '19990818',
-    '0.7000'                => '20000102',
-    '0.7001'                => '20000123',
-    '0.7002'                => '20000129',
-    '0.7003'                => '20000816',
 
-#    'MINIMUM REQUIREMENTS'  => '0.7000',
-    'MINIMUM REQUIREMENTS'  => '0.6123',
-    'LATEST_CPAN'           => '0.7003',
-    'LATEST_CVS'            => '20000901',
-    
-    # Those below don't work yet even in the latest CVS version
-    'GnomeDbGrid'           => '99999999',
-    'GnomeDbList'           => '99999999',
-    'GnomeDbCombo'          => '99999999',
-    'GnomeDbReport'         => '99999999',
-    'GnomeDbError'          => '99999999',
-    'GnomeDbLogin'          => '99999999',
-    'GnomeDbBrowser'        => '99999999',
-    'GnomeDbErrorDlg'       => '99999999',
-    'GnomeDbLoginDlg'       => '99999999',
+$gnome_db_widgets = join( " ",
+    'GnomeDbGrid',
+    'GnomeDbList',
+    'GnomeDbCombo',
+    'GnomeDbReport',
+    'GnomeDbError',
+    'GnomeDbLogin',
+    'GnomeDbBrowser',
+    'GnomeDbErrorDlg',
+    'GnomeDbLoginDlg',
+);
 
-    # Those below work in the CVS version after 20000410
-    'gtk_pixmap_menu_item'  => '20000410',
-    # Those below work in the CVS version after 20000301
-    'gnome_dialog_append_button' => '20000301',
-    # Those below work in the CPAN version after 0.7002 (CVS after 20000129)
-    'Gnome::UIInfo'     => '0.7002',
-    # Those below work in the CPAN version after 0.7000 (CVS after 20000102)
-    'Gtk::Packer->expand'=> '0.7000',
-    # Those below work in the CVS version after 19991107
-    'GnomeDruidPageStandard::vbox'
-                        => '19991107',
-    # Those below work in the CVS version after 19991025
-    'GnomeDruid'        => '19991025',
-    # Those below work in the CVS version after 19991001
-    'gnome_iconlist_new_undef'  => '19991001',
-    'gnome_stock_pixmap_widget' => '19991001',
-    'gnome_stock_button' => '19991001',
-    'gtk_colorselectiondialog_ok_button->child' => '19991001',
-     # Those below work in the CVS version after 19990922
-    'gnome_app_enable_layout_config'   => '19990922',
-    'gtk_layout_undef'  => '19990922',
-    'gtk_pixmap_set_build_insensitive' => '19990922',
-     # Those below work in the CVS version after 19990920
-    'GnomeApp'          => '19990920',
-    'GnomeIconList'     => '19990920',
-    'GnomeIconSelection'=> '19990920',
-    'GnomeMessageBox'   => '19990920',
-    'GnomePropertyBox'  => '19990920',
-     # Those below work in the CVS version after 19990914
-    'gdk_pixmap_colormap_create_from_xpm'       => '19990914',
-    'GnomeAppBar'       => '19990914',
-    'GnomeDock'         => '19990914',
-    'GnomeDockItem'     => '19990914',
-    'GnomeSpell'        => '19990914',
-    'GnomeStock'        => '19990914',
-    'GtkCalendar'       => '19990914',
-    };
-my $dialogs             = join(' ',
-    'Gnome::About',
-    'Gnome::App',
-    'Gnome::Dialog',
-    'Gnome::MessageBox',
-    'Gnome::PropertyBox',
-    'Gtk::ColorSelectionDialog',
-    'Gtk::Dialog',
-    'Gtk::FileSelection',
-    'Gtk::FontSelectionDialog',
-    'Gtk::InputDialog',
-    );
-my $composite_widgets   = join(' ',
-    'Gnome::Entry',
-    'Gnome::FileEntry',
-    'Gnome::NumberEntry',
-    'Gnome::PixmapEntry',
-    'Gtk::Combo',
-    );
-my $toplevel_widgets    = join(' ',
-    'Gnome::About',
-    'Gnome::App',
-    'Gnome::Dialog',
-    'Gnome::MessageBox',
-    'Gnome::PropertyBox',
-    'Gtk::Dialog',
-    'Gtk::InputDialog',
-    'Gtk::Window',
-    );
 #===============================================================================
 #=========== Version utilities                                      ============
 #===============================================================================
-sub my_perl_gtk_can_do {
+sub my_gtk_perl_can_do {
     my ($class, $action) = @_;
-    unless ($perl_gtk_depends->{$action}) { 
-        # There is no required version for $action
+    my $depends = $gtk_perl_depends->{$action} || '';
+    my $cant_do = $gtk_perl_cant_do->{$action} || '';
+    unless ($depends or $cant_do) { 
+        # There is no required/cant_do information for $action
         return 1;
     }
     my ($cpan, $cvs);
-    my $options = $Glade_Perl->{'options'};
     my $check = $action;
-    $check = $perl_gtk_depends->{$action};
-    $check = $perl_gtk_depends->{$check} if $perl_gtk_depends->{$check};
 
-    if ($check <= $options->my_perl_gtk) {
-        # We can do required $action in our version
-        return 1;
-
-    } else {
-        $cpan = $perl_gtk_depends->{'LATEST_CPAN'};
-        $cpan = $perl_gtk_depends->{$cpan} if $perl_gtk_depends->{$cpan};
+    # Check that we have at least the minimum required
+    $check = $gtk_perl_depends->{$depends} || $depends;
+    if ($check and $check > $Glade_Perl->glade2perl->my_gtk_perl) {
+        $cpan = $gtk_perl_depends->{'LATEST_CPAN'};
+        $cpan = $gtk_perl_depends->{$cpan} if $gtk_perl_depends->{$cpan};
         if ($check > $cpan) {
             # We need a CVS version
-            if ($check > $perl_gtk_depends->{'LATEST_CVS'}) {
+            if ($check > $gtk_perl_depends->{'LATEST_CVS'}) {
                 # The CVS version can't even do it yet
-                $class->diag_print(1, 
+                $Glade_Perl->diag_print(1, 
                     "warn  Gtk-Perl dated %s cannot do '%s' (properly)".
                     " and neither can the CVS version !!!",
-                $options->my_perl_gtk, $action);
+                    $Glade_Perl->glade2perl->my_gtk_perl, $action);
                     
             } else {
                 # We need a new CVS version
-                $class->diag_print(1, 
+                $Glade_Perl->diag_print(1, 
                     "warn  Gtk-Perl dated %s cannot do '%s' (properly)".
                     " we need CVS module 'gnome-perl' after %s",
-                    $options->my_perl_gtk, $action, $check);
+                    $Glade_Perl->glade2perl->my_gtk_perl, $action, $check);
             }
 
         } else {
             # We need a new CPAN version
-            $class->diag_print(1, 
+            $Glade_Perl->diag_print(1, 
                 "warn  Gtk-Perl version %s cannot do '%s' (properly)".
                 " we need CPAN version %s or CVS module 'gnome-perl' after %s",
-                $options->my_perl_gtk, $action, $perl_gtk_depends->{$action}, $check);
+                $Glade_Perl->glade2perl->my_gtk_perl, $action, 
+                    $gtk_perl_depends->{$action}, $check);
         }
         return undef;
     }
+
+    # Check that we dont have a cant_do version
+    $check = $gtk_perl_depends->{$cant_do} || $cant_do;
+    unless ($check and $check == $Glade_Perl->glade2perl->my_gtk_perl) {
+        # We can do required $action in our version
+        return 1;
+    } else {
+        # This version can't do it although earlier and later versions may
+        $Glade_Perl->diag_print(1, 
+            "warn  Gtk-Perl dated %s cannot do '%s' (properly)".
+            " although older and newer versions may",
+            $Glade_Perl->glade2perl->my_gtk_perl, $action);
+        return undef;
+    }
+    return undef;
 }
 
 sub my_gnome_libs_can_do {
     my ($class, $action) = @_;
-    unless ($gnome_libs_depends->{$action}) { return 1;}
-    if ($gnome_libs_depends->{$action} le 
-        $Glade_Perl->{'options'}->my_gnome_libs) {
+    my $depends = $gnome_libs_depends->{$action};
+    unless ($depends and $depends gt $Glade_Perl->glade2perl->my_gnome_libs) {
+        # There is no specified version or ours is sufficient
         return 1;
-    } else {
-        if ($gnome_libs_depends->{$action} ge 19990914) {
-            # We need a CVS version
-            if ($gnome_libs_depends->{$action} gt 29990000) {
-                # The CVS version can't even do it yet
-                $class->diag_print(1, 
-                    "warn  gnome_libs version %s cannot do '%s' (properly)".
-                    " and neither can the CVS version !!!",
-                    $Glade_Perl->{'options'}->my_gnome_libs, $action);
-            } else {
-                # We need a new CVS version
-                $class->diag_print(1, 
-                    "warn  gnome_libs version %s cannot do '%s' (properly)".
-                    " we need CVS module 'gnome-libs' after %s",
-                    $Glade_Perl->{'options'}->my_gnome_libs, 
-                    $action, $gnome_libs_depends->{$action});
-            }
-        } else {
-            # We need a new CPAN version
-            $class->diag_print(1, 
-                "warn  gnome_libs version %s cannot do '%s' (properly)".
-                " we need version %s",
-                $Glade_Perl->{'options'}->my_gnome_libs, 
-                $action, $gnome_libs_depends->{$action});
-        }
-        return undef;
     }
+    if ($depends ge 19990914) {
+        # We need a CVS version
+        if ($depends gt 29990000) {
+            # The CVS version can't even do it yet
+            $Glade_Perl->diag_print(1, 
+                "warn  gnome_libs version %s cannot do '%s' (properly)".
+                " and neither can the CVS version !!!",
+                $Glade_Perl->glade2perl->my_gnome_libs, $action);
+        } else {
+            # We need a new CVS version
+            $Glade_Perl->diag_print(1, 
+                "warn  gnome_libs version %s cannot do '%s' (properly)".
+                " we need CVS module 'gnome-libs' after %s",
+                $Glade_Perl->glade2perl->my_gnome_libs, $action, $depends);
+        }
+    } else {
+        # We need a new released version
+        $Glade_Perl->diag_print(1, 
+            "warn  gnome_libs version %s cannot do '%s' (properly)".
+            " we need version %s",
+            $Glade_Perl->glade2perl->my_gnome_libs, $action, $depends);
+    }
+    return undef;
 }
 
 #===============================================================================
@@ -313,17 +317,17 @@ sub my_gnome_libs_can_do {
 sub use_par {
     my ($class, $proto, $key, $request, $default, $dont_undef) = @_;
     my $me = "$class->use_par";
-    my $options = $Glade_Perl->{'options'};
+
     my $type;
     my $self = $proto->{$key};
     unless (defined $self) {
         if (defined $default) {
             $self = $default;
-#            $class->diag_print (8, "$indent- No value in proto->{'$key'} ".
+#            $Glade_Perl->diag_print (8, "$indent- No value in proto->{'$key'} ".
 #                "so using DEFAULT of '$default' in $me");
         } else {
             # We have no value and no default to use so bail out here
-            $class->diag_print (1, "error No value in supplied ".
+            $Glade_Perl->diag_print (1, "error No value in supplied ".
                 "%s and NO default was supplied in ".
                 "%s called from %s line %s",
                 "$proto->{'name'}\->{'$key'}", $me, (caller)[0], (caller)[2] );
@@ -331,20 +335,20 @@ sub use_par {
         }
     } else {
         # We have a value to use
-#        $class->diag_print (8, "$indent- Value supplied in ".
+#        $Glade_Perl->diag_print (8, "$indent- Value supplied in ".
 #            "proto->{'$key'} was '$self'");
     }
     # We must have some sort of value to use by now
     unless ($request) {
         # Nothing to do, we are already $proto->{$key} so
         # just drop through to undef the supplied prot->{$key}
-#        $class->diag_print(8, "I have used par->{'$key'} => '$self' in $me");
+#        $Glade_Perl->diag_print(8, "I have used par->{'$key'} => '$self' in $me");
         
     } elsif ($request eq $DEFAULT) {
         # Nothing to do, we are already $proto->{$key} (or default) so
         # just drop through to undef the supplied prot->{$key}
-#        $class->diag_print(8, "I have converted '$key' from ".($proto->{$key} || 'undef').
-#            " to default ('$self') in $me");
+#        $Glade_Perl->diag_print(8, "I have converted '$key' from ".
+#            ($proto->{$key} || 'undef')." to default ('$self') in $me");
         
     } elsif ($request == $LOOKUP) {
         return '' unless $self;
@@ -359,12 +363,12 @@ sub use_par {
         }
         unless ($lookup) {
             if (defined $default) {
-                $class->diag_print(2, 
+                $Glade_Perl->diag_print(2, 
                     "warn  Unable to lookup '%s' using default of '%s'",
                     $self, $default);
                 $self = $default;
             } else {
-                $class->diag_print(1, 
+                $Glade_Perl->diag_print(1, 
                     "error Unable to lookup '%s' and no default",
                     $self);
             }
@@ -372,7 +376,7 @@ sub use_par {
             $self = $lookup;
         }
             
-#        $class->diag_print(8, "$indent- I have converted '$key' from '".
+#        $Glade_Perl->diag_print(8, "$indent- I have converted '$key' from '".
 #            ($proto->{$key} || $default)."' to '$self' (LOOKUP) in $me");
 
     } elsif ($request == $BOOL) {
@@ -380,7 +384,7 @@ sub use_par {
         # undef becomes 0 (== false)
         $type = $self;
         $self = ('*true*y*yes*on*1*' =~ m/\*$self\*/i) ? '1' : '0';
-#        $class->diag_print(8, "$indent- I have converted proto->{'$key'} ".
+#        $Glade_Perl->diag_print(8, "$indent- I have converted proto->{'$key'} ".
 #            "from '$type' to $self (BOOL) in $me");
 
     } elsif ($request == $KEYSYM) {
@@ -389,7 +393,7 @@ sub use_par {
 # use the next line instead of the Gtk::Keysyms{$self} line below it
 #        $self = ord ($self );
         $self = $Gtk::Keysyms{$self};
-#        $class->diag_print(8, "$indent- I have converted '$key' from ".
+#        $Glade_Perl->diag_print(8, "$indent- I have converted '$key' from ".
 #            ($proto->{$key})." to '$self' (Gtk::Keysyms)in $me");
     } 
     # undef the parameter so that we can report any unused attributes later
@@ -402,17 +406,18 @@ sub use_par {
 sub Widget_from_Proto {
     my ($class, $parentname, $proto, $depth, $wh, $ch) = @_;
     my $me = "$class->Widget_from_Proto";
-#$class->diag_print(2, $forms);
+#$Glade_Perl->diag_print(2, $forms);
     my $typekey = $class->typeKey;
-    my ($name, $widget_hierarchy, $class_hierarchy, $childname, $constructor, $window, $sig );
+    my ($name, $widget_hierarchy, $class_hierarchy, $childname, 
+        $constructor, $window, $sig );
     my ($key, $dm, $self, $expr, $object, $refself, $packing );
     $parentname ||= "Top level application";
     if ($depth) {
         # We are a widget of some sort (toplevel window or child)
         unless ($proto->{name}) {
-            $class->diag_print (2, 
+            $Glade_Perl->diag_print (2, 
                 "You have supplied a proto without a name to %s", $me);
-            $class->diag_print (2, $proto);
+            $Glade_Perl->diag_print (2, $proto);
         } else {
             $name = $proto->{name};
         }
@@ -429,10 +434,10 @@ sub Widget_from_Proto {
             $current_window = "\$forms->{'$name'}\{'$name'}";
             $first_form ||= $name;
 
-            if ($Glade_Perl->{'options'}->hierarchy =~ /^(widget|both)/) {
+            if ($Glade_Perl->source->hierarchy =~ /^(widget|both)/) {
                 $widget_hierarchy = "\$forms->{'$name'}{__WH}";
             }
-            if ($Glade_Perl->{'options'}->hierarchy =~ /^(class|both)/) {
+            if ($Glade_Perl->source->hierarchy =~ /^(class|both)/) {
                 $class_hierarchy = "\$forms->{'$name'}{__CH}";
             }
 
@@ -446,8 +451,9 @@ sub Widget_from_Proto {
         $constructor = "new_$proto->{class}";
         if ($class->can($constructor)) {
             # Construct the widget
+            my $eval_class = 'Glade::PerlProject';#ref $class || $class;
             $expr =  "\$widgets->{'$name'} = ".
-                "$class->$constructor('$parentname', \$proto, $depth );";
+                "$eval_class->$constructor('$parentname', \$proto, $depth );";
             eval $expr or 
                 ($@ && die  "\nin $me\n\t".("while trying to eval").
                     " '$expr'\n\t".("FAILED with Eval error")." '$@'\n" );
@@ -456,7 +462,7 @@ sub Widget_from_Proto {
                 $class->add_to_UI( $depth,  
                     "$widget_hierarchy\{__W} = $current_form\{'$name'};" );
 #                    "\$class->W($widget_hierarchy, $current_form\{'$name'});" );
-                if ($Glade_Perl->{'options'}->hierarchy =~ /order/) {
+                if ($Glade_Perl->source->hierarchy =~ /order/) {
                     if ($depth > 1) {
                         $class->add_to_UI( $depth,  
                             "push \@{$wh\{__C}}, $current_form\{'$name'};" );
@@ -469,7 +475,7 @@ sub Widget_from_Proto {
                 $class->add_to_UI( $depth,  
                     "$class_hierarchy\{__W} = $current_form\{'$name'};" );
 #                    "\$class->W($class_hierarchy, $current_form\{'$name'});" );
-                if ($Glade_Perl->{'options'}->hierarchy =~ /order/) {
+                if ($Glade_Perl->source->hierarchy =~ /order/) {
                     if ($depth > 1) {
                         $class->add_to_UI( $depth,  
                             "push \@{$ch\{__C}}, $current_form\{'$name'};" );
@@ -478,16 +484,16 @@ sub Widget_from_Proto {
                 }
             }
         } else {
-            $class->diag_print(1, "error I don't have a constructor called '%s'".
+            $Glade_Perl->diag_print(1, "error I don't have a constructor called '%s'".
                 "- I guess that it isn't written yet :-)",
                 "$class->$constructor");
         }
     } else {
         # We are a complete GTK-Interface - ie we are the application
-        unless ($Glade_Perl->{'options'}->allow_gnome) {
+        unless ($Glade_Perl->app->allow_gnome) {
             $ignore_widgets .= " $gnome_widgets";
         }
-        unless ($Glade_Perl->{'options'}->allow_gnome_db) {
+        unless ($Glade_Perl->app->allow_gnome_db) {
             $ignore_widgets .= " $gnome_db_widgets";
         }
     }
@@ -500,7 +506,7 @@ sub Widget_from_Proto {
             $object = $proto->{$key}{$typekey};
             if ($object) {
                 if ( $object eq 'widget') {
-                    if ($class->my_perl_gtk_can_do($proto->{$key}{'class'})) {
+                    if ($class->my_gtk_perl_can_do($proto->{$key}{'class'})) {
                         unless (" $ignore_widgets " =~ / $proto->{$key}{'class'} /) {
                             # This is a real widget subhash so recurse to expand
                             $childname = $class->Widget_from_Proto( 
@@ -508,19 +514,19 @@ sub Widget_from_Proto {
                                 $widget_hierarchy, $class_hierarchy );
                             $class->set_child_packing(
                                 $proto->{name}, $childname, $proto->{$key}, $depth+1 );
-                            if ($class->diagnostics) {
+                            if ($Glade_Perl->diagnostics) {
                                 # Check that we have used all widget properties
                                 $class->check_for_unused_elements($proto->{$key} );
                             }
 
                         } else {
                             unless (" $gnome_widgets " =~ / $proto->{$key}{'class'} /) {
-                                $class->diag_print(4, 
-                                    "warn  %s widget ignored in %s", 
-                                    $proto->{$key}{'class'}, $me);
+                                $Glade_Perl->diag_print(3, 
+                                    "warn  %s in %s ignored in %s", 
+                                    $proto->{$key}{'class'}, $proto->{'name'}, $me);
                             } else {
-                                $class->diag_print(1, "error %s widget ignored in %s", 
-                                $proto->{$key}{'class'}, $me);
+                                $Glade_Perl->diag_print(1, "error %s in %s ignored in %s", 
+                                $proto->{$key}{'class'}, $proto->{'name'}, $me);
                             }
                             $ignored_widgets++;
                         }
@@ -553,17 +559,17 @@ sub Widget_from_Proto {
 
                 } else {
                     # I don't recognise it so do nothing but report it
-                    $class->diag_print (1, "error Object '%s' not recognised ".
+                    $Glade_Perl->diag_print (1, "error Object '%s' not recognised ".
                         "or processed for %s '%s' by %s",
                         $object, $proto->{'class'}, $proto->{name}, $me);
-                    $class->diag_print(1, $proto);
+                    $Glade_Perl->diag_print(1, $proto);
                 }
 
 #            } else {
 #                # I don't recognise it so do nothing but report it
-#                $class->diag_print (1, "error Undefined object for %s '%s' by $s".
+#                $Glade_Perl->diag_print (1, "error Undefined object for %s '%s' by $s".
 #                    $proto->{'class'}, '$proto->{name}', $me );
-#                $class->diag_print(1, $proto);
+#                $Glade_Perl->diag_print(1, $proto);
             }
         } elsif (ref $proto->{$key} eq 'ARRAY') {
             # We are a new type array of widgets so construct each in order
@@ -618,7 +624,7 @@ sub internal_pack_widget {
     }
     if (" $dialogs $toplevel_widgets " =~ m/ $refwid /) {
         # We are a window so don't have a parent to pack into
-        $class->diag_print (4, "%s- Constructing a toplevel component ".
+        $Glade_Perl->diag_print (4, "%s- Constructing a toplevel component ".
             "(window/dialog) '%s'", $indent, $childname);
 #        $child_type = $widgets->{$childname}->type;
 #        if (' toplevel dialog '=~ m/ $child_type /) {
@@ -681,7 +687,7 @@ sub internal_pack_widget {
                         "$CList_column, \$widgets->{'$childname'} );" );
                 $CList_column++;
             } else {
-                $class->diag_print (1, 
+                $Glade_Perl->diag_print (1, 
                     "error I don't know what to do with %s element %s",
                     $refpar, $child_type);
             }
@@ -696,14 +702,14 @@ sub internal_pack_widget {
                         "$CTree_column, \$widgets->{'$childname'} );" );
                 $CTree_column++;
             } else {
-                $class->diag_print (1, 
+                $Glade_Perl->diag_print (1, 
                     "error I don't know what to do with %s element %s".
                     $refpar, $child_type);
             }
 
 #---------------------------------------
         } elsif (' Gtk::Layout ' =~ m/ $refpar /) {
-#            $class->diag_print(2, $proto);
+#            $Glade_Perl->diag_print(2, $proto);
             my $x      = $class->use_par($proto, 'x');
             my $y      = $class->use_par($proto, 'y');
 #            my $width  = $class->use_par($proto, 'width');
@@ -742,7 +748,7 @@ sub internal_pack_widget {
                 # We are a notebook tab widget (eg label) so we can add the 
                 # previous notebook page with ourself as the  label
                 unless ($nb->{$parentname}{'panes'}[$nb->{$parentname}{'tab'}]) {
-                    $class->diag_print (1, "warn  There is no widget on the ".
+                    $Glade_Perl->diag_print (1, "warn  There is no widget on the ".
                         "notebook page linked to notebook tab '%s' - ".
                         "a Placeholder label was used instead",
                         $childname);
@@ -759,7 +765,6 @@ sub internal_pack_widget {
                     $nb->{$parentname}{'panes'}[$nb->{$parentname}{'tab'}] = 
                         'Placeholder_label';
                 }
-#                $class->diag_print(2, $proto);
                 $class->add_to_UI( $depth, 
                     "${current_form}\{'$parentname'}->append_page(".
                         "${current_form}\{'$nb->{$parentname}{'panes'}[$nb->{$parentname}{'tab'}]'}, ".
@@ -775,8 +780,6 @@ sub internal_pack_widget {
 
 #---------------------------------------
         } elsif (' Gtk::Packer ' =~ m/ $refpar /) {
-#            $class->diag_print(2, $proto);
-#            $class->diag_print(2, $proto->{'child'});
             my $anchor  = $class->use_par($proto->{'child'}, 'anchor', $LOOKUP, 'center', 'DONT_UNDEF');
             my $side    = $class->use_par($proto->{'child'}, 'side',   $LOOKUP, 'top', 'DONT_UNDEF');
             my $expand  = $class->use_par($proto->{'child'}, 'expand', $BOOL,   'False', 'DONT_UNDEF');
@@ -785,11 +788,7 @@ sub internal_pack_widget {
             my $use_default = $class->use_par($proto->{'child'}, 'use_default',  $BOOL,'True', 'DONT_UNDEF');
             my $options = "";
             if ($expand) {
-                if ($class->my_perl_gtk_can_do('Gtk::Packer->expand')) {
-                    $options .= "'expand', ";
-                } else {
-                    $options .= "'pack_expand', ";
-                }
+                $options .= "'expand', ";
             }
             $xfill  && ($options .= "'fill_x', ");
             $yfill  && ($options .= "'fill_y', ");
@@ -867,13 +866,13 @@ sub internal_pack_widget {
             if (eval "$current_form\{'$parentname'}{'tooltips'}" && 
                 !$tooltip &&
                 (' Gtk::VSeparator Gtk::HSeparator Gtk::Combo Gtk::Label ' !~ / $refwid /)) {
-                $class->diag_print (1, 
+                $Glade_Perl->diag_print (1, 
                     "warn  Toolbar '%s' is expecting ".
                     "a tooltip but you have not set one for %s '%s'",
                     $parentname, $refwid, $childname);
             }            
-#use Data::Dumper;print Dumper($proto);
-             if ($proto->{'child'}{'new_group'} && $proto->{'child'}{'new_group'} eq 'True') {
+
+            if ($proto->{'child'}{'new_group'} && $proto->{'child'}{'new_group'} eq 'True') {
                 $class->add_to_UI( $depth, 
                     "${current_form}\{'$parentname'}->append_space;" );
             }
@@ -909,7 +908,7 @@ sub internal_pack_widget {
                         "\$widgets->{'$childname'} );" );
 
             } else {
-                $class->diag_print (1, 
+                $Glade_Perl->diag_print (1, 
                     "error Don't know how to pack %s %s (type '%s') - what should I do?",
                     $refwid, "${current_form}\{'${childname}'}{'child_name'}", $type);
             }
@@ -979,7 +978,6 @@ sub internal_pack_widget {
         }
     }
     unless ($postpone_show || !$class->use_par($proto, 'visible', $BOOL, 'True') ) {
-#        $class->add_to_UI($depth, "\$widgets->{'$childname'}->realize( );" );
         $class->add_to_UI($depth, "\$widgets->{'$childname'}->show;" );
     }
 # FINDME This is to remove
@@ -1028,11 +1026,11 @@ sub set_tooltip {
             "${current_form}\{'$parentname'}, _('$tooltip' ));" );
 
     } elsif (!defined $proto->{name}) {
-        $class->diag_print (1, 
+        $Glade_Perl->diag_print (1, 
             "error Could not set tooltip for unnamed %s", $proto->{'class'});
 
     } else {
-        $class->diag_print(6, 
+        $Glade_Perl->diag_print(6, 
             "warn  No tooltip specified for widget '%s'", $proto->{name});
     }    
 }
@@ -1071,7 +1069,6 @@ sub set_misc_properties {
     my ($class, $parent, $name, $proto, $depth) = @_;
     my $me = "$class->set_alignment";
     # For use by Arrow, Image, Label, (TipsQuery), Pixmap
-#    $class->diag_print(8, "Setting misc properties for '$name'");
     # Cater for all the usual properties (defaults not stored in XML file)
     return unless ($proto->{'xalign'} || $proto->{'yalign'} || $proto->{'xpad'} || $proto->{'ypad'});
     my $xalign = $class->use_par($proto, 'xalign', $DEFAULT, 0 );
@@ -1170,9 +1167,6 @@ sub set_window_properties {
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->position('$position' );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_policy(".
         "$allow_shrink, $allow_grow, $auto_shrink );" );
-#    $class->add_to_UI( $depth, "\$widgets->{'$name'}->allow_shrink('$allow_shrink' );" );
-#    $class->add_to_UI( $depth, "\$widgets->{'$name'}->allow_grow('$allow_grow' );" );
-#    $class->add_to_UI( $depth, "\$widgets->{'$name'}->auto_shrink('$auto_shrink' );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_modal($modal );" );
     if ( (defined $proto->{'width'}) || (defined $proto->{'height'}) ) {
         my $width  = $class->use_par($proto, 'width',  $DEFAULT, 0 );
@@ -1189,7 +1183,7 @@ sub set_window_properties {
     if ( (defined $proto->{'x'}) || (defined $proto->{'y'}) ) {
         my $x = $class->use_par($proto, 'x',  $DEFAULT, 0 );
         my $y = $class->use_par($proto, 'y',  $DEFAULT, 0 );
-        $class->diag_print(1, "warn  Toplevel window uposition has been set ".
+        $Glade_Perl->diag_print(1, "warn  Toplevel window uposition has been set ".
             "but breaks the window manager's placement policy, and is almost ".
             "certainly a bad idea. (Havoc Pennington)");
         $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_uposition(".
@@ -1222,7 +1216,7 @@ sub new_accelerator {
     my $me = "$class->new_accelerator";
     my $mods = '[]';
     my $accel_flags = "['visible', 'locked']";
-    my $key       = $class->use_par($proto, 'key',          $KEYSYM );
+    my $key       = $class->use_par($proto, 'key',          $KEYSYM);
     my $modifiers = $class->use_par($proto, 'modifiers',    $DEFAULT, 0);
     my $signal    = $class->use_par($proto, 'signal');
     unless (defined $need_handlers->{$parentname}{$signal}) {
@@ -1252,10 +1246,10 @@ sub new_accelerator {
     
     } elsif (eval "${current_form}\{'$parentname'}->can('$signal')") {
         $class->add_to_UI( $depth, "${current_form}\{'accelgroup'}->add(".
-            "$key, $mods, $accel_flags, ".
+            ($key || "''").", $mods, $accel_flags, ".
             "${current_form}\{'$parentname'}, '$signal');");
     } else {
-        $class->diag_print (1, "error Widget '%s' can't emit signal ".
+        $Glade_Perl->diag_print (1, "error Widget '%s' can't emit signal ".
             "'%s' as requested - what's wrong?",
             $parentname, $signal);
     }
@@ -1264,7 +1258,6 @@ sub new_accelerator {
 sub new_style {
     my ($class, $parentname, $proto, $depth) = @_;
     my $me = "$class->new_style";
-#    $class->diag_print(2, $proto);
     my ($state, $color, $value, $element, $lc_state);
     my ($red, $green, $blue);
     $class->add_to_UI( $depth, "$current_form\{'$parentname-style'} = ".
@@ -1282,7 +1275,7 @@ sub new_style {
             $element = "$color-$state";
             if ($proto->{$element}) {
                 $value = $class->use_par($proto, $element, $DEFAULT, '');
-                $class->diag_print(6, "%s- We have a style element ".
+                $Glade_Perl->diag_print(6, "%s- We have a style element ".
                     "'%s' which is '%s'", $indent, $element, $value);
                 ($red, $green, $blue) = split(',', $value);
                 # Yes I really mean multiply by 257 (0x101)
@@ -1354,7 +1347,7 @@ sub new_from_child_name {
         #
         # For Gnome::Dialog and derivatives we can use ->append_button() 
         # (which calls gnome_dialog_init_action_area)
-        unless ($class->my_perl_gtk_can_do('gnome_dialog_append_button')) {
+        unless ($class->my_gtk_perl_can_do('gnome_dialog_append_button')) {
             # Force HButtonbox to construct its widget and add it to the VBox 
             # This will look wrong (above the separator)
             return undef;
@@ -1388,7 +1381,7 @@ sub new_from_child_name {
 
         my $tooltip = $class->use_par($proto, 'tooltip',       $DEFAULT, '' );
         if (eval "$current_form\{'$parent'}{'tooltips'}" && !$tooltip) {
-            $class->diag_print (1, "warn  Toolbar '%s' is expecting ".
+            $Glade_Perl->diag_print (1, "warn  Toolbar '%s' is expecting ".
                 "a tooltip but you have not set one for %s '%s'",
                 $parent, $proto->{'class'}, $name);
         }            
@@ -1407,20 +1400,14 @@ sub new_from_child_name {
 
         } elsif ($proto->{'stock_pixmap'}) {
             my $stock_pixmap = $class->use_par($proto, 'stock_pixmap',  $LOOKUP, '' );
-            if ($Glade_Perl->{'options'}->allow_gnome) {
+            if ($Glade_Perl->app->allow_gnome) {
                 $pixmap_widget_name = "${current_form}\{'${name}-pixmap'}";
-                if ($class->my_perl_gtk_can_do('gnome_stock_pixmap_widget')) {
-                    $class->add_to_UI( $depth, 
-                        "$pixmap_widget_name = Gnome::Stock->pixmap_widget(".
-                            "$current_window, '$stock_pixmap');" ); 
-                } else {
-                    $class->add_to_UI( $depth, 
-                        "$pixmap_widget_name = Gnome::Stock->new_with_icon(".
-                            "'$stock_pixmap');" ); 
-                }
+                $class->add_to_UI( $depth, 
+                    "$pixmap_widget_name = Gnome::Stock->pixmap_widget(".
+                        "$current_window, '$stock_pixmap');" ); 
 
             } else {
-                $class->diag_print(1, "error You have specified a Gnome stock ".
+                $Glade_Perl->diag_print(1, "error You have specified a Gnome stock ".
                     "pixmap but this is not a Gnome project - stock pixmap omitted");
                 $pixmap_widget_name = "undef";
             }
@@ -1470,13 +1457,8 @@ sub new_from_child_name {
 
 #---------------------------------------
     } elsif (' GnomeDruidPageStandard:vbox ' =~ / $type /) {
-        if ($class->my_perl_gtk_can_do('GnomeDruidPageStandard::vbox')) {
-            $class->add_to_UI( $depth, 
-                "\$widgets->{'$name'} = ".
-                    "${current_form}\{'$parent'}->vbox;" );
-        } else {
-            return undef;
-        }
+        $class->add_to_UI( $depth, 
+            "\$widgets->{'$name'} = ${current_form}\{'$parent'}->vbox;" );
 
 #---------------------------------------
     } elsif (eval "${current_form}\{'$parent'}->can('$type')") {
@@ -1493,13 +1475,13 @@ sub new_from_child_name {
                         "\$widgets->{'$name'}->child->set_text(_('$label'));", 
                         'TO_FILE_ONLY' );
                 } else {
-                    $class->diag_print (1, "error We have a label ".
+                    $Glade_Perl->diag_print (1, "error We have a label ".
                         "('%s') to set but the child of %s ".
                         "isn't a label (actually it's a %s)",
                         $label, "${current_form}\{'$name'}", $childref);
                 }
             } else {
-                $class->diag_print (1, "error We have a label ('%s') to ".
+                $Glade_Perl->diag_print (1, "error We have a label ('%s') to ".
                     "set but %s doesn't have a ->child() accessor",
                     $label, "${current_form}\{'${name}'}");
             }
@@ -1511,10 +1493,9 @@ sub new_from_child_name {
         
 #---------------------------------------
     } else {
-        $class->diag_print (1, "error Don't know how to get a ref to %s ".
+        $Glade_Perl->diag_print (1, "error Don't know how to get a ref to %s ".
             "(type '%s')",
             "${current_form}\{'${name}'}{'child_name'}", $type);
-#use Data::Dumper; print Dumper($proto);
         return undef;
     }
 
@@ -1539,6 +1520,7 @@ sub new_signal {
     my $me = "$class->new_signal";
     my $signal  = $proto->{name};
     my ($call, $expr);
+#    $class = ref $class || $class;
 # FIXME to do signals properly
     if ($proto->{'handler'}) {
         my $ignore = $class->use_par($proto, 'last_modification_time');
@@ -1555,7 +1537,7 @@ sub new_signal {
         if ($handler =~ /[- \.]/) {
             my %ents=('-'=>'MINUS',' '=>'SPACE','.'=>'DOT');
             my $replaced = $handler =~ s/([- \.])/_$ents{$1}_/g;
-            $class->diag_print (1, "error signal handler ('%s') ".
+            $Glade_Perl->diag_print (1, "error signal handler ('%s') ".
                 "contains %s minus sign/space/dot(s) which has(ve) been ".
                 "substituted because they are illegal in a sub name in Perl. ",
                 $handler, $replaced);
@@ -1566,7 +1548,7 @@ sub new_signal {
         # We must log the sub name for dynamic stub handlers
         unless ( ($Glade::PerlSource::subs =~ m/ $handler /) or    
             (defined $handlers->{$handler}) or 
-            ($class->Building_UI_only) ) {
+            ($Glade_Perl->Building_UI_only) ) {
             $subs .= "$handler\n$indent".(' ' x 19 );
             eval "$current_form\{_HANDLERS}{'$handler'} = 'signal'";
         }
@@ -1574,7 +1556,7 @@ sub new_signal {
             eval "$current_name->can('$handler')"
             # || 
             #    (
-            #        #($Glade_Perl->{'options'}->style || 'AUTOLOAD') eq 'Libglade' &&
+            #        #($Glade_Perl->source->style || 'AUTOLOAD') eq 'Libglade' &&
             #        defined $use_modules[0] && 
             #        print "$use_modules[0]\->can('$handler')\n" &&
             #        eval "$use_modules[0]\->can('$handler')"
@@ -1583,10 +1565,9 @@ sub new_signal {
             # All is hunky-dory - no need to generate a stub
             eval "delete $current_form\{_HANDLERS}{'$handler'}";
             # First connect the signal handler as best we can
-            unless ($class->Writing_Source_only) {
+            unless ($Glade_Perl->Writing_Source_only) {
                 $expr = "push \@{${current_form}\{'Signal_Strings'}}, ".
                     "\"\\${current_form}\{'$object'}->$call( ".
-#                    "'$signal', \\\\\\\"$handler\\\\\\\", '$data', '$object', ".
                     "'$signal', \\\"\$class\\\::$handler\\\", '$data', '$object', ".
                     "'name of form instance' )\"";
                 eval $expr
@@ -1604,22 +1585,23 @@ sub new_signal {
         } else {
             # First we'll connect a default handler to hijack the signal 
             # for us to use during the Build run
-            $class->diag_print (4, "warn  Missing signal handler '%s' ".
+            $Glade_Perl->diag_print (4, "warn  Missing signal handler '%s' ".
                 "connected to widget '%s' needs to be written",
                 $handler, $object);
-            unless ($class->Writing_Source_only) {
+            unless ($Glade_Perl->Writing_Source_only) {
             $expr = "push \@{${current_form}\{'Signal_Strings'}}, ".
                 "\"\\${current_form}\{'$object'}->$call(".
                 "'$signal', \\\"\$class\\\::missing_handler\\\", ".
                 "'$parentname', '$signal', '$handler', '".
-                $Glade_Perl->{'options'}{'logo_filename'}."' )\"";
+                $Glade_Perl->app->logo."' )\"";
                 eval $expr
             }
             # Now write a signal_connect for generated code
             # All these back-slashes are really necessary as these strings
             # are passed through so many others (evals and so on)
+            my $eval_class = ref $class || $class;
             $expr = "push \@{${current_form}\{'Signal_Strings'}}, ".
-                "\"$class->add_to_UI( 1, ".
+                "\"$eval_class->add_to_UI( 1, ".
                 "\\\"\\\\\\${current_form}\{'$object'}->$call( ".
                 "'$signal', \\\\\\\"\\\\\\\$class\\\\\\\\\::$handler\\\\\\\", '$data', '$object', ".
                 "\\\\\\\"$current_form_name\\\\\\\" );\\\", 'TO_FILE_ONLY' );\"";
@@ -1628,7 +1610,6 @@ sub new_signal {
 
     } else {
         # This is a signal that we will cause
-#        $class->diag_print(4, $proto);
     }
 }
 

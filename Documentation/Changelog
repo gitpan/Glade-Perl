@@ -1,6 +1,63 @@
 Revision history for Perl module Glade::PerlGenerate development branch.
 
-Fri Oct 20 01:19:45 BST 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
+Fri Apr 13 01:01:22 BST 2001 - Dermot Musgrove <dermot.musgrove at virgin.net>
+  - Version 0.58
+  - Mimimum requirements increased to Gtk-Perl-0.7000 and gnome-libs-1.2.0
+    These have been around for a year or more now and fix many problems.
+  - All packages - Extensive tidying of options handling with a new data
+    structure. Old format options files will be read as before but project 
+    options will be saved in the new hierarchically nested structure.
+  - The options handling and diagnostics utilities have been moved to
+    Glade::PerlRun so that you can use them in your own apps.
+  - PerlUI - some variables updated for Gtk-Perl-0.7004 and later.
+  - Some changes to generated comments and source code.
+  - glade2perl - removed redundant 'use English' call
+    New, more meaningful 'set_by' value and 
+    New (2nd) arg to specify verbosity in glade2perl call 
+    eg. 'glade2perl Project.glade 2'
+    Simplified usage so that a separate Glade::PerlGenerate->options() call
+    is not needed and the options can be specified to Form_from_File()
+    Also, undefined glade_filename causes most recently used file stored
+    in your user options file to run.
+  - PerlRun->reload_any_altered_modules() is a new sub for app testing to 
+    reload any modules that have been edited. This idea is from Stas Bekman
+    and gives you the ability to edit and reload any signal handlers and 
+    support modules without closing down the app and restarting it. 
+    This is not possible if you regenerate the UI module and reload it.
+    Your app will crash in flames if you try this.
+    Simply call '__PACKAGE__->reload_any_altered_modules;' in a handler 
+    for any widget/signal you like (I usually use a Refresh button).
+  - PerlGenerate->Form_from_Glade_File() amended to call two new subs
+    parse_form() and build_form() to allow use in future Glade::Helper app.
+  - PerlGenerate->about_Form() fixed to use proper pixmap option
+  - PerlGenerate->Form_from_Proto() now only generates subclass for simple
+    AUTOLOAD style runs.
+  - PerlRun->load_translations() amended to look for .mo files in several
+    possible places if a catalog path is not specified.
+  - An extra form element is now returned from generated UI constructor so
+    that you can call $form->{'TOPLEVEL'} in any signal handler to get a
+    toplevel form widget - ie. use $form->{'TOPLEVEL'}->get_filename() to
+    get the file name entered in a fileselection dialog from the
+    'on_ok_button_clicked' signal handler.
+  - PerlUI->my_gtk_perl_can_do() now also checks for particular versions
+    that are known to be flawed in certain ways.
+  - FAQ split into 3 files - all old FAQs are available on the website.
+      FAQ       - Frequently asked questions (general)
+      FAQ.i18n  - FAQs relating to internationalisation (I18N) issues.
+      FAQ.old   - FAQs relating to old/flawed software versions
+  - PerlSource->perl_about() generates `gnome-config --version` call in
+    Gnome about_Form() sub in App/SubApp. If the gnome-libs-devel RPM 
+    is not installed the gnome-libs version number will not be reported.
+  - PerlSource now generates lines in app_run to load translations.
+  - Glade-Perl.spec file based on one from George, the mp3 organiser. 
+    This one works I think and allows RPM builds from the tarball by 
+    calling eg. 'rpm -ta Glade-Perl-0.58.tar.gz'.
+  - PerlUI->new_accelerator() - accelerator key now defaults to ''.
+    PerlUIExtra->new_GtkPixmapMenuItem() also defaults key to ''
+    PerlProject->use_Glade_Project() now escapes double quotes in author.
+    Thanks for bug reports for the above reports to Joe "Markus" Clark.
+    
+Fri Oct 20 01:19:45 BST 2000 - Dermot Musgrove <dermot.musgrove at virgin.net>
   - Version 0.57
   - PerlUIGtk->new_GtkPixmap() fixed to use project logo as default rather
     than crash in flames if no pixmap is specified.
@@ -13,7 +70,7 @@ Fri Oct 20 01:19:45 BST 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
     so that the returned full path is exact and unique if possible.
   - PerlGenerate pod corrected and improved.
   - COPYING file changed to invite commercial users to make a donation to 
-    perl.org (donors@perlmongers.org) rather than me ;-> I borrowed the 
+    perl.org (donors at perlmongers.org) rather than me ;-> I borrowed the 
     COPYING file from a CPAN module and was embarrassed to reread it when
     Scott Barninger of Piedmont Airlines accepted the invitation!
   - PerlUI->internal_pack_widget() fixed to pack Gtk::PixmapMenuItem
@@ -36,11 +93,11 @@ Fri Oct 20 01:19:45 BST 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
     test example to see how this works.
   - test.pl extended to test both the split base classes and the subclass.
   
-Wed Apr 19 02:28:58 BST 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
+Wed Apr 19 02:28:58 BST 2000 - Dermot Musgrove <dermot.musgrove at virgin.net>
   - Version 0.56 - embarassment release
   - Makefile.PL unchanged so that it will install all the modules correctly.
   
-Wed Apr 19 02:28:58 BST 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
+Wed Apr 19 02:28:58 BST 2000 - Dermot Musgrove <dermot.musgrove at virgin.net>
   - Version 0.55
   - New FAQ about building Unicode::String for perl 5.6
   - PerlXML->Proto_from_XML_Parser_Tree() changed to cancel the use of 
@@ -50,7 +107,7 @@ Wed Apr 19 02:28:58 BST 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
     tutorial http://personal.riverusers.com/~swilhelm/perlgtk/tutorial/
     now pushed as the best starting point for learning Gtk-Perl.
   
-Sun Apr 16 00:07:26 BST 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
+Sun Apr 16 00:07:26 BST 2000 - Dermot Musgrove <dermot.musgrove at virgin.net>
   - Version 0.54
   - PerlUI->new_from_child_name() fixed to use gnome_app_docked_item() and
     not construct our own widgets and containers (Damon's ideas)
@@ -66,8 +123,10 @@ Sun Apr 16 00:07:26 BST 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
     Gtk-Perl (CVS 20000410) that actually construct a PixmapMenuItem 
     instead of just a Gtk::MenuItem. Earlier versions of Gtk-Perl will now
     construct Gtk::MenuItem explicitly.
+  - Documentation - all email addresses in online documentation are now 
+    mangled to reduce spam for those kind enough to send bug reports/patches.
     
-Tue Apr 11 15:45:29 BST 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
+Tue Apr 11 15:45:29 BST 2000 - Dermot Musgrove <dermot.musgrove at virgin.net>
   - Version 0.53
   - New FAQ about character encodings.
   - PerlProject two new user options to handle character encodings.
@@ -96,7 +155,7 @@ Tue Apr 11 15:45:29 BST 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
   - PerlGenerate documentation - perldoc (and manpage) corrected and 
     improved to include all user options.
   
-Fri Mar 31 16:44:38 BST 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
+Fri Mar 31 16:44:38 BST 2000 - Dermot Musgrove <dermot.musgrove at virgin.net>
   - Version 0.52
   - PerlSource->check_gettext_strings() and write_gettext_strings() are
     two new subs to help you spot missing translations and write a .pot file
@@ -119,14 +178,14 @@ Fri Mar 31 16:44:38 BST 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
   - PerlUIGtk->new_GtkVPaned() fixed to supply a default position. This 
     seems to be caused because Glade-0.5.7 doesn't save all default values.
     Most other defaults also now supplied in case of further changes.
-    Thanks to Ned Konz <ned@bike-nomad.com> for the report
+    Thanks to Ned Konz <ned at bike-nomad.com> for the report
   - Popup menus with keyboard accelerators and tooltips generated correctly
-    Thanks to Skywolf Lu <skywolf@ms21.hinet.net> for the report
+    Thanks to Skywolf Lu <skywolf at ms21.hinet.net> for the report
   - PerlGenerate->unused_widgets() now only warns (verbose >= 4) when C++
     specific widget properties are encountered (they are currently ignored).
-    Thanks to Robert Schwebel <robert@schwebel.de> for the report.
+    Thanks to Robert Schwebel <robert at schwebel.de> for the report.
     
-Thu Mar  2 04:30:08 GMT 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
+Thu Mar  2 04:30:08 GMT 2000 - Dermot Musgrove <dermot.musgrove at virgin.net>
   - Version 0.51
   - PerlUI testing source comments removed from generated code
   - PerlRun->create_image() pixmaps made relative to usual global.
@@ -154,7 +213,7 @@ Thu Mar  2 04:30:08 GMT 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
     All defaults are $ENV{'LANG'} but diagnostics and source languages can 
     be overridden in the site, user or Project.glade2perl.xml options files
     
-Thu Feb 24 22:57:47 GMT 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
+Thu Feb 24 22:57:47 GMT 2000 - Dermot Musgrove <dermot.musgrove at virgin.net>
   - Version 0.50 embarassment release
   - PerlUiExtra->new_GtkPixMeneuItem() fixes to string quoting
   

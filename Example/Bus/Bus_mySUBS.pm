@@ -13,8 +13,10 @@ require 5.000; use English; use strict 'vars', 'refs', 'subs';
 # b) the Artistic License.
 #
 # If you use this library in a commercial enterprise, you are invited,
-# but not required, to pay what you feel is a reasonable fee to the
-# author, who can be contacted at dermot.musgrove@virgin.net
+# but not required, to pay what you feel is a reasonable fee to perl.org
+# to ensure that useful software is available now and in the future. 
+#
+# (visit http://www.perl.org/ or email donors@perlmongers.org for details)
 
 BEGIN {
     use Exporter    qw (  );
@@ -38,20 +40,42 @@ BEGIN {
 #==== Below are all the signal handlers supplied by the programmer          ====
 #===============================================================================
 sub on_New_activate {
-	my ($class, $data) = @_;
-    my $me = __PACKAGE__."->on_New_activate";
-    my $filesel = fileselection1->new->TOPLEVEL;
-    $filesel->set_title("New file selection triggered in $me");
-    $filesel->show;
-}
+  my ($class, $data, $object, $instance, $event) = @_;
+  my $me = __PACKAGE__."->on_New_activate";
+    my $title = sprintf(_("New file selection triggered in %s"), $me);
+    if ($instance) {
+        # We are AUTOLOAD style run
+        # Get ref to hash of all widgets on our form
+        my $form = $__PACKAGE__::all_forms->{$instance};
+        my $filesel = fileselection1->new->TOPLEVEL;
+        $filesel->set_title($title);
+        $filesel->show;
+    } else {
+        # We are Libglade style run
+        my $filesel = fileselection1->new;
+        $filesel->get_widget('fileselection1')->set_title($title);
+        $filesel->signal_autoconnect_from_package('fileselection1');
+    }
+} # End of sub on_New_activate
 
 sub on_Open_activate {
-	my ($class, $data) = @_;
-    my $me = __PACKAGE__."->on_Open_activate";
-    my $filesel = fileselection1->new->TOPLEVEL;
-    $filesel->set_title("Open file selection triggered in $me");
-    $filesel->show;
-}
+  my ($class, $data, $object, $instance, $event) = @_;
+  my $me = __PACKAGE__."->on_Open_activate";
+    my $title = sprintf(_("Open file selection triggered in %s"), $me);
+    if ($instance) {
+        # We are AUTOLOAD style run
+        # Get ref to hash of all widgets on our form
+        my $form = $__PACKAGE__::all_forms->{$instance};
+        my $filesel = fileselection1->new->TOPLEVEL;
+        $filesel->set_title($title);
+        $filesel->show;
+    } else {
+        # We are Libglade style run
+        my $filesel = fileselection1->new;
+        $filesel->get_widget('fileselection1')->set_title($title);
+        $filesel->signal_autoconnect_from_package('fileselection1');
+    }
+} # End of sub on_Open_activate
 
 sub on_Print_activate {
 	my ($class, $data) = @_;

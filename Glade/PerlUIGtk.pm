@@ -21,8 +21,6 @@ require 5.000; use strict 'vars', 'refs', 'subs';
 BEGIN {
     use Glade::PerlSource qw( :VARS :METHODS );
     use vars              qw( 
-                            $PACKAGE
-                            $VERSION
                             @VARS @METHODS
                             @EXPORT @EXPORT_OK %EXPORT_TAGS 
                             $CList_column
@@ -33,8 +31,10 @@ BEGIN {
                             $Notebook_tab
                             $enums
                           );
-    $PACKAGE =          __PACKAGE__;
-    $VERSION        = q(0.57);
+#                            $PACKAGE
+#                            $VERSION
+#    $PACKAGE =          __PACKAGE__;
+#    $VERSION        = q(0.58);
     @VARS           = qw( 
                             $VERSION
                             $AUTHOR
@@ -229,9 +229,9 @@ sub new_GtkButton {
         my $stock_button = $class->use_par($proto, 'stock_button',  $LOOKUP, '');
         if ($label) {
 # FIXME This should probably be split into GnomeStock(Button) and GtkButton
-            if ($stock_button && $class->my_perl_gtk_can_do('GnomeStock')) {
-                    $class->diag_print(2, $proto);
-                    $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
+            if ($stock_button) {
+                $Glade_Perl->diag_print(2, $proto);
+                $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
                     "new Gnome::Stock->button('$stock_button' );" );
 
             } else {
@@ -240,23 +240,12 @@ sub new_GtkButton {
             }
 
         } else {
-            if ($class->my_perl_gtk_can_do('GnomeStock')) {
-                if ($stock_button) {
-                    $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
-                        "Gnome::Stock->button('$stock_button' );" );
-                } elsif (! $proto->{'stock_pixmap'}) {
-                    $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
-                        "new Gtk::Button;" );
-                }
-
-            } else {
-                if ($stock_button) {
-                    $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
-                       "new Gtk::Button('$stock_button' );" );
-                } else {
-                    $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
-                        "new Gtk::Button;");
-                }
+            if ($stock_button) {
+                $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
+                    "Gnome::Stock->button('$stock_button' );" );
+            } elsif (! $proto->{'stock_pixmap'}) {
+                $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
+                    "new Gtk::Button;" );
             }
         }
         $class->pack_widget($parent, $name, $proto, $depth );
@@ -393,7 +382,7 @@ sub new_GtkCList {
     $CList_column = 0;
     my $i = 0;
     while ($i < scalar(@column_widths)) { 
-        $class->diag_print(8, 
+        $Glade_Perl->diag_print(8, 
             "%s- Setting column %s to width %s in %s",
             $indent, $i, $column_widths[$i], $me);
         $class->add_to_UI( $depth,  "\$widgets->{'$name'}->set_column_width(".
@@ -427,7 +416,7 @@ sub new_GtkCTree {
     $CTree_column = 0;
     my $i = 0;
     while ($i < scalar(@column_widths)) { 
-        $class->diag_print(8, 
+        $Glade_Perl->diag_print(8, 
             "%s- Setting column %s to width %s in %s",
             $indent, $i, $column_widths[$i], $me);
         $class->add_to_UI( $depth,  "\$widgets->{'$name'}->set_column_width(".
@@ -459,11 +448,6 @@ sub new_GtkColorSelectionDialog {
     my $title  = $class->use_par($proto,'title',  $DEFAULT, 'File Selection' );
     my $policy = $class->use_par($proto,'policy', $LOOKUP, 'continuous' );
     
-    unless ($class->my_perl_gtk_can_do('gtk_colorselectiondialog_ok_button->child')) {
-        $class->diag_print(1, "warn  We are generating code to construct a ".
-            "Gtk::ColorSelectionDialog but if you have set the OK button's ".
-            "label the app will crash when you show the dialog");
-    }
     $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
         "new Gtk::ColorSelectionDialog(_('$title') );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->colorsel->".
@@ -485,7 +469,7 @@ sub new_GtkCombo {
     my $value_in_list  = $class->use_par($proto, 'value_in_list',  $BOOL,   'False' );
     unless ($ok_if_empty) {
         if ($items eq '') {
-            $class->diag_print (1, "warn  Widget '%s' does not have any ".
+            $Glade_Perl->diag_print (1, "warn  Widget '%s' does not have any ".
                 "items specified in %s", $name, $me);
         }
     }
@@ -920,14 +904,8 @@ sub new_GtkLayout {
     my $area_width  = $class->use_par($proto, 'area_width',  $DEFAULT, 0 );
     my $area_height = $class->use_par($proto, 'area_height',  $DEFAULT, 0 );
     
-    if ($class->my_perl_gtk_can_do('gtk_layout_undef')) {
-        $class->add_to_UI($depth, "\$widgets->{'$name'} = new Gtk::Layout(".
-            "undef, undef );" );
-    } else {
-        $class->add_to_UI($depth, "\$widgets->{'$name'} = new Gtk::Layout(".
-            "new Gtk::Adjustment( 0.0, 0.0, 101.0, 0.1, 1.0, 1.0), ".
-            "new Gtk::Adjustment( 0.0, 0.0, 101.0, 0.1, 1.0, 1.0) );" );
-    }
+    $class->add_to_UI($depth, "\$widgets->{'$name'} = new Gtk::Layout(".
+        "undef, undef );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_size(".
         "$area_width, $area_height );" );
     $class->add_to_UI( $depth, 
@@ -1143,12 +1121,11 @@ sub new_GtkPixmap {
     my $filename = $class->use_par($proto, 'filename', $DEFAULT, '' );
     my $build_insensitive = $class->use_par($proto, 'build_insensitive', $BOOL, 'False' );
     unless ($filename) {
-        $class->diag_print(2, "warn  No pixmap file specified for GtkPixmap ".
+        $Glade_Perl->diag_print(2, "warn  No pixmap file specified for GtkPixmap ".
             "'%s' so we are using the project logo instead", $name);
-        $filename = $Glade_Perl->{'options'}->logo;
+        $filename = $Glade_Perl->app->logo;
     }
     $filename = "\"\$Glade::PerlRun::pixmaps_directory/$filename\"";
-#    $filename = "${Glade::PerlRun::pixmaps_directory}/$filename";
     $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
         "\$class->create_pixmap($current_window, $filename );" );
     unless (defined $widgets->{$name}) { 
@@ -1156,13 +1133,8 @@ sub new_GtkPixmap {
             $me, $filename), "\n";
     }
     unless ($build_insensitive) {
-        if ($class->my_perl_gtk_can_do('gtk_pixmap_set_build_insensitive')) {
-            $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_build_insensitive(".
-                "$build_insensitive );" );
-        } else {
-            $class->add_to_UI( $depth, "\$widgets->{'$name'}->set(".
-                "'build_insensitive', $build_insensitive );" );
-        }
+        $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_build_insensitive(".
+            "$build_insensitive );" );
     }
     
     $class->pack_widget($parent, $name, $proto, $depth );
@@ -1368,7 +1340,7 @@ sub new_GtkSpinButton {
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_update_policy(".
         "'$update_policy' );" );
     if ($numeric) {
-        $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_numeric;" );
+        $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_numeric(1);" );
     }
     if ($wrap) {
         $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_wrap;" );

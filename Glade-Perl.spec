@@ -1,50 +1,101 @@
-%define version     0.57
+%define ver     0.58
+%define rel     1
+%define name    Glade-Perl
+%define rlname  %{name}
+%define source0 http://www.glade.perl.connectfree.co.uk/%{name}-%{ver}.tar.gz
+%define url     http://www.glade.perl.connectfree.co.uk/
+%define group   Development/Languages
+%define copy    GPL or Artistic
+%define filelst %{name}-%{ver}-files
+%define confdir /etc
+%define prefix  /usr
+%define arch    noarch
 
-%define name        Glade-Perl
-%define real_name   %{name}
-%define release     1
-%define url         http://www.glade.perl.connectfree.co.uk
-%define packager    Dermot Musgrove <dermot@glade.perl.connectfree.co.uk>
-%define group       Development/Languages
-%define copying     GPL or Artistic
-%define prefix      /usr
+Summary: Perl module to generate Gtk-Perl apps from a Glade file.
 
-Name: %{name}
-Version: %{version}
-Release: %{release}
-Summary: Perl module to generate Gtk-Perl source from a Glade file.
-Copyright: %{copying}
-Packager: %{packager}
-Source: %{url}/%{real_name}-%{version}.tar.gz
+Name: %name
+Version: %ver
+Release: %rel
+Copyright: %{copy}
+Packager: Dermot Musgrove <dermot@glade.perl.connectfree.co.uk>
+Source: %{source0}
+URL: %{url}
 Group: %{group}
-BuildRoot: /tmp/%{real_name}-%{version}-root/
-Prefix: %{_prefix}
-BuildRequires: perl >= 5.004, XML-Parser >= 2.27, Gtk-Perl >= 0.6123
+BuildArch: %{arch}
+BuildRoot: /var/tmp/%{name}-%{ver}
 
 %description
 Glade-Perl will read a Glade-Interface XML file, build the UI and/or
 write the perl source to create the UI later and handle signals. 
 It also creates an 'App' and a 'Subclass' that you can edit.
 
+The current version of Glade-Perl is available on CPAN or on the 
+project website at
+
+   http://www.glade.perl.connectfree.co.uk/
+
+Glade-Perl can generate AUTOLOAD type OO code with subclasses or even
+Libglade apps.
+
 %prep
-%setup -n %{real_name}-%{version}
+%setup -n %{rlname}-%{ver}
 
 %build
-perl Makefile.PL --lazy-load
-make OPTIMIZE="$RPM_OPT_FLAGS"
+if [ -f configure ];then
+  inst_method="autoconf"
+  CFLAGS=$RPM_OPT_FLAGS ./configure --prefix=%{prefix} --sysconfdir=%{confdir}
+elif [ -f autogen.sh ];then
+  inst_method="autoconf"
+  CFLAGS=$RPM_OPT_FLAGS ./autogen.sh --prefix=%{prefix} --sysconfdir=%{confdir}
+elif [ -f Makefile.PL ];then
+  if [ $(perl -e 'print index($INC[0],"%{prefix}/lib/perl");') -eq 0 ];then
+    # package is to be installed in perl root
+    inst_method="makemaker-root"
+    CFLAGS=$RPM_OPT_FLAGS perl Makefile.PL PREFIX=%{prefix}
+  else
+    # package must go somewhere else (eg. /opt), so leave off the perl
+    # versioning to ease integration with automatic profile generation scripts
+    # if this is really a perl-version dependant package you should not omiss
+    # the version info...
+    inst_method="makemaker-site"
+    CFLAGS=$RPM_OPT_FLAGS perl Makefile.PL PREFIX=%{prefix} LIB=%{prefix}/lib/perl5
+  fi
+else
+  echo No configure, autogen.sh or Makefile.PL, giving up...
+  exit 1
+fi
+
+echo $inst_method > inst_method
+
+# get number of processors for parallel builds on SMP systems
+numprocs=`cat /proc/cpuinfo | grep processor | wc | cut -c7`
+if [ "x$numprocs" = "x" -o "x$numprocs" = "x0" ]; then
+  numprocs=1
+fi
+
+make "MAKE=make -j$numprocs"
 
 %install
-rm -rf "$RPM_BUILD_ROOT"
-make install PREFIX="$RPM_BUILD_ROOT%{_prefix}"
+rm -rf $RPM_BUILD_ROOT
 
-%files
-%defattr(-,root,root)
-#%dir /%{prefix}/lib/perl5/site_perl/5.005/%{_arch}-linux/auto/Gtk
-#%{prefix}/lib/perl5/site_perl/5.005/Glade/PerlGenerate.pm
-#%{prefix}/lib/perl5/man/man3/Glade::PerlGenerate.3.bz2
-%doc README Documentation/COPYING Documentation/Changelog Documentation/TODO Documentation/NEWS Documentation/Gtk-Perl-Docs
+if [ "$(cat inst_method)" = "autoconf" ];then
+   make DESTDIR=$RPM_BUILD_ROOT install
+elif [ "$(cat inst_method)" = "makemaker-root" ];then
+   make UNINST=1 PREFIX=$RPM_BUILD_ROOT%{prefix} install
+elif [ "$(cat inst_method)" = "makemaker-site" ];then
+   make UNINST=1 PREFIX=$RPM_BUILD_ROOT%{prefix} LIB=$RPM_BUILD_ROOT%{prefix}/lib/perl5 install
+fi
+
+%__os_install_post
+find $RPM_BUILD_ROOT -type f -print|sed -e "s@^$RPM_BUILD_ROOT@@g" > %{filelst}
+
+%files -f %{filelst}
+%defattr(-, root, root)
+%doc Documentation/*
+
+%clean
+rm -rf $RPM_BUILD_ROOT
 
 %changelog
-* Wed Sep 13 16:56:20 BST 2000 Dermot Musgrove <dermot@glade.perl.connectfree.co.uk>
-- First go at a spec file.
-
+* Tue Apr 09 2001 Dermot Musgrove <dermot@glade.perl.connectfree.co.uk>
+  Edited from George.spec by Frank de Lange <frank@unternet.org>
