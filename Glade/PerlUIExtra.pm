@@ -26,8 +26,13 @@ BEGIN {
                             $gnome_enums
                           );
     $PACKAGE =          __PACKAGE__;
-    $VERSION            = q(0.41);
-    $gnome_enums =      {};
+    $VERSION            = q(0.42);
+    # These cannot be looked up in the include files
+    $gnome_enums =      {
+        'GNOME_ANIMATOR_LOOP_NONE'      => 'none',
+        'GNOME_ANIMATOR_LOOP_RESTART'   => 'restart',
+        'GNOME_ANIMATOR_LOOP_PING_PONG' => 'ping_pong',
+    };
     # Tell interpreter who we are inheriting from
     @ISA =              qw( Glade::PerlSource );
 }
@@ -55,6 +60,28 @@ sub new_GnomeAbout {
         "'About $title' );" );
 
     $class->set_window_properties($parent, $name, $proto, $depth );
+    return $widgets->{$name};
+}
+
+sub new_GnomeAnimator {
+    my ($class, $parent, $proto, $depth) = @ARG;
+    my $me = "$class->new_GnomeAnimator";
+    my $name = $proto->{'name'};
+    my $playback_direction = 
+        $class->use_par($proto, 'playback_direction', $BOOL, 0 ) ? '-1' : '1';
+    my $playback_speed = $class->use_par($proto, 'playback_speed', $DEFAULT, 1 );
+    my $loop_type = $class->use_par($proto, 'loop_type',  $LOOKUP, 'none' );
+
+    $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
+        "new_with_size Gnome::Animator('190', '141');" );
+    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_playback_speed(".
+        "'$playback_speed' );" );
+    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_playback_direction(".
+        "'$playback_direction' );" );
+    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_loop_type(".
+        "'$loop_type' );" );
+    
+    $class->pack_widget($parent, $name, $proto, $depth );
     return $widgets->{$name};
 }
 

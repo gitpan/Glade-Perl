@@ -1,20 +1,32 @@
 Revision history for Perl module Glade::PerlGenerate development branch.
 
+Wed Nov 10 00:59:38 GMT 1999 - Dermot Musgrove <dermot.musgrove@virgin.net>
+  - Version 0.42
+  - Fixed to 'use Gnome;' now. This is vital for Gtk-Perl CVS after 19991029
+  - PerlUIGtk->new_GtkMenuBar() allows null shadow_type (old Glade XML)
+  - PerlProject->get_versions() now dies if your libs don't at least meet the
+    MINIMUM REQUIREMENTS
+  - PerlUIExtra->new_GnomeAnimator() new widget implemented (first appeared 
+    in Glade 0.5.4)    
+  - New FAQ about failing to build Gnome::Stock buttons.  
+  - PerlProject->save_options() and use_Glade_Project() fixed to save the value
+    of <allow_gnome> correctly
+
 Tue Nov  2 02:20:00 GMT 1999 - Dermot Musgrove <dermot.musgrove@virgin.net>
- - Version 0.41
- - PerlRun->create_pixmap() updated to use new Perl/Gtk bindings if available
- - PerlSource->write_UI() stripped from PerlGenerate->Form_from_Glade_Proto()
- - PerlSource->write_Subclass() will generate a working subclass with 
-   skeleton subs for all missing signal handlers
- - PerlSource->write_dist() started new sub to generate dist files
- - PerlProject->use_Glade_Project() now defaults to allow_gnome if programmer
-   has set <project><gnome_support> to True
- - PerlSource->perl_SUBCLASS_AUTOLOAD_header() new sub and some extra 
-   utilities generated (toplevel_hide, toplevel_close and toplevel_destroy)
- - Gnome::Druid* stuff implemented (needs Gtk-Perl CVS after 19991025 and
-   gnome-libs >= 1.0.50 to get the full effect)
- - PerlRun->create_image() new sub to return a Gtk::Gdk::ImlibImage for
-   Gnome::Druid* logos and watermarks
+  - Version 0.41
+  - PerlRun->create_pixmap() updated to use new Gtk-Perl bindings if available
+  - PerlSource->write_UI() stripped from PerlGenerate->Form_from_Glade_Proto()
+  - PerlSource->write_Subclass() will generate a working subclass with 
+    skeleton subs for all missing signal handlers
+  - PerlSource->write_dist() started new sub to generate dist files
+  - PerlProject->use_Glade_Project() now defaults to allow_gnome if programmer
+    has set <project><gnome_support> to True
+  - PerlSource->perl_SUBCLASS_AUTOLOAD_header() new sub and some extra 
+    utilities generated (toplevel_hide, toplevel_close and toplevel_destroy)
+  - Gnome::Druid* stuff implemented (needs Gtk-Perl CVS after 19991025 and
+    gnome-libs >= 1.0.50 to get the full effect)
+  - PerlRun->create_image() new sub to return a Gtk::Gdk::ImlibImage for
+    Gnome::Druid* logos and watermarks
         
 Fri Oct 22 19:42:41 BST 1999 - Dermot Musgrove <dermot.musgrove@virgin.net>
  - Version 0.40
@@ -69,10 +81,10 @@ Fri Sep 25 23:52:00 BST 1999 - Dermot Musgrove <dermot.musgrove@virgin.net>
     - Version 0.3.12
     - PerlUI->internal_pack_widget() and ->set_child_packing() fixed to cope 
       with Gtk::Packer and its children properly
-    - Version dependency checking added for Perl/Gtk and gnome-libs
+    - Version dependency checking added for Gtk-Perl and gnome-libs
     - Documentation/NEWS split off from README
     - Gnome::App            implemented 
-      Perl/Gtk is still missing the GNOMEUIINFO bindings so Gnome::App menus
+      Gtk-Perl is still missing the GNOMEUIINFO bindings so Gnome::App menus
       and toolbar icons are as incompletely constructed as normal ones ie.
       accelerators and underlines are not handled properly <sigh>
     - Gnome::AppBar         implemented
@@ -96,7 +108,7 @@ Fri Sep 25 23:52:00 BST 1999 - Dermot Musgrove <dermot.musgrove@virgin.net>
 Thu Aug 26 17:30:00 BST 1999 - Dermot Musgrove <dermot.musgrove@virgin.net>
     - Version 0.3.11
     - PerlUI - new_GtkDialog split off from GtkWindow and correct methods used
-      to attach widgets ie vbox(), action_area(). Doesn't work yet as Perl/Gtk
+      to attach widgets ie vbox(), action_area(). Doesn't work yet as Gtk-Perl
       doesn't derive Window methods like allow_grow(). I am holding my breath.
     - Fixed style colors (converted 8bpp-16bpp) and bg_pixmaps (child->style).
     - Added project description to user options (for about_Form or whatever)
@@ -166,7 +178,7 @@ Fri Jul 23 22:04:00 BST 1999 - Dermot Musgrove <dermot.musgrove@virgin.net>
     - Automatically generated signal connects for toplevels removed. They
       must be specified as signals in the Glade file.
     - Gnome widgets' implementation started. There is not a very good match
-      between Glade and Perl/Gtk so all I can implement is the overlap.
+      between Glade and Gtk-Perl so all I can implement is the overlap.
     - new user option 'allow_gnome' to produce code for the Gnome widgets 
       that have been implemented
       
@@ -266,7 +278,7 @@ Thu Jun 24 18:13:00 BST 1999 - Dermot Musgrove <dermot.musgrove@virgin.net>
     
 Tue Jun 22 21:03:00 BST 1999 - Dermot Musgrove <dermot.musgrove@virgin.net>
     - Version 0.0.12
-    - Fixed Table layout, Perl/Gtk wanted [] anon array of strings !
+    - Fixed Table layout, Gtk-Perl wanted [] anon array of strings !
     - Fixed Form_from_XML uninitilized warnings
     - Limited automatic MenuItem accelerators (prefixed with '_' underscore)
       to provide mod1 + next letter.
@@ -285,9 +297,9 @@ Tue Jun 16 14:54:00 BST 1999 - Dermot Musgrove <dermot.musgrove@virgin.net>
     - Radio button/menuitem grouped properly now.
     - Testfile renamed to BusForm.glade in line with Damon's naming
     - Changes have begun for Glade 0.5.0 - 
-    - Label should have 'wrap' property but Perl/Gtk can't do this
+    - Label should have 'wrap' property but Gtk-Perl can't do this
     - Progressbar has many new properties
-    - Toolbar should have 'space_style' propewty - Perl/Gtk can't do this
+    - Toolbar should have 'space_style' propewty - Gtk-Perl can't do this
     - Glade script now called 'rename-to-glade2perl' for obvious reasons
     
 Tue Jun 16 07:00:00 BST 1999 - Dermot Musgrove <dermot.musgrove@virgin.net>
@@ -354,6 +366,6 @@ Fri Jun  4 00:18:00 BST 1999 - Dermot Musgrove <dermot.musgrove@virgin.net>
     - Version 0.0.1 split off from a larger and somewhat open-ended
       project. It now includes Glade::Perl::Generate (GPG) that can read a 
       Glade XML file, convert it into	a hierarchy of widgets in a hash, build 
-      the UI using Perl/Gtk and write the	sources to two Perl .pm files.
+      the UI using Gtk-Perl and write the	sources to two Perl .pm files.
       Glade::Perl::Run has some run-time subs used in the Generate run and 
       also in any subsequent runs of the generated Perl modules.

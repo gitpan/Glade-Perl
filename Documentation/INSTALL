@@ -1,9 +1,9 @@
-Glade::PerlGenerate (GPG) Perl/Gtk-Glade UI builder and source generator
+Glade::PerlGenerate (GPG) Gtk-Perl-Glade UI builder and source generator
 --------------------------------------------------------------------
 TO INSTALL
 ----------
 There is a standard Makefile.PL but it will not check any dependencies
-(Glade, Gtk, Perl/Gtk XML::Parser etc) and neither will it install the
+(Glade, Gtk, Gtk-Perl XML::Parser etc) and neither will it install the
 glade2perl script.
 
 To install
@@ -28,7 +28,7 @@ for the Glade build phase.
 
 TO RUN MANUALLY
 ---------------
-You need Perl, Glib/Gtk+, Perl/Gtk and XML::Parser packages and of course
+You need Perl, Glib/Gtk+, Gtk-Perl and XML::Parser packages and of course
 Glade if you want to edit the interface files.
 ------------------------------------------------------------------------
 
@@ -55,7 +55,7 @@ The 'Help/About' button will show details of Glade::PerlGenerate.
 B) To run the code that you have generated, call (again from the 
 same directory as this README file)
 
-    perl -e 'use Generated::BusForm; BusForm->run'
+    perl -e 'use Generated::BusForm; BusFrame->run'
 
 Now, _all_ signals will cause an information message_box since you
 have generated stubs for any signal handlers that were missing at Build time.
@@ -72,8 +72,8 @@ will block the source code generation.
 -------------------------------------------------------------------------
 
 C) To build a UI from an XML string. Look at the file test.pl for an
-example of doing this. Uncomment the call to 
-Glade::PerlGenerate->Form_from_XML to show a simple test form.
+example of doing this. Use a call to Glade::PerlGenerate->Form_from_XML to 
+show a Glade UI.
 
 -------------------------------------------------------------------------
 You may have problems with your own Glade project files if they use widgets

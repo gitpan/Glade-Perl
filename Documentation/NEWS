@@ -1,8 +1,14 @@
-NEWS of Glade::PerlGenerate (GPG) Perl/Gtk-Glade UI builder and source generator
+NEWS of Glade::PerlGenerate (GPG) Gtk-Perl-Glade UI builder and source generator
 --------------------------------------------------------------------
 
 NEW 'FEATURES'
 --------------
+version 0.42 implements Gnome::Animator and makes change necessary for
+    Gtk-Perl CVS versions after 19991029. Also fixes some Gnome related 
+    failures (I hope). 
+    You will need the CVS version after 19991107 and Glade 0.5.4 to see all
+    the improvements although older versions should still work.
+
 version 0.41 implements Gnome::Druid stuff and also generates a working
     subclass with skeleton signal handler subs for you to copy and edit.
     We can now generate _all_ Glade widgets (and mostly correctly :-)
@@ -19,10 +25,10 @@ version 0.3.13 allows you to have a Gnome::App with some widgets in it! Some
 
 version 0.3.12 does most Gnome stuff now but you will need the CVS version
     after 19990922 to get the best from it. I have added a version dependancy
-    checking so that older versions (eg Perl/Gtk 0.6123) will still work but 
+    checking so that older versions (eg Gtk-Perl 0.6123) will still work but 
     without the improvements and newer CVS builds can get at the improvements.
     
-version 0.3.11 handles all widgets/properties that Perl/Gtk 0.6123 can handle
+version 0.3.11 handles all widgets/properties that Gtk-Perl 0.6123 can handle
     as well as styles, although Glade cannot handle styles properly yet.
     Signals are now connected after the widgets are constructed.
 
@@ -30,7 +36,7 @@ version 0.3.8 does more Gnome widgets, GtkImage, MenuItem label accelerator
     underlining, signal handlers now get ref to form and first styles (fonts)
     
 version 0.3.5 (and greater) generates Gnome widgets but many are missing in the
-    generally available Perl/Gtk (0.5121) :-(.
+    generally available Gtk-Perl (0.5121) :-(.
 
 version 0.3.4 produces an OO class for each toplevel window/dialog. Thanks to 
     Robert Schwebel for many ideas and tests.

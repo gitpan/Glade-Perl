@@ -16,11 +16,17 @@ Glade-Perl - perl source code generator
 
 TODO
 ----
+*   Make better Examples/tests.
+    1) Simple 'getting started' project and subclass example with docs
+    2) UI from string (exists)
+    3) More complex Gtk UI with subclass and use_modules
+    4) Gnome UI with subclass
+
 *   Cut out all checks and diagnostics if verbose == 0
 
 *   Recombine into fewer .pm files, possibly fewer packages
 
-*   Make mySUBS file (as pre 0.2.0) if requested
+*   Make projectname_SUBS.pm file (as pre 0.2.0) if requested
 
 *   Make dist files eg Makefile.PL, MANIFEST, Changelog etc etc
 
@@ -105,11 +111,13 @@ TODO
 
 DONE
 ----
-*   Implement Gnome widget 'GnomeDruid*',(needs Perl/Gtk CVS after 19990925)
+*   Implement Gnome widget 'GnomeAnimator',(in Glade >= 0.5.4)
+
+*   Implement Gnome widget 'GnomeDruid*',(needs Gtk-Perl CVS after 19990925)
 
 *   I have no idea how portable the Makefile.PL is. There are bound to be 
-    problems with Gtk and Perl/Gtk versions, possibly I can handle this via 
-    Perl/Gtk's ./configure and capabilities. 
+    problems with Gtk and Gtk-Perl versions, possibly I can handle this via 
+    Gtk-Perl's ./configure and capabilities. 
 
     I have heard from users on other platforms so I guess that this works OK
     Please email me with any successes or failures.
@@ -135,17 +143,17 @@ DONE
 *   Implement version-dependant source code generation so that new features
     or widgets available in CVS versions don't break the CPAN release.
 
-*   Implement Gnome widget 'GtkAppBar',    (needs Perl/Gtk CVS after 19990914)
-*   Implement Gnome widget 'GtkDock',      (needs Perl/Gtk CVS after 19990914)
-*   Implement Gnome widget 'GtkDockItem',  (needs Perl/Gtk CVS after 19990914)
-*   Implement Gnome widget 'GtkSpell',     (needs Perl/Gtk CVS after 19990914)
-*   Implement Gnome widget 'GtkCalendar',  (needs Perl/Gtk CVS after 19990914)
-*   Implement Gnome widget 'GnomeApp',     (needs Perl/Gtk CVS after 19990922)
-*   Implement Gnome widget 'GnomeAppBar',  (needs Perl/Gtk CVS after 19990922)
-*   Implement Gnome widget 'GnomeDialog',  (needs Perl/Gtk CVS after 19990922)
-*   Implement Gnome widget 'GnomeDock',    (needs Perl/Gtk CVS after 19990922)
-*   Implement Gnome widget 'GnomeDockItem',(needs Perl/Gtk CVS after 19990922)
-*   Implement Gnome widget 'GnomeSpell',   (needs Perl/Gtk CVS after 19990922)
+*   Implement Gnome widget 'GtkAppBar',    (needs Gtk-Perl CVS after 19990914)
+*   Implement Gnome widget 'GtkDock',      (needs Gtk-Perl CVS after 19990914)
+*   Implement Gnome widget 'GtkDockItem',  (needs Gtk-Perl CVS after 19990914)
+*   Implement Gnome widget 'GtkSpell',     (needs Gtk-Perl CVS after 19990914)
+*   Implement Gnome widget 'GtkCalendar',  (needs Gtk-Perl CVS after 19990914)
+*   Implement Gnome widget 'GnomeApp',     (needs Gtk-Perl CVS after 19990922)
+*   Implement Gnome widget 'GnomeAppBar',  (needs Gtk-Perl CVS after 19990922)
+*   Implement Gnome widget 'GnomeDialog',  (needs Gtk-Perl CVS after 19990922)
+*   Implement Gnome widget 'GnomeDock',    (needs Gtk-Perl CVS after 19990922)
+*   Implement Gnome widget 'GnomeDockItem',(needs Gtk-Perl CVS after 19990922)
+*   Implement Gnome widget 'GnomeSpell',   (needs Gtk-Perl CVS after 19990922)
 
 *   Write a &XmlUtf8Encode() sub for PerlXML->QuoteXMLChars()
 
@@ -158,7 +166,7 @@ DONE
     dynamically in case gnome-libs change the defines. This would allow lookup
     of 'GNOME_STOCK_PIXMAP_SRCHRPL'   => "Search/Replace", for instance.
     
-*   Sort out pixmap creation, Perl/Gtk has limitations here but is improving
+*   Sort out pixmap creation, Gtk-Perl has limitations here but is improving
 
 *   Improve PerlRun->create_pixmap() to use new bindings, possibly do in same
     way that Glade C code in support.c does.
@@ -171,15 +179,5 @@ LONG TERM
 
 BUGS
 ----
-This version doesn't handle Gnome::Druid widgets.
-
 The biggest deficiencies are with menu/toolbar underline accelerators
-
-I still sometimes get Segmentation fault (core dumped) or other errors
-when I close a window from my window manager (IceWM) <sigh>. I hear that 
-this happens with WindowMaker as well. However I connect to 'delete_event' 
-I reckon that this is caused by calling Gtk->main_exit in a different
-module/class to that which called Gtk->main but I can't sort this out.
-The problem seems to be connected to Gnome::Pixmaps and graphics libs but 
-I can't find out exactly what it is. Please email me if you get this problem.
-
+particularly in Gnome::Apps.

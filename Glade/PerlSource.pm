@@ -50,7 +50,7 @@ BEGIN {
                         $first_form
                       );
     $PACKAGE      = __PACKAGE__;
-    $VERSION        = q(0.41);
+    $VERSION        = q(0.42);
     @VARS         = qw( 
                         $VERSION
                         $AUTHOR
@@ -577,7 +577,7 @@ ${indent}${indent}\"Copyright $project->{'date'}\",
 ${indent}${indent}\"$project->{'author'}\", 
 ${indent}${indent}\"$project->{'description'} \\n\".
 ${indent}${indent}\"Gtk version:        \$gtkversion\\n\".
-${indent}${indent}\"Perl/Gtk version:    \$Gtk::VERSION\\n\".
+${indent}${indent}\"Gtk-Perl version:    \$Gtk::VERSION\\n\".
 ${indent}${indent}\"run from file:        \$name\\n\".
 ${indent}${indent}\"$project->{'copying'}\", 
 ${indent}${indent}\"$project->{'logo'}\", 
@@ -604,7 +604,7 @@ ${indent}${indent}__PACKAGE__.\" (version $project->{'version'} - $project->{'da
 ${indent}${indent}\"Written by         $project->{'author'} \\n\\n\".
 ${indent}${indent}\"$project->{'description'} \\n\\n\".
 ${indent}${indent}\"Gtk version:        \$gtkversion\\n\".
-${indent}${indent}\"Perl/Gtk version:    \$Gtk::VERSION\\n\\n\".
+${indent}${indent}\"Gtk-Perl version:    \$Gtk::VERSION\\n\\n\".
 ${indent}${indent}\"run from file:        \$name\";
 ${indent}__PACKAGE__->message_box(\$message, \"About \\u\".__PACKAGE__, ['Dismiss', 'Quit Program'], 1,
 ${indent}${indent}'$project->{'logo'}', 'left' );
@@ -772,7 +772,7 @@ ${indent}${indent}\"Copyright $project->{'date'}\",
 ${indent}${indent}\"$project->{'author'}\", 
 ${indent}${indent}\"$project->{'description'} \\n\".
 ${indent}${indent}\"Gtk version:        \$gtkversion\\n\".
-${indent}${indent}\"Perl/Gtk version:    \$Gtk::VERSION\\n\".
+${indent}${indent}\"Gtk-Perl version:    \$Gtk::VERSION\\n\".
 ${indent}${indent}\"run from file:        \$name\\n\".
 ${indent}${indent}\"$project->{'copying'}\", 
 ${indent}${indent}\"$project->{'logo'}\", 
@@ -799,7 +799,7 @@ ${indent}${indent}__PACKAGE__.\" (version $project->{'version'} - $project->{'da
 ${indent}${indent}\"Written by         $project->{'author'} \\n\\n\".
 ${indent}${indent}\"$project->{'description'} \\n\\n\".
 ${indent}${indent}\"Gtk version:        \$gtkversion\\n\".
-${indent}${indent}\"Perl/Gtk version:    \$Gtk::VERSION\\n\\n\".
+${indent}${indent}\"Gtk-Perl version:    \$Gtk::VERSION\\n\\n\".
 ${indent}${indent}\"run from file:        \$name\";
 ${indent}__PACKAGE__->message_box(\$message, \"About \\u\".__PACKAGE__, ['Dismiss', 'Quit Program'], 1,
 ${indent}${indent}'$project->{'logo'}', 'left' );

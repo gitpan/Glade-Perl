@@ -37,9 +37,9 @@ BEGIN {
     # Tell interpreter who we are inheriting from
     @ISA          = qw( Exporter );
     $PACKAGE      = __PACKAGE__;
-    $VERSION      = q(0.41);
+    $VERSION      = q(0.42);
     $AUTHOR       = q(Dermot Musgrove <dermot.musgrove\@virgin.net>);
-    $DATE         = q(Sun Oct 10 14:13:00 BST 1999);
+    $DATE         = q(Wed Nov 10 00:59:38 GMT 1999);
     $widgets      = {};
     $all_forms    = {};
     # These vars are imported by all Glade-Perl modules for consistency
@@ -225,13 +225,13 @@ sub create_pixmap {
     	}
     }
     if (Gtk::Gdk::Pixmap->can('colormap_create_from_xpm')) {
-        # We have Perl/Gtk after CVS 19990911 so we don't need a realized window
+        # We have Gtk-Perl after CVS 19990911 so we don't need a realized window
         my $colormap = $widget->get_colormap;
         return new Gtk::Pixmap(
             Gtk::Gdk::Pixmap->colormap_create_from_xpm (
                 undef, $colormap, undef, $found_filename));
     } else {
-        # We have an old Perl/Gtk so we need a realized window
+        # We have an old Gtk-Perl so we need a realized window
         $work->{'window'} 	    = $widget->get_toplevel->window	 ;
         unless ($work->{'window'}) {
     	    print STDOUT "error Couldn't get_toplevel_window to construct pixmap from '$filename' in $me\n";

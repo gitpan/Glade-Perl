@@ -31,7 +31,7 @@ BEGIN {
                             $VERSION
                        );
     $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.41);
+    $VERSION        = q(0.42);
     # Tell interpreter who we are inheriting from
     @ISA            = qw( 
                             Glade::PerlXML 
@@ -54,7 +54,8 @@ my %fields = (
     'use_modules'       => undef,   # Existing signal handler modules
     'allow_gnome'       => undef,   # Don't allow gnome widgets
     'start_time'        => undef,   # Time that this run started
-    'options_filename'  => undef,   # Don't read or save options in disk file
+    'project_options'   => undef,   # Don't read or save options in disk file
+#    'options_filename'  => undef,   # Don't read or save options in disk file
     'options_set'       => 'DEFAULT', # Who set the options
 # UI
     'GTK_Interface'     => undef,
@@ -85,7 +86,7 @@ my %fields = (
 # Helpers
     'editors'           => undef,   # Editor calls that are available
     'active_editor'     => undef,   # Index of editor that we are using
-    'my_perl_gtk'       => undef,   # Get the version number from Perl/Gtk
+    'my_perl_gtk'       => undef,   # Get the version number from Gtk-Perl
                                     # '0.6123'   we have CPAN release 0.6123 (or equivalent)
                                     # '19990901' we have CVS version of 1st Sep 1999
     'my_gnome_libs'     => undef,   # Get the version number from gnome_libs
@@ -206,6 +207,39 @@ sub diag_print {
 #===============================================================================
 #=========== Project utilities                                      ============
 #===============================================================================
+sub get_versions {
+    my ($class, $options) = @ARG;
+    if ($options->my_perl_gtk &&
+            ($options->my_perl_gtk > $Gtk::VERSION)) {
+        $class->diag_print (2, 
+            $options->indent."- Gtk-Perl reported version $Gtk::VERSION".
+            " but user overrode with version ".$options->my_perl_gtk);
+    } else {
+        $options->my_perl_gtk($Gtk::VERSION);
+        $class->diag_print (2, 
+            $options->indent."- Gtk-Perl reported version $Gtk::VERSION");
+    }
+    unless ($class->my_perl_gtk_can_do('MINIMUM REQUIREMENTS')) {
+        die "You need to upgrade your Gtk-Perl";
+    }
+    my $gnome_libs_version = `gnome-config --version`;
+    chomp $gnome_libs_version;
+    $gnome_libs_version =~ s/gnome-libs //;
+    if ($options->my_gnome_libs &&
+            ($options->my_gnome_libs > $gnome_libs_version)) {
+        $class->diag_print (2, 
+            $options->indent."- gnome_libs reported version $gnome_libs_version".
+            " but user overrode with version ".$options->my_gnome_libs);
+    } else {
+        $options->my_gnome_libs($gnome_libs_version);
+        $class->diag_print (2, 
+            $options->indent."- gnome_libs reported version $gnome_libs_version");
+    }
+    unless ($class->my_gnome_libs_can_do('MINIMUM REQUIREMENTS')) {
+        die "You need to upgrade your gnome-libs";
+    }
+}
+
 sub merge_options {
     my ($class, $filename, $base_options) = @ARG;
     my $me = "$class->merge_options";
@@ -232,12 +266,12 @@ sub merge_options {
 }
 
 sub save_options {
-    my ($class, $filename, $supplied_options) = @ARG;
-    my $me = "$class->save_options";
+    my ($class, $filename) = @ARG;
+    my $me = __PACKAGE__."->save_options";
     my ($file_options, $key);
-    my %project_options = %{$supplied_options};
+    my %project_options = %{$class};
     my $user_filename = $project_options{'user_options'};
-    $class->diag_print(6, $supplied_options, 'Options to save');
+    $class->diag_print(4, $class, 'Options to save');
     if ($user_filename && -f $user_filename) {
         # Only save options that are different to user_options in file
         $file_options = $class->Proto_from_File(
@@ -263,8 +297,7 @@ sub save_options {
     }
     $project_options{'glade2perl_version'} = $VERSION;
     $class->diag_print (2, "${indent}- Saving project options in file '$filename'");
-    my $xml = $class->XML_from_Proto('', '  ', 'G2P-Options', 
-            \%project_options);
+    my $xml = $class->XML_from_Proto('', '  ', 'G2P-Options', \%project_options);
     $class->diag_print(6, $xml);
     open OPTIONS, ">".($filename) or 
         die "error $me - can't open file '$filename' for output";
@@ -275,7 +308,7 @@ sub save_options {
 
 sub options {
     my ($class, %params) = @ARG;
-    my $me = "$class->options";
+    my $me = (ref $class || $class)."->options";
     my ($key, $first_time, $file);
     my $options;
     if (ref $main::Glade_Perl_Generate_options eq __PACKAGE__) {
@@ -322,7 +355,6 @@ sub options {
     } else {
         $columns = $options->diag_wrap;
     }
-    $options->options_set($me);
     $tab = (' ' x $options->tabwidth);
 # FIXME check that this is portable and always works
 #   why does it give BST interactively but UTC from Glade??
@@ -350,40 +382,12 @@ sub options {
             $class->diag_print(6, $options, 'Options used for Generate run');    
         }
     }
+    $options->options_set($params{'options_set'} || $me);
     if ($first_time && $params{'project_options'}) {
-        # Save the current project options
-        my $work = $options;
-        $work->save_options( $params{'project_options'}, $work, );
+        $options->save_options( $params{'project_options'} );
     }
     bless $options, $PACKAGE;
     return $options;
-}
-
-sub get_versions {
-    my ($class, $options) = @ARG;
-    if ($options->my_perl_gtk &&
-            ($options->my_perl_gtk > $Gtk::VERSION)) {
-        $class->diag_print (2, 
-            $options->indent."- Perl/Gtk reported version $Gtk::VERSION".
-            " but user overrode with version ".$options->my_perl_gtk);
-    } else {
-        $options->my_perl_gtk($Gtk::VERSION);
-        $class->diag_print (2, 
-            $options->indent."- Perl/Gtk reported version $Gtk::VERSION");
-    }
-    my $gnome_libs_version = `gnome-config --version`;
-    chomp $gnome_libs_version;
-    $gnome_libs_version =~ s/gnome-libs //;
-    if ($options->my_gnome_libs &&
-            ($options->my_gnome_libs > $gnome_libs_version)) {
-        $class->diag_print (2, 
-            $options->indent."- gnome_libs reported version $gnome_libs_version".
-            " but user overrode with version ".$options->my_gnome_libs);
-    } else {
-        $options->my_gnome_libs($gnome_libs_version);
-        $class->diag_print (2, 
-            $options->indent."- gnome_libs reported version $gnome_libs_version");
-    }
 }
 
 sub use_Glade_Project {
@@ -401,43 +405,37 @@ sub use_Glade_Project {
     my $glade_file_dirname = dirname($proto->{'glade_filename'});
     $form->{'name'}  = $proto->{'project'}{'name'};
     $form->{'glade_filename'} = $proto->{'glade_filename'};
-    $form->{'directory'} = 
-        $class->full_Path(
-            $proto->{'project'}{'directory'}, 
-            $glade_file_dirname);
-    $form->{'source_directory'} = 
-        $class->full_Path(
-            $proto->{'project'}{'source_directory'},     
-            $glade_file_dirname,
-            $form->{'directory'} );
+    $form->{'directory'} = $class->full_Path(
+        $proto->{'project'}{'directory'}, 
+        $glade_file_dirname);
+    $form->{'source_directory'} = $class->full_Path(
+        $proto->{'project'}{'source_directory'},     
+        $glade_file_dirname,
+        $form->{'directory'} );
     if ($class->Writing_to_File && 
         !-d $form->{'source_directory'}) { 
         $class->diag_print (2, "$indent- Creating source_directory ".
             "'$form->{'source_directory'}' in $me");
         mkpath($form->{'source_directory'} );   # In case it doesn't exist
     }
-    $form->{'pixmaps_directory'} = 
-        $class->full_Path(
-            $proto->{'project'}{'pixmaps_directory'},    
-            $glade_file_dirname, 
-            $form->{'directory'} );
+    $form->{'pixmaps_directory'} = $class->full_Path(
+        $proto->{'project'}{'pixmaps_directory'},    
+        $glade_file_dirname, 
+        $form->{'directory'} );
     # FIXME
     # Make sure that generated subs source filename is not included 
     # in 'use'd packages supplied to us
-    $form->{'UI_filename'} = 
-        $class->full_Path(
-            $proto->{'project'}{'name'}.".pm",         
-            $form->{'source_directory'} );
-    $form->{'SUBCLASS_filename'} = 
-        $class->full_Path(
-            "Sub".$proto->{'project'}{'name'}.".pm",         
-            $form->{'source_directory'} );
+    $form->{'UI_filename'} = $class->full_Path(
+        $proto->{'project'}{'name'}.".pm",         
+        $form->{'source_directory'} );
+    $form->{'SUBCLASS_filename'} = $class->full_Path(
+        "Sub".$proto->{'project'}{'name'}.".pm",         
+        $form->{'source_directory'} );
     $form->{'GTK-Interface'}     = $proto;
-    $form->{'logo'} = 
-        $class->full_Path(
-            'Logo.xpm', 
-            $form->{'pixmaps_directory'}, 
-            '' );
+    $form->{'logo'} = $class->full_Path(
+        'Logo.xpm', 
+        $form->{'pixmaps_directory'}, 
+        '' );
 #        $proto->{'project'}{'pixmaps_directory'}."/Logo.xpm";
         unless ( -f "$form->{'logo'}") { $form->{'logo'} = '';}
 
@@ -456,6 +454,9 @@ sub use_Glade_Project {
     unless (defined $options->{'allow_gnome'}) {
         $options->{'allow_gnome'} = 
             ('*true*y*yes*on*1*' =~ m/\*$gnome_support\*/i) ? '1' : '0';
+        if ($options->project_options) {
+            $options->save_options( $options->project_options );
+        }
     }
     $form->{'version'}      = $options->version;
     $form->{'date'}         = $options->date        || $options->start_time;

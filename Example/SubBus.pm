@@ -72,7 +72,7 @@ sub about_Form {
         __PACKAGE__." (version 9.9.9 - Fri Jul 23 21:52:05 BST 1999)\n".
         "Written by         A subclass programmer\n\n".
         "Gtk version:        $gtkversion\n".
-        "Perl/Gtk version:    $Gtk::VERSION\n\n".
+        "Gtk-Perl version:    $Gtk::VERSION\n\n".
         "run from file:        $name";
     __PACKAGE__->message_box(
         $message, 

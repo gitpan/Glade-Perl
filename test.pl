@@ -84,8 +84,8 @@ source code generator",
     'project_options' => $project_options_file, 
                                    # Project-specific options     Don't read file
     'allow_gnome'   => undef,      # Ignore/report Gnome widgets  Ignore Gnome
-#   'my_perl_gtk'   => '0.6123',   # I have CPAN version 0.6123   Use Perl/Gtk's version no
-#   'my_perl_gtk'   => '19991001', # I have the gnome.org CVS     Use Perl/Gtk's version no
+#   'my_perl_gtk'   => '0.6123',   # I have CPAN version 0.6123   Use Gtk-Perl's version no
+#   'my_perl_gtk'   => '19991001', # I have the gnome.org CVS     Use Gtk-Perl's version no
                                    # version of 'gnome-perl' that 
                                    # I downloaded on Oct 1st 1999
 #   'my_gnome_libs' => '19991001', # I have the gnome.org CVS     Use gnome-libs version no

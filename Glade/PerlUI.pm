@@ -19,7 +19,7 @@ require 5.000; use English; use strict 'vars', 'refs', 'subs';
 BEGIN {
     use UNIVERSAL         qw( can );          # in lots of subs
     use Gtk               qw(  );             # Everywhere
-# Comment out the line below if you have a really old version of Perl/Gtk
+# Comment out the line below if you have a really old version of Gtk-Perl
     use Gtk::Keysyms;
     use Glade::PerlSource qw( :VARS );
     use Glade::PerlUIGtk  qw( :VARS );;
@@ -39,7 +39,7 @@ BEGIN {
         $missing_widgets
         );
     $PACKAGE =          __PACKAGE__;
-    $VERSION        = q(0.41);
+    $VERSION        = q(0.42);
 
     $ignored_widgets = 0;
     $missing_widgets = 0;
@@ -103,7 +103,7 @@ my $gnome_widgets       = join( " ",
     'GtkPixmapMenuItem',
     );
 $gnome_libs_depends     = { 
-    'ALL EXCEPT THOSE BELOW' => '1.0.8',
+    'MINIMUM REQUIREMENTS' => '1.0.08',
     'gtk_clock_new'         => '1.0.16',
     'GnomeDruid'            => '1.0.50',
     'GnomeDruidPageFinish'  => '1.0.50',
@@ -111,8 +111,10 @@ $gnome_libs_depends     = {
     'GnomeDruidPageStart'   => '1.0.50',
     };
 $perl_gtk_depends       = { 
-    'ALL EXCEPT THOSE BELOW' => '0.6123',
+    'MINIMUM REQUIREMENTS' => '0.6123',
     # Those below don't work yet even in the latest CVS version
+    'GnomeDruidPageStandard::vbox'
+                        => '19991107',
     # Those below work in the CVS version after 19991025
     'GnomeDruid'        => '19991025',
     # Those below work in the CVS version after 19991001
@@ -185,20 +187,20 @@ sub my_perl_gtk_can_do {
             # We need a CVS version
             if ($perl_gtk_depends->{$action} > 29990000) {
                 # The CVS version can't even do it yet
-                $class->diag_print(1, "warn  Perl/Gtk version ".
+                $class->diag_print(1, "warn  Gtk-Perl version ".
                     $main::Glade_Perl_Generate_options->my_perl_gtk.
                     " cannot do '$action' (properly) and neither can".
                     " the CVS version !!!");
             } else {
                 # We need a new CVS version
-                $class->diag_print(1, "warn  Perl/Gtk version ".
+                $class->diag_print(1, "warn  Gtk-Perl version ".
                     $main::Glade_Perl_Generate_options->my_perl_gtk.
                     " cannot do '$action' (properly) we need".
                     " CVS module 'gnome-perl' after $perl_gtk_depends->{$action}");
             }
         } else {
             # We need a new CPAN version
-            $class->diag_print(1, "warn  Perl/Gtk version ".
+            $class->diag_print(1, "warn  Gtk-Perl version ".
                 $main::Glade_Perl_Generate_options->my_perl_gtk.
                 " cannot do '$action' (properly) we need".
                 " CPAN version $perl_gtk_depends->{$action}");
@@ -279,7 +281,7 @@ sub use_par {
 #            " to default ('$self') in $me");
         
     } elsif ($request == $LOOKUP) {
-        # make an effort to convert from Gtk to Perl/Gtk constant/enum name
+        # make an effort to convert from Gtk to Gtk-Perl constant/enum name
         $self =~ s/^G[DT]K_//;    # strip off leading GDK_ or GTK_
 # FIXME remove any GNOME types that are useless or improve whole lookup
 # process, perhaps only define the ones that can't be predicted or write a
@@ -367,7 +369,7 @@ sub use_par {
 
     } elsif ($request == $KEYSYM) {
         $self =~ s/GDK_//;
-# If you have an old version of Perl/Gtk that doesn't have Gtk::Keysyms
+# If you have an old version of Gtk-Perl that doesn't have Gtk::Keysyms
 # use the next line instead of the Gtk::Keysyms{$self} line below it
 #        $self = ord ($self );
         $self = $Gtk::Keysyms{$self};
@@ -1083,21 +1085,17 @@ sub new_accelerator {
     }
 #--------------------------------------
 
+#  gtk_widget_add_accelerator (accellabel3, "button_press_event", accel_group,
+#                              GDK_L, GDK_MOD1_MASK,
+#                              GTK_ACCEL_VISIBLE);
+#    $class->add_to_UI( $depth, "${current_form}\{'$parentname'}->add_accelerator(".
+#        "'$signal', ${current_form}\{'accelgroup'}, '$key', $mods, $accel_flags);");
+
     if (eval "${current_form}\{'$parentname'}->can('$signal')") {
         $class->add_to_UI( $depth, "${current_form}\{'accelgroup'}->add(".
             "'$key', $mods, $accel_flags, ".
             "${current_form}\{'$parentname'}, '$signal');");
     } else {
-# FIXME - this is all tosh, why do some signals add and others not ?
-#Thu Jun 17 05:49:29 1999 Gtk-WARNING **: gtk_accel_group_add(): 
-# signal "key_press_event" in the `GtkAccelLabel' class ancestry
-#   cannot be used as accelerator signal at (eval 790) line 1.
-#        $class->add_to_UI($depth, "${current_form}\{'accelgroup'}->event(".
-#            "'$signal');");
-#	FAILED with Eval error 'Can't locate object method "event" via package 
-#       "Gtk::AccelGroup" at (eval 807) line 1.
-#	FAILED with Eval error 'Can't locate object method "set_events" via package 
-#       "Gtk::AccelGroup" at (eval 807) line 1.
         $class->diag_print (1, "error Widget '$parentname' can't emit signal ".
             "'$signal' as requested - what's wrong?");
     }
@@ -1230,6 +1228,9 @@ sub new_signal {
 #                print $expr."\n";
                 eval $expr
             }
+            # Now write a signal_connect for generated code
+            # All these back-slashes are really necessary as these strings
+            # are passed through so many others (evals and so on)
             $expr = "push \@{${current_form}\{'Signal_Strings'}}, ".
                 "\"$class->add_to_UI( 1, ".
                 "\\\"\\\\\\${current_form}\{'$object'}->$call( ".
@@ -1338,11 +1339,13 @@ sub new_from_child_name {
 
 #---------------------------------------
     } elsif (' GnomeDruidPageStandard:vbox ' =~ / $type /) {
-#        return undef;
-# FIXME Gtk-Perl can't do this 19991025 - I have patched it
-        $class->add_to_UI( $depth, 
-            "\$widgets->{'$name'} = ".
-                "${current_form}\{'$parent'}->vbox;" );
+        if ($class->my_perl_gtk_can_do('GnomeDruidPageStandard::vbox')) {
+            $class->add_to_UI( $depth, 
+                "\$widgets->{'$name'} = ".
+                    "${current_form}\{'$parent'}->vbox;" );
+        } else {
+            return undef;
+        }
 
 #---------------------------------------
     } elsif (eval "${current_form}\{'$parent'}->can('$type')") {

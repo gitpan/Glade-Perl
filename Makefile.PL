@@ -7,8 +7,8 @@ use ExtUtils::MakeMaker;
 # Versions to check for held somewhere obvious
 my $need_version = {
     'Perl'          => '5.000',     # Done above
-    'gtk+'          => '1.2.3',     # Possibly trust Perl/Gtk to have done it
-    'Perl/Gtk'      => '0.6123',
+    'gtk+'          => '1.2.3',     # Possibly trust Gtk-Perl to have done it
+    'Gtk-Perl'      => '0.6123',
     'XML::Parser'   => '2.19',
     'glade'         => '0.5.3',     # Not absolutely necessary yet
 };

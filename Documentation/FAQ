@@ -1,5 +1,16 @@
 This is the Frequently Asked Question list for Glade-Perl source generator
+--------------------------------------------------------------------------
+Q   Glade-Perl fails with this message:
+    FAILED with Eval error 'Can't locate object method "button" via
+        package "Gnome::Stock" at (eval 373) line 1.
 
+A   The error means that Gnome wasn't available. There is a bug in version 
+    <= 0.42 so that the <allow_gnome> project option was not saved. 
+    Either add/amend the line in file projectname.glade2perl.xml to read:
+        <allow_gnome>1</allow_gnome>
+        
+    or, better, upgrade to 0.42. 
+    
 --------------------------------------------------------------------------
 Q   How do I write signal handlers in a separate module?
 
@@ -47,7 +58,7 @@ A   Each instance of a form (you can have more than one copy of a UI showing at
 Q   My GtkClock does not show the current time
 
 A   Older versions of gnome-libs (at least <= 1.0.8) do not handle the clock 
-    type 'realtime' properly. Perl/Gtk 0.6123 cannot explicitly set the type 
+    type 'realtime' properly. Gtk-Perl 0.6123 cannot explicitly set the type 
     so we are stuck. Upgrade to a newer version of gnome-libs.
 
         
@@ -55,7 +66,7 @@ A   Older versions of gnome-libs (at least <= 1.0.8) do not handle the clock
 Q   When I upgraded to Glade-Perl version 0.3.5 (or greater) I get error ...
     'Can't locate Gtk/Keysyms.pm in @INC (@INC contains: .....'
     
-A   You have a flawed version of Perl/Gtk - eg released version 0.5121. There
+A   You have a flawed version of Gtk-Perl - eg released version 0.5121. There
     are many improvements in later versions (or in gnome.org CVS repository),
     for example, Glade-Perl now uses the new keysyms bindings in Gtk::Keysysms.
     Version 0.6123 is now available on CPAN (20 Aug 1999), otherwise you can

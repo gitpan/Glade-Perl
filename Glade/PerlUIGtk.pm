@@ -31,7 +31,7 @@ BEGIN {
                             $Notebook_tab
                           );
     $PACKAGE =          __PACKAGE__;
-    $VERSION        = q(0.41);
+    $VERSION        = q(0.42);
     @VARS           = qw( 
                             $VERSION
                             $AUTHOR
@@ -96,6 +96,7 @@ sub new_GtkAccelLabel {
         $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_pattern(".
             "'$pattern');" );
 # FIXME How do we know which widget/signal to emit?
+# Should we use set_accel_widget? Probably I guess but how?
 # How should we check that this is all correct?
 # Look at gnome-libs gnome-libs/libgnomeui/gnome-app-helper.c
 #        if (eval "${current_form}\{'$parent'}->can('button_press_event')") {
@@ -111,6 +112,9 @@ sub new_GtkAccelLabel {
 #            "'".ord(lc($accel_key))."', ['mod1_mask'], ['visible', 'locked'], ".
 #            "\$widgets->{'$name'}, 'activate');");
     }
+#use Data::Dumper; print Dumper($proto);
+#    $class->add_to_UI( -$depth, "\$widgets->{'$name'}->set_accel_widget(".
+#        "$current_form\{'$proto->{'signal'}{'object'}'});" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_justify(".
         "'$justify' );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_line_wrap('$wrap' );" );
@@ -205,9 +209,7 @@ sub new_GtkButton {
     unless ($class->new_from_child_name($parent, $name, $proto, $depth )) {
 #    unless ($proto->{'child_name'} ) {
         my $label = $class->use_par($proto, 'label', $DEFAULT,  '' );
-# FIXME use $LOOKUP instead
         my $stock_button = $class->use_par($proto, 'stock_button',  $LOOKUP, '');
-#        my $stock_button = $class->use_par($proto, 'stock_button',  $LOOKUP, '' );
         if ($label) {
 # FIXME This should probably be split into GnomeStock(Button) and GtkButton
             if ($class->my_perl_gtk_can_do('Gnome::Stock')) {
@@ -231,8 +233,6 @@ sub new_GtkButton {
         } else {
             if ($class->my_perl_gtk_can_do('Gnome::Stock')) {
                 if ($stock_button) {
-# FIXME use $LOOKUP instead and lose the line below
-#                    $stock_button = $Glade::PerlUIExtra::gnome_enums->{$stock_button};
                     $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
                         "Gnome::Stock->button('$stock_button' );" );
 #                } elsif ($stock_pixmap) {
@@ -912,8 +912,9 @@ sub new_GtkMenuBar {
     my $shadow_type = $class->use_par($proto, 'shadow_type', $LOOKUP );
 
     $class->add_to_UI($depth, "\$widgets->{'$name'} = new Gtk::MenuBar("." );" );
-    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_shadow_type(".
-        "'$shadow_type' );" );
+    $shadow_type &&
+        $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_shadow_type(".
+            "'$shadow_type' );" );
 
     $class->pack_widget($parent, $name, $proto, $depth );
     return $widgets->{$name};

@@ -26,7 +26,7 @@ BEGIN {
                             $PACKAGE 
                           );
     $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.41);
+    $VERSION        = q(0.42);
     # Tell interpreter who we are inheriting from
     @ISA            = qw(
                             Glade::PerlProject
@@ -48,7 +48,7 @@ sub about_Form {
         "version: $VERSION - $DATE)\n".
         "Written by: $AUTHOR\n\n".
         "Gtk version: $gtkversion\n".
-        "Perl/Gtk version:    $Gtk::VERSION\n\n".
+        "Gtk-Perl version:    $Gtk::VERSION\n\n".
         "run from file:        $name";
     my $widget = $PACKAGE->message_box($message, 
         "About \u$PACKAGE", 
@@ -156,6 +156,7 @@ sub Form_from_Pad_Proto {
     }
     if ($main::Glade_Perl_Generate_options->allow_gnome) {
         $class->diag_print (6, "$indent- Use()ing Gnome in $me");
+        eval "use Gnome;";
         Gnome->init(__PACKAGE__, $VERSION);
     } else {
         Gtk->init;
@@ -180,14 +181,12 @@ sub Form_from_Pad_Proto {
     }
     $module = "$glade_proto->{'project'}{'source_directory'}";
     $module =~ s/.*\/(.*)$/$1/;
-    # Look through $proto for any unused attributes (still defined) and report them
+    # Look through $proto and report any unused attributes (still defined)
     if ($class->diagnostics(2)) {
         $class->diag_print (2, "-----------------------------------------------------------------------------");
         $class->diag_print (2, "$indent  CONSISTENCY CHECKS");
         $class->diag_print (2, "$indent- $missing_widgets unused widget properties");
-        $class->diag_print (2, "$indent- $ignored_widgets ".
-            "widgets were ignored (one or more of ".
-            "'$ignore_widgets')");
+        $class->diag_print (2, "$indent- $ignored_widgets widgets were ignored (one or more of '$ignore_widgets')");
         $class->diag_print (2, "$indent- ".$class->unpacked_widgets." unpacked widgets");
 #        $class->diag_print (2, "$indent- ".$class->unhandled_signals." unhandled signals");
         $class->diag_print (2, "-----------------------------------------------------------------------------");
@@ -346,8 +345,8 @@ Glade::PerlGenerate - Generate Perl source from a Glade XML project file.
    'project_options' => $project_options_file, 
                                   # Project-specific options     Don't read file
    'allow_gnome'   => undef,      # Ignore/report Gnome widgets  Ignore Gnome
- # 'my_perl_gtk'   => '0.6123',   # I have CPAN version 0.6123   Use Perl/Gtk's version no
- # 'my_perl_gtk'   => '19991001', # I have the gnome.org CVS     Use Perl/Gtk's version no
+ # 'my_perl_gtk'   => '0.6123',   # I have CPAN version 0.6123   Use Gtk-Perl's version no
+ # 'my_perl_gtk'   => '19991001', # I have the gnome.org CVS     Use Gtk-Perl's version no
                                   # version of 'gnome-perl' that 
                                   # I downloaded on Oct 1st 1999
  # 'my_gnome_libs' => '19991001', # I have the gnome.org CVS     Use gnome-libs version no
@@ -372,7 +371,7 @@ Glade::PerlGenerate - Generate Perl source from a Glade XML project file.
 
 Glade::PerlGenerate reads a <GTK-Interface> definition from a Glade
 file (or a string) using XML::Parser, converts it into a hash of hashes 
-and works its way through this to show the UI using Perl/Gtk bindings. 
+and works its way through this to show the UI using Gtk-Perl bindings. 
 The module can also optionally generate Perl source code to show the UI 
 and handle the signals. Any signal handlers that are specified in the 
 project file but not visible at Generate time will be hijacked to show 
