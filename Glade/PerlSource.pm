@@ -60,9 +60,9 @@ BEGIN {
                         $init_string
                       );
     $PACKAGE      = __PACKAGE__;
-    $VERSION      = q(0.60);
+    $VERSION      = q(0.61);
     $AUTHOR       = q(Dermot Musgrove <dermot.musgrove@virgin.net>);
-    $DATE         = q(Fri May  3 03:56:25 BST 2002);
+    $DATE         = q(Sun Nov 17 03:21:11 GMT 2002);
     @VARS         = qw( 
                         $PARTYPE $LOOKUP $BOOL $DEFAULT $KEYSYM $LOOKUP_ARRAY
 
@@ -372,24 +372,13 @@ sub write_distribution {
     my $exec_mode = 0755;
     my $count = 0;
     
-    $class->dist->directory($class->full_Path(
-        $class->dist->directory, $class->glade->directory));
-    
-    if ($class->dist->directory ne $class->glade->directory) {
-        unless (-d $class->dist->directory) { 
-            # Source directory does not exist yet so create it
-            $Glade_Perl->diag_print (2, "%s- Creating distribution '%s' in %s", 
-                $indent, $class->dist->directory, $me);
-            mkpath($class->dist->directory );
-        }
-    }
-    $class->dist->spec($class->app->name.".spec");
+    $class->dist->spec($class->full_Path(
+        ($class->dist->spec || $class->app->name.".spec"), 
+        $class->glade->directory));
+
     for $file (sort keys %{$class->dist}) {
         next unless $force || $class->dist->{$file};
-        unless ("*$permitted_fields*directory*write*type*compress*scripts*docs*" =~ /\*$file\*/) {
-            $class->dist->{$file} = $class->full_Path(
-                $class->dist->{$file}, 
-                $class->dist->directory);
+        unless ("*$permitted_fields*directory*write*type*compress*scripts*docs*bin_directory*test_directory*" =~ /\*$file\*/) {
             if ($force || !-f $class->dist->{$file}) {
                 $class->diag_print(2, "%s- Generating distribution file '%s'",
                     $class->source->indent, $class->dist->{$file});
@@ -401,7 +390,7 @@ sub write_distribution {
                 }
                 $class->save_file_from_string($class->dist->{$file}, $string);
                 $count++;
-                if ('*test_pl*' =~ /\*$file\*/) {
+                if ('*test_pl*bin*' =~ /\*$file\*/) {
                     chmod $exec_mode, $class->dist->{$file};
                 }
             }
@@ -641,6 +630,34 @@ rm -rf \$RPM_BUILD_ROOT
 
 sub dist_test_pl {
     my ($class) = @_;
+    my $init_string;
+    if ($class->app->allow_gnome) {
+        $init_string .= "Gnome->init(\"\$PACKAGE\", \"\$VER"."SION\");";
+    } else {
+        $init_string .= "Gtk->init;";
+    }
+
+return "#!/usr/bin/perl
+#==============================================================================
+#=== This is a test script
+#==============================================================================
+require 5.000; use strict 'vars', 'refs', 'subs';
+
+use Test;
+BEGIN { plan tests => 2 };
+
+use ".$class->test->use_module.";
+ok(1);
+
+$init_string
+my \$window = ".$class->test->first_form."->new;
+ok(\$window->INSTANCE);
+
+";
+}
+
+sub dist_bin {
+    my ($class) = @_;
 return "#!/usr/bin/perl
 #==============================================================================
 #=== This is a toplevel script
@@ -757,6 +774,7 @@ ${indent}${indent}_('$project->{'description'}').\"\\n\".
 ${indent}${indent}\"Gtk \".     _(\"version\").\": \$gtkversion\\n\".
 ${indent}${indent}\"Gtk-Perl \"._(\"version\").\": \$Gtk::VERSION\\n\".
 ${indent}${indent}`gnome-config --version`.\"\\n\".
+${indent}${indent}\"Glade-Perl "._("version").": \$Glade::PerlRun::VERSION\\n\".
 ${indent}${indent}_(\"run from file\").\": \$name\\n \\n\".
 ${indent}${indent}'$project->{'copying'}', 
 ${indent}${indent}\"$logo\", 
@@ -783,6 +801,8 @@ ${indent}${indent}_(\"Written by\").\" \$AUTHOR \\n\\n\".
 ${indent}${indent}_('$project->{'description'}').\" \\n\\n\".
 ${indent}${indent}\"Gtk \".     _(\"version\").\": \$gtkversion\\n\".
 ${indent}${indent}\"Gtk-Perl \"._(\"version\").\": \$Gtk::VERSION\\n\".
+${indent}${indent}\"Glade-Perl "._("version").": \$Glade::PerlRun::VERSION\\n\".
+${indent}${indent}\"\\n\".
 ${indent}${indent}_(\"run from file\").\": \$name\";
 ${indent}__PACKAGE__->message_box(\$message, _(\"About\").\" \\u\".__PACKAGE__, [_('Dismiss'), _('Quit Program')], 1,
 ${indent}${indent}\"$logo\", 'left' );

@@ -12,6 +12,7 @@ use strict;
 my @programs_to_install = qw(glade2perl);
 
 my $prereq_pm = {
+    'Gtk'               => 0.7000,
     'XML::Parser'       => 2.19,
     'Unicode::String'   => 2.04,
     };
@@ -100,6 +101,7 @@ The missing modules can be obtained from CPAN. Visit
 WriteMakefile(
     'DISTNAME'      => 'Glade-Perl',
     'NAME'          => 'Glade',
+    'AUTHOR'        => 'Dermot Musgrove <dermot.musgrove@virgin.net>',
     'VERSION_FROM'  => 'Glade/PerlRun.pm',
     'EXE_FILES'     => [ map {"Example/$_"} @programs_to_install ],
     'clean'         => { FILES => '$(EXE_FILES)' },

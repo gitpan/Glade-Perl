@@ -92,13 +92,13 @@ Doesn't the world seem a richer place with the beautiful contributions of
 these creative people? I have only mentioned the most obvious names and I
 apologise to those who I have missed out.
 
-Glade       Damon Chaplin <damon at karuna.freeserve.co.uk> Main author
+Glade       Damon Chaplin <damon at ximian.com> Main author
             Martijn van Beers <martijn at earthling.net> Part of the source code 
             output, some popup menu functions, and the widget tree view.
 GTK         Copyright - Peter Mattis, Spencer Kimball and Josh MacDonald
 gnome-libs  Too many to list, check the AUTHORS file in the dist
 Gtk-Perl    Kenneth Albanowski <kjahds at kjahds.com> and
-            Paolo Molaro <lupus at lettere.unipd.it>
+            Paolo Molaro <lupus at ximian.com>
 Perl        Larry Wall <larry at wall.org>, with the help of oodles of other folks
 XML::Parser Larry Wall <larry at wall.org> wrote version 1.0.
             Clark Cooper <coopercl at sch.ge.com> picked up support, changed the 

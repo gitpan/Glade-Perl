@@ -50,9 +50,9 @@ BEGIN {
     $ignored_widgets = 0;
     $missing_widgets = 0;
     $PACKAGE      = __PACKAGE__;
-    $VERSION      = q(0.60);
+    $VERSION      = q(0.61);
     $AUTHOR       = q(Dermot Musgrove <dermot.musgrove@virgin.net>);
-    $DATE         = q(Fri May  3 03:56:25 BST 2002);
+    $DATE         = q(Sun Nov 17 03:21:11 GMT 2002);
     @METHODS =          qw(  );
     @VARS =             qw(
         $gnome_widgets
@@ -411,7 +411,7 @@ sub use_par {
     # Backslash escape any single quotes (unless they are already backslashed)
     $self =~ s/(?!\\)(.)'/$1\\'/g;
     $self =~ s/^'/\\'/g;
-    return $self;
+    return "$self";
 }
 
 sub construct_widget {
@@ -428,7 +428,12 @@ sub construct_widget {
 
     }
     if ($depth == 1) {
+        $name = $class->fix_name($name);
         $forms->{$name} = {};
+        if (keys %{$forms->{$name}}) {
+            die "You have already defined a form called '$name'";
+        }
+
         # We are a toplevel window so create a new hash and 
         # set $current_form with its name
         # All these back-slashes are really necessary as this string
@@ -1208,7 +1213,7 @@ sub set_window_properties {
     my $wmclass_name  = $class->use_par($proto, 'wmclass_name',  $DEFAULT, '' );
     my $wmclass_class = $class->use_par($proto, 'wmclass_class', $DEFAULT, '' );
 
-    $class->add_to_UI( $depth, "\$widgets->{'$name'}->position('$position' );" );
+    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_position('$position' );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_policy(".
         "$allow_shrink, $allow_grow, $auto_shrink );" );
     $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_modal($modal );" );
@@ -1577,7 +1582,7 @@ sub new_signal {
     my ($class, $parentname, $proto, $depth) = @_;
     my $me = "$class->new_signal";
     my $signal  = $proto->{name};
-    my ($call, $expr, $when);
+    my ($call, $expr, $when, $changes);
 #    $class = ref $class || $class;
 # FIXME to do signals properly
     if ($proto->{'handler'}) {
@@ -1586,6 +1591,16 @@ sub new_signal {
         my $object  = $class->use_par($proto, 'object', $DEFAULT, '');
         my $data    = $class->use_par($proto, 'data', $DEFAULT, '');
         my $after   = $class->use_par($proto, 'after', $BOOL, 'False');
+
+        # Triple escape any double-quotes so that they get passed through
+        $changes  = $data =~ s/(?!\\)(.)"/$1\\\\\\"/g;
+        $changes += $data =~ s/^"/\\\\\\"/g;
+        if ($changes) {
+            $Glade_Perl->diag_print (1, "warn signal handler data ('%s') ".
+                "contains %s double-quote(s) which has(ve) been ".
+                "escaped so that they are preserved. ",
+                $handler, $changes);
+        }
         unless ($object) {$object = $parentname}
         if ($after)  {
             $when = 'after_';
@@ -1594,13 +1609,16 @@ sub new_signal {
             $when = '';
             $call .= 'signal_connect'
         }
+
+        $handler = $class->fix_name($handler, 'TRANSLATE');
+
         if ($handler =~ /[- \.]/) {
             my %ents=('-'=>'MINUS',' '=>'SPACE','.'=>'DOT');
-            my $replaced = $handler =~ s/([- \.])/_$ents{$1}_/g;
+            $changes = $handler =~ s/([- \.])/_$ents{$1}_/g;
             $Glade_Perl->diag_print (1, "error signal handler ('%s') ".
                 "contains %s minus sign/space/dot(s) which has(ve) been ".
                 "substituted because they are illegal in a sub name in Perl. ",
-                $handler, $replaced);
+                $handler, $changes);
         }            
         # We can check dynamically below
         # Flag that we are done
@@ -1621,7 +1639,7 @@ sub new_signal {
             unless ($Glade_Perl->Writing_Source_only) {
                 $expr = "push \@{${current_form}\{'Signal_Strings'}}, ".
                     "\"\\${current_form}\{'$object'}->$call( ".
-                    "'$signal', \\\"\$class\\\::$handler\\\", '$data', '$object', ".
+                    "'$signal', \\\"\$class\\\::$handler\\\", '".$data."', '$object', ".
                     "'name of form instance' )\"";
                 eval $expr
             }
@@ -1651,8 +1669,10 @@ sub new_signal {
         $expr = "push \@{${current_form}\{'Signal_Strings'}}, ".
             "\"$class->add_to_UI( 1, \\\"".$id_string.
             "\\\\\\${current_form}\{'$object'}->$call(".
-            "'$signal', \\\\\\\"\\\\\\\$class\\\\\\\\\::$handler\\\\\\\", '$data', '$object', ".
+            "'$signal', \\\\\\\"\\\\\\\$class\\\\\\\\\::$handler\\\\\\\", '".$data."', '$object', ".
             "\\\\\\\"$current_form_name\\\\\\\" );\\\", 'TO_FILE_ONLY' );\"";
+        $Glade_Perl->diag_print (4, "warn  Connecting missing signal handler '%s' ",
+            $expr);
         eval $expr
             
     } else {

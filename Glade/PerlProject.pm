@@ -42,7 +42,7 @@ BEGIN {
                             Glade::PerlUI
                         );
     $PACKAGE      = __PACKAGE__;
-    $VERSION      = q(0.60);
+    $VERSION      = q(0.61);
     $AUTHOR       = q(Dermot Musgrove <dermot.musgrove@virgin.net>);
     $DATE         = q(Fri May  3 03:56:25 BST 2002);
 
@@ -133,8 +133,12 @@ BEGIN {
         'directory'     => '',
         'Makefile_PL'   => 'Makefile.PL',
         'MANIFEST_SKIP' => 'MANIFEST.SKIP',
+        'test_directory'=> 't',
         'test_pl'       => 'test.pl',
-        'spec'          => undef,
+        'bin_directory' => 'bin',
+        'bin'           => undef,   # name of bin (script) to generate
+        'rpm'           => undef,   # Name of RPM to produce
+        'spec'          => undef,   # Name of RPM spec file
         'type'          => undef,   # Type of distribution
         'compress'      => undef,   # How to compress the distribution
         'scripts'       => undef,   # Scripts that should be installed
@@ -289,13 +293,16 @@ sub use_Glade_Project {
 
     # Remove any spaces, dots or minuses in the project name
     # These are invalid in perl package name
-    my $replaced = $glade_proto ->{'project'}{'name'} =~ s/[ -\.]//g;
-    if ($replaced) {
-        $Glade_Perl->diag_print(2, "%s- %s Space(s), minus(es) or dot(s) ".
-            "removed from project name - it is now '%s'",
-            $indent, $replaced, $glade_proto->{'project'}{'name'});
-    }
+    $glade_proto ->{'project'}{'name'} = 
+        $class->fix_name($glade_proto ->{'project'}{'name'});
+#    my $replaced = $glade_proto ->{'project'}{'name'} =~ s/[ -\.]//g;
+#    if ($replaced) {
+#        $Glade_Perl->diag_print(2, "%s- %s Space(s), minus(es) or dot(s) ".
+#            "removed from project name - it is now '%s'",
+#            $indent, $replaced, $glade_proto->{'project'}{'name'});
+#    }
     $proj_opt->{app}{name}  = $glade_proto->{'project'}{'name'};
+    $proj_opt->{app}{program}  = $glade_proto->{'project'}{'program_name'};
 
     # Glade assumes that all directories are named relative to the Glade 
     # project (.glade) file (not <project><directory>) !
@@ -404,6 +411,43 @@ sub use_Glade_Project {
     unless ($proj_opt->{app}{logo} && -r $proj_opt->{app}{logo}) {
         $proj_opt->{app}{logo} = $proj_opt->{$type}{logo};
     }            
+
+    $proj_opt->{dist}{directory} = $class->full_Path(
+        $proj_opt->{dist}{directory}, $proj_opt->{glade}{directory});
+    
+    unless (-d $proj_opt->{dist}{directory}) { 
+        # Source directory does not exist yet so create it
+        $Glade_Perl->diag_print (2, "%s- Creating distribution '%s' in %s", 
+            $indent, $proj_opt->{dist}{directory}, $me);
+        mkpath($proj_opt->{dist}{directory} );
+    }
+    $proj_opt->{dist}{bin_directory} = $class->full_Path(
+        ($proj_opt->{dist}{bin_directory} || './bin'),    
+        $proj_opt->{dist}{directory},
+        $proj_opt->{dist}{directory} );
+    unless (-d $proj_opt->{dist}{bin_directory}) { 
+        # bin directory does not exist yet so create it
+        $Glade_Perl->diag_print (2, "%s- Creating directory '%s' in %s",
+            $indent, $proj_opt->{dist}{bin_directory}, $me);
+        mkpath($proj_opt->{dist}{bin_directory} );
+    }
+    $proj_opt->{dist}{bin} = $class->full_Path(
+        ($glade_proto->{project}{program_name} || 'run_'.$proj_opt->app->name),
+        $proj_opt->{dist}{bin_directory} );
+
+    $proj_opt->{dist}{test_directory} = $class->full_Path(
+        ($proj_opt->{dist}{test_directory} || './t'),    
+        $proj_opt->{dist}{directory},
+        $proj_opt->{dist}{directory} );
+    unless (-d $proj_opt->{dist}{test_directory}) { 
+        # bin directory does not exist yet so create it
+        $Glade_Perl->diag_print (2, "%s- Creating directory '%s' in %s",
+            $indent, $proj_opt->{dist}{test_directory}, $me);
+        mkpath($proj_opt->{dist}{test_directory} );
+    }
+    $proj_opt->{dist}{test_pl} = $class->full_Path(
+        ($proj_opt->{dist}{test_pl} || './01.t'),    
+        $proj_opt->{dist}{test_directory} );
 
     if ($Glade_Perl->app->author) {
         $proj_opt->{app}{author} = $Glade_Perl->app->author;

@@ -1,8 +1,8 @@
-%define ver     0.60
+%define ver     0.61
 %define rel     1
 %define name    Glade-Perl
 %define rlname  %{name}
-%define source0 http://www.glade.perl.connectfree.co.uk/%{name}-%{ver}.tar.gz
+%define source0 http://www.glade.perl.connectfree.co.uk/%{name}/%{name}-%{ver}.tar.gz
 %define url     http://www.glade.perl.connectfree.co.uk/
 %define group   Development/Languages
 %define copy    GPL or Artistic

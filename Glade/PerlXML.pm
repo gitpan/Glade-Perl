@@ -32,9 +32,9 @@ BEGIN {
     # Tell interpreter who we are inheriting from
     @ISA            = qw( Glade::PerlRun );
     $PACKAGE      = __PACKAGE__;
-    $VERSION      = q(0.60);
+    $VERSION      = q(0.61);
     $AUTHOR       = q(Dermot Musgrove <dermot.musgrove@virgin.net>);
-    $DATE         = q(Fri May  3 03:56:25 BST 2002);
+    $DATE         = q(Sun Nov 17 03:21:11 GMT 2002);
 }
 
 sub DESTROY {

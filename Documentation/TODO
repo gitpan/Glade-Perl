@@ -18,6 +18,7 @@ Glade-Perl - perl source code generator
 
 TODO
 ----
+*   Add comments to all options (xml) files that explain the options.
 *   Investigate a 'quick and dirty' generation mode that performs no checks
     and does not test-eval the code during the run. First tests show only
     an improvement from 15 secs to 14 secs on a reference form so the loss

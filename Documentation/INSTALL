@@ -7,9 +7,9 @@ There is a standard Makefile.PL to handle some checks and install the package
 To install
     perl Makefile.PL
     make
-    make test
+    make test       (if you have X running)
     su
-    make install (if test was OK)
+    make install    (if test was OK)
         
 TO BUILD RPMS
 -------------

@@ -56,9 +56,9 @@ BEGIN {
                         );
 
     $PACKAGE      = __PACKAGE__;
-    $VERSION      = q(0.60);
+    $VERSION      = q(0.61);
     $AUTHOR       = q(Dermot Musgrove <dermot.musgrove@virgin.net>);
-    $DATE         = q(Fri May  3 03:56:25 BST 2002);
+    $DATE         = q(Sun Nov 17 03:21:11 GMT 2002);
     $widgets      = {};
     $all_forms    = {};
     $convert      = {};
@@ -830,40 +830,41 @@ sub save_app_options {
 
 Updates mru and saves all app/user options. This will save the mru file
 in the user options file (if one is named in 
-$class->{$class->type}->xml->user).
+$class->run_options->xml->user).
 
 e.g. Glade::PerlRun->save_app_options($mru_filename);
 
 =cut
-    %defaults = %{$class->{$class->type}->proto->app_defaults} 
+    my $type = 'glade2perl';
+    %defaults = %{$Glade_Perl->{$type}->proto->app_defaults} 
         unless keys %defaults;
-    
+
     # Store new mru file name and start_time
-    $class->{$class->type}->proto->user->{$class->type}{mru} = $mru;
-    $class->{$class->type}->proto->user->{$class->type}{start_time} = 
-        ($class->{$class->type}->start_time);
-    undef $class->{$class->type}{mru};
+    $Glade_Perl->{$type}->proto->user->{$type}->{mru} = $mru;
+    $Glade_Perl->{$type}->proto->user->{$type}->{start_time} = 
+        ($Glade_Perl->{$type}->start_time);
+    undef $Glade_Perl->{$type}->{mru};
 
     # Save project options
-    $class->diag_print(6, $class, "Options to be saved");
-    $class->save_options(
+    $Glade_Perl->diag_print(6, $class, "Options to be saved");
+    $Glade_Perl->save_options(
         undef, 
         %Glade::PerlRun::fields, 
         %defaults
     );
 
-    if ($class->{$class->type}->xml->user) {
+    if ($Glade_Perl->{$type}->xml->user) {
         # Save new user options
-        $class->write_options(
-            $class->reduce_hash(
-                $class->{$class->type}->proto->user,
+        $Glade_Perl->write_options(
+            $Glade_Perl->reduce_hash(
+                $Glade_Perl->{$type}->proto->user,
                 {},
                 {},
                 {},
                 {},
-                $class->{$class->type}->prune
+                $Glade_Perl->{$type}->prune
                 ), 
-            $class->{$class->type}->xml->user);
+            $Glade_Perl->{$type}->xml->user);
     }
 }
 
@@ -879,7 +880,7 @@ e.g. $Object->save_options;
 
 =cut
     my $type = $class->type;
-    %app_defaults = %{$class->{$class->type}->proto->app_defaults}
+    %app_defaults = %{$class->run_options->proto->app_defaults}
         unless keys %app_defaults;
     
     if ($filename) {
@@ -1148,6 +1149,39 @@ sub XML_from_Proto {
 	return $xml
 }
 	
+sub fix_name {
+
+=item fix_name($name)
+
+Substitutes illegal characters in a perl name and returns it
+
+e.g. my $name = Glade::PerlRun->fix_name($name);
+OR   my $name = Glade::PerlRun->fix_name($name, 'TRANSLATE');
+
+=cut
+
+    my ($class, $name, $translate) = @_;
+    my $illegals = '- ./+*!';
+    my $replaced = 0;
+    my $new_name = $name;
+    if ($name =~ /[$illegals]/) {
+        if ($translate) {
+            my %ents=('-'=>'MINUS', ' '=>'SPACE', '.'=>'DOT', 
+                    '/'=>'SLASH', '+'=>'PLUS', '*'=>'STAR', '!'=>'BANG');
+            $replaced = $new_name =~ s/([$illegals])/_$ents{$1}_/g;
+
+        } else {
+            $replaced = $new_name =~ s/([$illegals])//g;
+
+        }
+        $Glade_Perl->diag_print (1, "warn  new name '%s' generated as ".
+            "original name '%s' contained %s chars [%s] ".
+            "which are illegal in a Perl name.",
+            $new_name, $name, $replaced, $illegals);
+    }
+    return $new_name;
+}
+
 sub save_file_from_string {
     my ($class, $filename, $string) = @_;
     my $me = __PACKAGE__."->save_file_from_string";
@@ -1343,9 +1377,9 @@ e.g. $Object->start_log('log_filename');
     $class->diag_print (2, 
         "%s  DIAGNOSTICS - %s (locale <%s> verbosity %s) ".
         "started by %s (version %s)", 
-        $class->diag->indent, $class->{$type}->start_time,
+        $class->diag->indent, $class->run_options->start_time,
         $class->diag->LANG, $class->diag->verbose, 
-        $class->{$type}->name, $class->{$type}->version, 
+        $class->run_options->name, $class->run_options->version, 
     );
 }
 

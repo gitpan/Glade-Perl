@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 require 5.000; use strict 'vars', 'refs', 'subs';
 
-my $VERSION = "0.60";
+my $VERSION = "0.61";
 
 use Glade::PerlGenerate;
 

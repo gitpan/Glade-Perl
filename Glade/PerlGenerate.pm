@@ -40,9 +40,9 @@ BEGIN {
                             Glade::PerlUI
                         );
     $PACKAGE      = __PACKAGE__;
-    $VERSION      = q(0.60);
+    $VERSION      = q(0.61);
     $AUTHOR       = q(Dermot Musgrove <dermot.musgrove@virgin.net>);
-    $DATE         = q(Fri May  3 03:56:25 BST 2002);
+    $DATE         = q(Sun Nov 17 03:21:11 GMT 2002);
 }
 
 sub DESTROY {
@@ -133,7 +133,7 @@ sub about_Form {
     my $widget = $PACKAGE->message_box($message, 
         D_("About")." \u$PACKAGE", 
         [D_('Dismiss'), D_('Quit Program')], 1, 
-        $Glade_Perl->glade2perl->logo, 'left' );
+        $Glade_Perl->run_options->logo, 'left' );
 }
 
 sub destroy_Form {
@@ -190,8 +190,9 @@ sub Form_from_Glade_File {
         );
         $Glade_Perl->glade->name_from("Specified in project options file");
     }
-    $Glade_Perl->{$Glade_Perl->type}->xml->project(
-        $Glade_Perl->{$Glade_Perl->type}->xml->project ||
+#print Dumper($Glade_Perl);
+    $Glade_Perl->run_options->xml->project(
+        $Glade_Perl->run_options->xml->project ||
         $Glade_Perl->glade->file."2perl.xml");
 #    $Glade_Perl->diag_print (2, "%s- Reading project options from '%s' - %s",
 #        $Glade_Perl->diag->indent, $Glade_Perl->{$Glade_Perl->type}->xml->project);
@@ -376,7 +377,7 @@ sub Form_from_Proto {
             # Write source that will use libglade to show the UI
             $Glade_Perl->diag_print (2, "%s  Generating libglade type code", $indent);
             $class->write_LIBGLADE($proto, $forms);
-            $options->glade2perl->dont_show_UI(1);
+            $options->run_options->dont_show_UI(1);
             $proto->test->use_module($save_module || 
                 $module.$proto->test->use_module.
                 $proto->module->libglade->class."LIBGLADE");
@@ -444,8 +445,13 @@ sub Form_from_Proto {
         $Glade_Perl->diag_print (2, "%s", "-----------------------------------------------------------------------------");
         $Glade_Perl->diag_print (2, "%s  CONSISTENCY CHECKS", $indent);
         $Glade_Perl->diag_print (2, "%s- %s unused widget properties", $indent, $missing_widgets);
-        $Glade_Perl->diag_print (2, "%s- %s widgets were ignored (one or more of '%s')", 
-            $indent, $ignored_widgets, $ignore_widgets);
+        if ($ignored_widgets) {
+            $Glade_Perl->diag_print (2, "%s- %s widgets were ignored (one or more of '%s')", 
+                $indent, $ignored_widgets, $ignore_widgets);
+        } else {
+            $Glade_Perl->diag_print (2, "%s- %s widgets were ignored", 
+                $indent, $ignored_widgets);
+        }
         $Glade_Perl->diag_print (2, "%s- %s unpacked widgets",
             $indent, $class->unpacked_widgets);
         if ($Glade_Perl->diagnostics(4)) {

@@ -5,7 +5,7 @@ BEGIN     {
     use lib './';               # Force use of my dev version
     }
 
-my $VERSION = "0.60";
+my $VERSION = "0.61";
 
 # We expect to be supplied with parameter
 #   $_[0] is name of a Glade <GTK-Interface> XML file
