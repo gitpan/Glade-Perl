@@ -1,0 +1,49 @@
+Some notes on Perl/Gtk documentation
+
+Firstly, make sure that you have the latest Perl/Gtk (version 0.6123). 
+Older versions have too many errors and omissions.
+
+The Perl/Gtk maintainers have started to document the bindings and if you
+build Perl/Gtk yourself docs should be produced then. Examples of what is
+produced are at
+  http://www.lettere.unipd.it/~lupus/perl-gtk-ref.html
+        for the reference manual of modules and functions, and
+  http://www.lettere.unipd.it/~lupus/perl-gtk-ds.html
+        for some data structures and types (currently enumerations and flags).
+
+Pod versions of these files are in the Perl/Gtk build/ directory after calling 
+'perl Makefile.PL' Call 
+  'pod2html perl-gtk-ref.pod > perl-gtk-ref.html'
+  'pod2html perl-gtk-ds.pod  > perl-gtk-ds.html'
+to turn them into HTML files if you want.
+
+Since Perl/Gtk mimics the toolkits so regularly, I use the
+  Gtk+ documentation    
+      gtk-docs-html-1.1.1 IIRC a tar.gz from gtk+ download site
+
+  Gnome documentation   
+      /usr/doc/gnome-libs-devel-1.0.8/devel-docs/ in my gnome-libs-devel
+      rpm package or directory devel-docs/ in the CVS dir.
+
+  Perl/Gtk distribution .xs files
+  
+  If you have the gtk+ sources, read the .[ch] files
+
+All the source files are clearly named but the main confusion is likely
+to come from the Perl/Gtk structure which is much more obviously object
+oriented. For example, gtk_container_add is bound as Gtk::Container->add()
+and this method is inherited by all containers. So, to add a widget to a
+TreeItem that inherits as follows
+
+ GtkObject
+     +----GtkWidget
+           +----GtkContainer
+                 +----GtkBin
+                       +----GtkItem
+                             +----GtkTreeItem
+
+you must get a ref $ti_ref to the TreeItem and then call $ti_ref->add()
+rather than gtk_conatiner_add() as you would in C.
+
+The file NOTES in Perl/Gtk also gives some programming guidelines and 
+information about Perl/Gtk naming.

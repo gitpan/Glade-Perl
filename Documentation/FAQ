@@ -1,0 +1,50 @@
+This is the Frequently Asked Question list for Glade-Perl source generator
+
+--------------------------------------------------------------------------
+Q   My GtkClock does not show the current time
+
+A   Older versions of gnome-libs (at least <= 1.0.8) do not handle the clock 
+    type 'realtime' properly. Perl/Gtk 0.6123 cannot explicitly set the type 
+    so we are stuck. Upgrade to a newer version of gnome-libs or wait until
+    Perl/Gtk can do Gtk::Clock->style() - maybe it already does?.
+
+        
+--------------------------------------------------------------------------
+Q   When I upgraded to Glade-Perl version 0.3.5 (or greater) I get error ...
+    'Can't locate Gtk/Keysyms.pm in @INC (@INC contains: .....'
+    
+A   You have a flawed version of Perl/Gtk - eg released version 0.5121. There
+    are many improvements in later versions (or in gnome.org CVS repository),
+    for example, Glade-Perl now uses the new keysyms bindings in Gtk::Keysysms.
+    Version 0.6123 is now available on CPAN (20 Aug 1999), otherwise you can
+    get the CVS version ie. the 'gnome-perl' module in the CVS repository at 
+    gnome.org and use that. There is a good description of the Gnome CVS on a
+    Gnome mirror at http://www.uk.gnome.org/devel/whatiscvs.shtml
+    
+    If neither action is possible or desirable you can edit Glade::PerlUI.pm 
+    in two places.
+    
+    change two lines in the Glade/PerlUI.pm module and 'make install' again
+
+    #   use Gtk::Keysyms;               # comment out line 23 (or near)
+    #   $self = $Gtk::Keysyms{$self};   # replace line 1590 (or near) 
+                                        # by the line below
+        $self = ord ($self );
+
+    Of course, any keyboard accelerators that use keysyms other than A-Z,a-z
+    will cause unusual behaviour but it should get you going.
+    
+--------------------------------------------------------------------------
+Q   When I run glade2perl I get the following message ...
+    Can't call method "merge_options" on an undefined value at
+    /home/Perl/5.005_02/lib/site_perl/Glade/PerlProject.pm line 210.
+    
+A   Two people have reported this error, they use perl version 5.005_x with 
+    some parts of perl installed in their home directory. I can't believe 
+    that the problems come from perl but I don't know what else it could be,
+    The error shown means that Glade::PerlGenerate->options has been called 
+    without any arguments, not even a class name. 
+
+    If you know what causes this please let me know.
+
+--------------------------------------------------------------------------

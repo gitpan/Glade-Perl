@@ -1,0 +1,206 @@
+Glade::PerlGenerate (GPG) Perl/Gtk-Glade UI builder and source generator
+--------------------------------------------------------------------
+# Copyright (c) 1999 - Dermot Musgrove <dermot.musgrove@virgin.net>
+#
+# This library is released under the same conditions as Perl, that
+# is, either of the following:
+#
+# a) the GNU General Public License as published by the Free
+# Software Foundation; either version 1, or (at your option) any
+# later version.
+#
+# b) the Artistic License.
+#
+# If you use this library in a commercial enterprise, you are invited,
+# but not required, to pay what you feel is a reasonable fee to the
+# author  Dermot Musgrove <dermot.musgrove@virgin.net>
+#
+SEE ALSO
+--------
+Documentation/COPYING       # How we encourage copying
+Documentation/Changelog     # History of the changes made
+Documentation/FAQ           # Frequently asked questions
+Documentation/Perl-Gtk-Docs.txt # Some pointers to Perl/Gtk documentation
+Documentation/NEWS          # What is new in each version
+Documentation/README        # This file
+Documentation/ROADMAP       # Where will the module go?
+Documentation/TODO          # What still must be done <sigh>
+test.pl                     # Examples of user options
+
+Glade::PerlGenerate is a module that will read a Glade-Interface XML 
+file, build the UI and/or write the perl source to create the UI later. 
+It is made up of two main packages. Glade::PerlGenerate does the clever 
+stuff and Glade::PerlRun has some run-time utilities that are needed 
+by Glade::PerlGenerate and also by your generated modules.
+There are now several support modules for PerlGenerate that read the XML
+build the UI, write the source and handle the project options.
+
+There are several options
+1) Simply show and run the interface. Any missing signal handlers are
+   hijacked to show a simple message box.
+2) Write a perl class file. It contains the class constructor, utilities 
+   and a sub that constructs the UI. If you specifiy &STDOUT as the 
+   output filename all the generated code will be written to STDOUT but of
+   course you will have nothing to run later.
+3) Do both of the above.
+4) Generate (2 above) from Glade's 'Build' button.
+
+TO INSTALL
+----------
+There is a standard Makefile.PL but it will not check any dependencies
+(Glade, Gtk, Perl/Gtk XML::Parser etc) and neither will it install the
+glade2perl script.
+
+To install
+    perl Makefile.PL
+    make
+    make test
+    make install (if test was OK)
+    
+TO RUN FROM GLADE
+-----------------
+If you use Glade >= 0.5.0 you can set the project language to Perl and copy
+the supplied script called 'glade2perl' to a directory in your path . Then 
+when you click the 'Build' button or menu item the script will generate Perl 
+sources for you.
+
+We use options files to store information about such things as existing signal 
+handler modules and so on. This means that signal handler stubs are only 
+specified if they are not available at Build time even though Glade knows 
+nothing about them. This approach also allows you to control other options
+for the Glade build phase.
+
+TO RUN MANUALLY
+---------------
+You need Perl, Glib/Gtk+, Perl/Gtk and XML::Parser packages and of course
+Glade if you want to edit the interface files.
+------------------------------------------------------------------------
+
+A) To Build the supplied example, call (from the same directory as 
+this README file) This should do the same as make test did
+
+    perl -w test.pl  
+	
+and when the form shows, try clicking some menu items. They will 
+all show a simple message_box and to exit you can click the 
+'Quit Program' button or click 'File/Quit'. Perl sometimes core-dumps when I 
+close the window from the windowmanager but that must be my problem/mistake. 
+
+'File/Open' or Ctrl-O will show a file selection dialog which does nothing
+but prove that the class can be used.
+
+All the Help menu buttons have Existing_SUBS and will show an information 
+message_box but the other buttons will show the AUTOLOAD()ed message_box 
+since the signal-handlers will not exist. 
+The 'Help/About' button will show details of Glade::PerlGenerate.
+
+-------------------------------------------------------------------------
+
+B) To run the code that you have generated, call (again from the 
+same directory as this README file)
+
+    perl -e 'use Generated::BusForm; BusForm->run'
+
+Now, _all_ signals will cause an information message_box since you
+have generated stubs for any signal handlers that were missing at Build time.
+The 'Help/About' button will now show details of the generated App.
+
+Obviously, change the use() command above to whatever the details were in
+your project file ie. 
+
+'use <project><source_directory>::<project><name>; form_name->run'
+
+If you want just to view the interface, without writing the source files
+edit file test.pl and comment out the 'write_source' option. This 
+will block the source code generation.
+-------------------------------------------------------------------------
+
+C) To build a UI from an XML string. Look at the file test.pl for an
+example of doing this. Uncomment the call to 
+Glade::PerlGenerate->Form_from_XML to show a simple test form.
+
+-------------------------------------------------------------------------
+You may have problems with your own Glade project files if they use widgets
+that Glade::PerlGenerate doesn't handle correctly. At least it will warn you 
+about any widgets or properties that it doesn't understand properly. 
+
+GLADE PROJECT
+-------------
+Glade::PerlGenerate uses the Glade <project> details in order to 
+generate the code and uses certain information. These are the <project> 
+elements that it uses from the GTK-Interface XML file:
+
+<project>
+# The Glade project structure
+
+  <name>BusForm</name>
+#   Project name (it is used for the file and package/module/class name)
+
+  <directory></directory>
+#   Directory that Glade was running in when project was written ??
+ 
+  <source_directory>Generated</source_directory>
+#   Directory to hold generated source modules (relative to XML file)
+		
+  <pixmaps_directory>pixmaps</pixmaps_directory>
+#   Directory to search for pixmaps (relative to XML file)
+#   If there is a pixmap in this directory called 'Logo.xpm' this
+#   will be used as the project logo in message boxes etc.
+		
+# All other project properties are ignored
+
+</project>
+
+Some other project information is generated for inclusion in the generated
+source modules. 
+  <author>  User's long name with email address of username@hostname
+  <date>    Current localtime
+  <copying> '# Unspecified copying policy. Please contact the author'
+  <version> 0.0.1
+  
+EDITING
+-------
+The source code is generated with tabs replacing spaces at the rate specified 
+by the user option 'tabwidth' (default 8) so your editor should be set to the
+same tabwidth if the generated source is to look correct.
+
+Read the file test.pl for some examples of how to use Glade::PerlGenerate.
+
+REQUIREMENTS (what I use)
+-------------------------
+Package     my version	available from
+-------     ----------  --------------
+Glade       0.5.3       http://glade.pn.org/
+Glib/Gtk+   1.2.3       ftp://ftp.gimp.org/pub/gtk/
+gnome-libs  1.0.16      Gnome mirrors or Gnome.org CVS 
+Perl-Gtk    0.6123      CPAN 
+    (but you'll need CVS >= 19991001 from Gnome.org to get the best results)
+Perl        5.004_04    CPAN
+XML::Parser 2.27        CPAN
+
+ACKNOWLEDGEMENTS
+----------------
+Doesn't the world seem a richer place with the beautiful contributions of 
+these creative people? I have only mentioned the most obvious names and I
+apologise to those who I have missed out.
+
+Glade       Damon Chaplin <damon@karuna.freeserve.co.uk> Main author
+            Martijn van Beers <martijn@earthling.net> Part of the source code 
+            output, some popup menu functions, and the widget tree view.
+GTK         Copyright - Peter Mattis, Spencer Kimball and Josh MacDonald
+gnome-libs  Too many to list, check the AUTHORS file in the dist
+Perl/Gtk    Kenneth Albanowski <kjahds@kjahds.com> and
+            Paolo Molaro <lupus@lettere.unipd.it>
+Perl        Larry Wall <larry@wall.org>, with the help of oodles of other folks
+XML::Parser Larry Wall <larry@wall.org> wrote version 1.0.
+            Clark Cooper <coopercl@sch.ge.com> picked up support, changed the 
+            API for this version (2.x), provided documentation, and added
+            some standard package features.
+
+Information, advice and patches - Damon Chaplin, Robert Schwebel 
+
+AUTHOR
+------
+Dermot Musgrove <dermot.musgrove@virgin.net>
+
+Any errors, omissions and general stupidity are my fault - sorry.

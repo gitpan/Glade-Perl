@@ -1,0 +1,23 @@
+#!/usr/bin/perl
+require 5.000; use English; use strict 'vars', 'refs', 'subs';
+
+use Glade::PerlGenerate;
+
+my $project_options_file = $ARGV[0];
+$project_options_file =~ s/(xml|glade)$/glade2perl.xml/;
+# Default $project_options_file is eg 'Existing/BusForm.glade2perl.xml'
+
+Glade::PerlGenerate->options(    
+    'verbose'          => 0,                        # Turn off diagnostics
+    'write_source'     => 'True',                   # We DO want source
+    'dont_show_UI'     => 'True',                   # We DON'T want to show UI
+    'options_set'      => 'Glade/Build Source',     # Glade set the options
+    'project_options'  => $project_options_file,    # Read/write project_options file
+);
+
+# Read and build a Glade file
+Glade::PerlGenerate->Form_from_Glade_File( 'glade_filename' => $ARGV[0] ) && 
+
+exit 0; # to return a C or shell type success
+
+1;      # else return a C or shell failure
