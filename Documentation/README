@@ -27,7 +27,6 @@ Documentation/NEWS               # What is new in each version
 Documentation/README             # This file
 Documentation/ROADMAP            # Where will the module go?
 Documentation/TODO               # What still must be done <sigh>
-Documentation/User-Options.html  # What the user options are
 
 test.pl                          # Examples of user options
 

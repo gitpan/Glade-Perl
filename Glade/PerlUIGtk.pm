@@ -32,7 +32,7 @@ BEGIN {
                             $enums
                           );
     $PACKAGE =          __PACKAGE__;
-    $VERSION        = q(0.53);
+    $VERSION        = q(0.54);
     @VARS           = qw( 
                             $VERSION
                             $AUTHOR
@@ -265,7 +265,7 @@ sub new_GtkButton {
                 "$current_form\{'$name'}->add_accelerator(".
                     "'clicked', $current_form\{'accelgroup'}, ". 
                     "$current_form\{'$name-key'}, 'mod1_mask', ['visible', 'locked'] );");
-            $class->add_to_UI( $depth, "undef \$widgets->{'$name-key'};");
+            undef $widgets->{"$name-key"};
         }
     }
 
@@ -329,7 +329,7 @@ sub new_GtkCheckButton {
             "$current_form\{'$name'}->add_accelerator(".
                 "'clicked', $current_form\{'accelgroup'}, ". 
                 "$current_form\{'$name-key'}, 'mod1_mask', ['visible', 'locked'] );");
-        $class->add_to_UI( $depth, "undef \$widgets->{'$name-key'};");
+        undef $widgets->{"$name-key"};
     }
     return $widgets->{$name};
 }
@@ -360,13 +360,7 @@ sub new_GtkCheckMenuItem {
             "$current_form\{'$name'}->add_accelerator(".
                 "'activate', $current_form\{'accelgroup'}, ". 
                 "$current_form\{'$name-key'}, 'mod1_mask', ['visible', 'locked'] );");
-        $class->add_to_UI( $depth, "undef \$widgets->{'$name-key'};");
-#        $class->add_to_UI( $depth,  "$current_form\{'$name-pattern'} = ".
-#            "_('$label');" );
-#        $class->add_to_UI( $depth,  "$current_form\{'$name-pattern'} =~ ".
-#            "tr/_/ /c;" );
-#        $class->add_to_UI( $depth,  "$current_form\{'$name'}->child->".
-#            "set_pattern($current_form\{'$name-pattern'});" );
+        undef $widgets->{"$name-key"};
     }
     return $widgets->{$name};
 }
@@ -1028,7 +1022,7 @@ sub new_GtkMenuItem {
             "$current_form\{'$name'}->add_accelerator(".
                 "'activate_item', $current_form\{'accelgroup'}, ". 
                 "$current_form\{'$name-key'}, 'mod1_mask', ['visible', 'locked'] );");
-        $class->add_to_UI( $depth, "undef \$widgets->{'$name-key'};");
+        undef $widgets->{"$name-key"};
     }
     return $widgets->{$name};
 }
@@ -1257,7 +1251,7 @@ sub new_GtkRadioButton {
                 "$current_form\{'$name'}->add_accelerator(".
                     "'clicked', $current_form\{'accelgroup'}, ". 
                     "$current_form\{'$name-key'}, 'mod1_mask', ['visible', 'locked'] );");
-            $class->add_to_UI( $depth, "undef \$widgets->{'$name-key'};");
+            undef $widgets->{"$name-key"};
         }
     }
     
@@ -1311,13 +1305,7 @@ sub new_GtkRadioMenuItem {
             "$current_form\{'$name'}->add_accelerator(".
                 "'activate', $current_form\{'accelgroup'}, ". 
                 "$current_form\{'$name-key'}, 'mod1_mask', ['visible', 'locked'] );");
-        $class->add_to_UI( $depth, "undef \$widgets->{'$name-key'};");
-#        $class->add_to_UI( $depth,  "$current_form\{'$name-pattern'} = ".
-#            "_('$label');" );
-#        $class->add_to_UI( $depth,  "$current_form\{'$name-pattern'} =~ ".
-#            "tr/_/ /c;" );
-#        $class->add_to_UI( $depth,  "$current_form\{'$name'}->child->".
-#            "set_pattern($current_form\{'$name-pattern'});" );
+        undef $widgets->{"$name-key"};
     }
     return $widgets->{$name};
 }
@@ -1480,7 +1468,7 @@ sub new_GtkToggleButton {
                 "$current_form\{'$name'}->add_accelerator(".
                     "'clicked', $current_form\{'accelgroup'}, ". 
                     "$current_form\{'$name-key'}, 'mod1_mask', ['visible', 'locked'] );");
-            $class->add_to_UI( $depth, "undef \$widgets->{'$name-key'};");
+            undef $widgets->{"$name-key"};
         }
     }
     $class->add_to_UI( $depth, "$current_form\{'$name'}->active(".

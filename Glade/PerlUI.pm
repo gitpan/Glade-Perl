@@ -40,7 +40,7 @@ BEGIN {
         $cxx_properties
         );
     $PACKAGE =          __PACKAGE__;
-    $VERSION        = q(0.53);
+    $VERSION        = q(0.54);
 
     $ignored_widgets = 0;
     $missing_widgets = 0;
@@ -131,9 +131,9 @@ $perl_gtk_depends       = {
 #    'MINIMUM REQUIREMENTS'  => '0.7000',
     'MINIMUM REQUIREMENTS'  => '0.6123',
     'LATEST_CPAN'           => '0.7002',
-    'LATEST_CVS'            => '20000301',
+    'LATEST_CVS'            => '20000414',
     # Those below don't work yet even in the latest CVS version
-
+    'gtk_pixmap_menu_item'  => '20000410',
     # Those below work in the CVS version after 20000301
     'gnome_dialog_append_button' => '20000301',
     # Those below work in the CPAN version after 0.7002 (CVS after 20000129)
@@ -298,11 +298,11 @@ sub use_par {
 #            $class->diag_print (8, "$indent- No value in proto->{'$key'} ".
 #                "so using DEFAULT of '$default' in $me");
         } else {
-            # We have no value and no default to use so bale out here
+            # We have no value and no default to use so bail out here
             $class->diag_print (1, "error No value in supplied ".
                 "%s and NO default was supplied in ".
                 "%s called from %s line %s",
-                $proto->{'name'}->{'$key'}, $me, (caller)[0], (caller)[2] );
+                "$proto->{'name'}\->{'$key'}", $me, (caller)[0], (caller)[2] );
             return undef;
         }
     } else {
@@ -484,7 +484,7 @@ sub Widget_from_Proto {
                                 $proto->{name}, $childname, $proto->{$key}, $depth+1 );
                             if ($class->diagnostics) {
                                 # Check that we have used all widget properties
-                                $class->unused_elements($proto->{$key} );
+                                $class->check_for_unused_elements($proto->{$key} );
                             }
 
                         } else {
@@ -912,14 +912,14 @@ sub internal_pack_widget {
 # a GnomeApp, and should be adding the dock items via the GnomeApp's
 # GnomeDockLayout, e.g. using gnome_app_add_docked() or gnome_app_add_dock_item().
 
-# FIXME Above is how it should be done, adding to App's contents for now
             if (" Gnome::DockItem " =~/ $refwid /) {
                 $class->add_to_UI( $depth, 
                     "${current_form}\{'$parentname'}->add_item(".
                         "\$widgets->{'$childname'}, '$placement', $band, ".
                         "$position, $offset, $in_new_band );" );
             } else {
-                my $class_name = $class->use_par($proto, 'child_name');
+                # We are not a dock_item - just using set_contents
+                undef $proto->{'child_name'};
                 $class->add_to_UI( $depth, 
                     "${current_window}->set_contents(".
                         "\$widgets->{'$childname'} );" );
@@ -1483,7 +1483,8 @@ sub new_from_child_name {
 
 #---------------------------------------
     } else {
-        $class->diag_print (1, "error Don't know how to get a ref to %s (type '%s')",
+        $class->diag_print (1, "error Don't know how to get a ref to %s ".
+            "(type '%s')",
             "${current_form}\{'${name}'}{'child_name'}", $type);
         return undef;
     }
@@ -1566,7 +1567,7 @@ sub new_signal {
         } else {
             # First we'll connect a default handler to hijack the signal 
             # for us to use during the Build run
-            $class->diag_print (2, "warn  Missing signal handler '%s' ".
+            $class->diag_print (4, "warn  Missing signal handler '%s' ".
                 "connected to widget '%s' needs to be written",
                 $handler, $object);
             unless ($class->Writing_Source_only) {

@@ -26,7 +26,7 @@ BEGIN {
                             $PACKAGE 
                           );
     $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.53);
+    $VERSION        = q(0.54);
     # Tell interpreter who we are inheriting from
     @ISA            = qw(
                             Glade::PerlProject
@@ -277,9 +277,9 @@ sub Form_from_Proto {
 #===============================================================================
 #=========== Diagnostic utilities                                   ============
 #===============================================================================
-sub unused_elements {
+sub check_for_unused_elements {
     my ($class, $proto) = @_;
-    my $me = "$class->unused_elements";
+    my $me = "$class->check_for_unused_elements";
     my $typekey = $class->typeKey;
     my $key;
     my ($object,$name );

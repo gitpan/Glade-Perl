@@ -46,10 +46,6 @@ TODO
     
 *   Make dist files eg Makefile.PL, MANIFEST, Changelog etc etc
 
-*   Sort out Gnome::App accelerators and signals properly Probably it
-    would be best to implement the gnome-app-helper methods and use those when
-    they are available.
-    
 *   Fix the signal handling for AccelLabels and pixmaps. Which widget should
     the signal be connected to?
 
@@ -108,6 +104,10 @@ DONE
     should be combined into PerlGenerate for this reason among others.
     The perldoc is still at the end of Glade::PerlGenerate but at least it is
     complete and up-to-date.
+    
+*   Sort out Gnome::App accelerators and signals properly Probably it
+    would be best to implement the gnome-app-helper methods and use those when
+    they are available.
     
 *   Rewrite GtkMenuItem and PixmapMenuItem constructors to simplify and reuse
     code and to handle underline accelerators properly.
@@ -192,7 +192,7 @@ LONG TERM
     is read. This might be quicker and would also allow 'net delivery
     of UIs. Write Glade::PerlGenerate->Form_from_(XML_)Stream.
 
-BUGS
-----
-The biggest deficiencies are with menu/toolbar underline accelerators for labels
-and GNOMEUIINFO stuff in Gnome::Apps.
+    Since on my 170MHz AMD K6/II a large reference form (136 kb) only takes 3 
+    seconds to read and parse into the glade proto, this might not be worth 
+    the effort. A trivial parser that I wrote in perl does reduce that to 1 
+    second so I remain open to suggestions.

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 require 5.000; use English; use strict 'vars', 'refs', 'subs';
 
-my $CERSION = "0.52";
+my $VERSION = "0.54";
 use Glade::PerlGenerate;
 
 my $base = $ARGV[0] || 'project1.glade';

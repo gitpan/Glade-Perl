@@ -1,11 +1,28 @@
 Revision history for Perl module Glade::PerlGenerate development branch.
+Sun Apr 16 00:07:26 BST 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
+  - Version 0.54
+  - PerlUI->new_from_child_name() fixed to use gnome_app_docked_item() and
+    not construct our own widgets and containers (Damon's ideas)
+    Also now better handles notebooks as children of Gnome Dialogs
+  - PerlGenerate->unused_elements() name now check_for_unused_elements()
+  - PerlUI->new_signal() changed 'Missing signal handler' message to 
+    verbose level 4 so that verbose => 2 gives more compact diagnostics. 
+    Skeleton signal handlers are still generated in ProjectSIGS.pm for you 
+    to copy somewhere and edit as before.
+  - Makefile.PL fixed to use the correct module name (Glade-Perl)
+  - PerlSource->write_LIBGLADE() fixed to produce working signal handlers.
+  - PerlUIExtra->new_GtkPixmapMenuItem() changed to use the new bindings in
+    Gtk-Perl (CVS 20000410) that actually construct a PixmapMenuItem 
+    instead of just a Gtk::MenuItem. Earlier versions of Gtk-Perl will now
+    construct Gtk::MenuItem explicitly.
+    
 Tue Apr 11 15:45:29 BST 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
   - Version 0.53
   - New FAQ about character encodings.
   - PerlProject two new user options to handle character encodings.
     <glade_encoding> to specify the Glade file character encoding.
-    <glade2perl_encoding> to specify the glade2perl.xml project options file
-    character encoding (defaults to glade_encoding).
+    <glade2perl_encoding> to specify the glade2perl.xml project options 
+    file character encoding (defaults to glade_encoding).
   - PerlXML->QuoteXMLChars() characters x80-xff not now encoded so project
     options are saved without re-encoding eg european characters.
   - PerlXML->save_options() extra declaration line with character encoding
@@ -23,10 +40,10 @@ Tue Apr 11 15:45:29 BST 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
     now parsed correctly.
   - Perl* all packages now have an empty DESTROY method to keep perl 5.006
     happy when it is running cleanup with warnings enabled.
-  - PerlSource->perl_AUTOLOAD_top(), perl_SUBCLASS_top(), perl_LIBGLADE_top()
+  - PerlSource->perl_AUTOLOAD_top, perl_SUBCLASS_top, perl_LIBGLADE_top
     amended to write empty DESTROY() subs to generated classes (see above)
-  - PerlGenerate documentation - perldoc (and manpage) corrected and improved
-    to include all user options.
+  - PerlGenerate documentation - perldoc (and manpage) corrected and 
+    improved to include all user options.
   
 Fri Mar 31 16:44:38 BST 2000 - Dermot Musgrove <dermot.musgrove@virgin.net>
   - Version 0.52

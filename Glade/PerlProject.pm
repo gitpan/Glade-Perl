@@ -35,7 +35,7 @@ BEGIN {
                             $xAUTOLOAD
                        );
     $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.53);
+    $VERSION        = q(0.54);
     # Tell interpreter who we are inheriting from
     @ISA            = qw( 
                             Glade::PerlXML 

@@ -62,7 +62,7 @@ BEGIN {
                         $first_form
                       );
     $PACKAGE      = __PACKAGE__;
-    $VERSION        = q(0.53);
+    $VERSION        = q(0.54);
     @VARS         = qw( 
                         $VERSION
                         $AUTHOR
@@ -1106,7 +1106,7 @@ sub write_LIBGLADE {
 
         foreach $handler (sort keys (%{$forms->{$form}{'_HANDLERS'}})) {
             unless ($autosubs =~ / $handler /) {
-                push @code, $class->perl_signal_handler($handler, 'LIBGLADE');
+                push @code, $class->perl_signal_handler($handler, 'Libglade');
             }
         }
     }

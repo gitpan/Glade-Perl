@@ -88,7 +88,7 @@ The missing modules can be obtained from CPAN. Visit
 # Last of all generate the Makefile
 WriteMakefile(
     'DISTNAME'     => 'Glade-Perl',
-    'NAME'         => 'Glade',
+    'NAME'         => 'Glade-Perl',
     'VERSION_FROM' => 'Glade/PerlRun.pm',
     'EXE_FILES'    => [ map {"Example/$_"} @programs_to_install ],
     'clean'        => { FILES => '$(EXE_FILES)' },

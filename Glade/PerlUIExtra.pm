@@ -24,7 +24,7 @@ BEGIN {
                             $enums
                           );
     $PACKAGE =          __PACKAGE__;
-    $VERSION            = q(0.53);
+    $VERSION            = q(0.54);
     # These cannot be looked up in the include files
     $enums =      {
         'GNOME_MENU_SAVE_AS_STRING'     => 'Save _As...',
@@ -906,7 +906,7 @@ sub new_GtkPixmapMenuItem {
                         "'activate_item', $current_form\{'accelgroup'}, ". 
                         "\$widgets->{'$name-key'}, 'mod1_mask', ".
                         "['visible', 'locked'] );");
-                $class->add_to_UI( $depth, "undef \$widgets->{'$name-key'};");
+                undef $widgets->{"$name-key"};
             }
         
         }
@@ -923,35 +923,50 @@ sub new_GtkPixmapMenuItem {
                     "'activate_item', $current_form\{'accelgroup'}, ". 
                     "\$widgets->{'$name-key'}, 'mod1_mask', ".
                     "['visible', 'locked'] );");
-            $class->add_to_UI( $depth, "undef \$widgets->{'$name-key'};");
+            undef $widgets->{"$name-key"};
         }
         
     } elsif ($label) {
-        $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
-            "new Gtk::PixmapMenuItem(_('$label') );" );
-        if (_($label) =~ /_/) {
-            $class->add_to_UI( $depth,
-                "\$widgets->{'$name-key'} = ".
-                    "\$widgets->{'$name'}->child->parse_uline(_('$label') );");
-            $class->add_to_UI( $depth,
-                "\$widgets->{'$name'}->add_accelerator(".
-                    "'activate_item', $current_form\{'accelgroup'}, ". 
-                    "\$widgets->{'$name-key'}, 'mod1_mask', ".
-                    "['visible', 'locked'] );");
-            $class->add_to_UI( $depth, "undef \$widgets->{'$name-key'};");
-            if ($right_justify) { 
-                $class->add_to_UI( $depth, "\$widgets->{'$name'}->right_justify;" );
-            }
+        if ($class->my_perl_gtk_can_do('gtk_pixmap_menu_item')) {
+            # We can use all the PixmapMenuItem methods
+            $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
+                "new Gtk::PixmapMenuItem;" );
+            $class->add_to_UI( $depth, "\$widgets->{'$name-label'} = ".
+                "new Gtk::AccelLabel(_('$label'));" );
+            $class->add_to_UI( $depth, "\$widgets->{'$name'}->add(".
+                "\$widgets->{'$name-label'});" );
+            $class->add_to_UI( $depth, "\$widgets->{'$name-label'}->".
+                "set_alignment(0.0, 0.5);" );
+            $class->add_to_UI( $depth, "\$widgets->{'$name-label'}->show;" );
 
+            if (_($label) =~ /_/) {
+                $class->add_to_UI( $depth,
+                    "\$widgets->{'$name-key'} = ".
+                        "\$widgets->{'$name-label'}->parse_uline(_('$label') );");
+                $class->add_to_UI( $depth,
+                    "\$widgets->{'$name'}->add_accelerator(".
+                        "'activate', $current_form\{'accelgroup'}, ". 
+                        "\$widgets->{'$name-key'}, 'mod1_mask', ".
+                        "['visible', 'locked'] );");
+                undef $widgets->{"$name-key"};
+            }
+            undef $widgets->{"$name-label"};
         } else {
-            # There is no '_' underline accelerator
-            $class->add_to_UI($depth, "\$widgets->{'$name'} = ".
-                "new Gtk::PixmapMenuItem(_('$label'));" );
-            if ($right_justify) { 
-                $class->add_to_UI( $depth, "\$widgets->{'$name'}->right_justify;" );
+            # Use old methods (from Gtk::MenuItem)
+            $class->add_to_UI( $depth, "\$widgets->{'$name'} = ".
+                "new Gtk::MenuItem(_('$label') );" );
+            if (_($label) =~ /_/) {
+                $class->add_to_UI( $depth,
+                    "\$widgets->{'$name-key'} = ".
+                        "\$widgets->{'$name'}->child->parse_uline(_('$label') );");
+                $class->add_to_UI( $depth,
+                    "\$widgets->{'$name'}->add_accelerator(".
+                        "'activate', $current_form\{'accelgroup'}, ". 
+                        "\$widgets->{'$name-key'}, 'mod1_mask', ".
+                        "['visible', 'locked'] );");
+                undef $widgets->{"$name-key"};
             }
         }
-
     } else {
         # There is no label
         $class->add_to_UI($depth, "\$widgets->{'$name'} = ".
@@ -963,13 +978,17 @@ sub new_GtkPixmapMenuItem {
 
     $class->pack_widget($parent, $name, $proto, $depth );
     if ($icon) {
-        $class->add_to_UI( $depth,
-            "$current_form\{'$name-pixmap'} = \$class->create_pixmap(".
-                "$current_window, '$icon');");
-# FIXME find out how to achieve this
-        $class->add_to_UI( -$depth,
-            "#$current_form\{'$name'}->set_pixmap(".
-                "$current_form\{'$name-pixmap'});");
+        if ($class->my_perl_gtk_can_do('gtk_pixmap_menu_item')) {
+            $class->add_to_UI( $depth,
+                "$current_form\{'$name-pixmap'} = \$class->create_pixmap(".
+                    "$current_window, '$icon');");
+            $class->add_to_UI( $depth, "$current_form\{'$name-pixmap'}->show;");
+# FIXME find out how to show the accelerators
+            $class->add_to_UI( $depth,
+                "$current_form\{'$name'}->set_pixmap(".
+                    "$current_form\{'$name-pixmap'});");
+            undef $widgets->{"$name-pixmap"};
+        }
     }
     return $widgets->{$name};
 }
