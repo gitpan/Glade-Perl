@@ -50,7 +50,7 @@ BEGIN {
                         $first_form
                       );
     $PACKAGE      = __PACKAGE__;
-    $VERSION        = q(0.40);
+    $VERSION        = q(0.41);
     @VARS         = qw( 
                         $VERSION
                         $AUTHOR
@@ -82,7 +82,8 @@ BEGIN {
     @METHODS      = qw( 
                     );
     $subs =             '';
-    $autosubs =         '';
+    $autosubs =         ' destroy_Form about_Form '.
+                        ' toplevel_hide toplevel_close toplevel_destroy ';
     $LOOKUP       = 2;
     $BOOL         = 4;
     $DEFAULT      = 8;
@@ -133,11 +134,12 @@ sub Write_to_File {
     my ($class) = @ARG;
     my $me = "$class->Write_to_File";
     my $filename = $main::Glade_Perl_Generate_options->write_source;
-    if (fileno UI or fileno SUBS or $class->Building_UI_only) {
+    if (fileno UI or fileno SUBS or fileno SUBCLASS or $class->Building_UI_only) {
         # Files are already open or we are not writing source
         if ($class->Writing_to_File) {
             if ($filename eq '-1') {
                 close UI;
+                close SUBCLASS;
                 close SUBS;
                 $class->diag_print (2, "$indent- Closing output file in $me");
                 $main::Glade_Perl_Generate_options->write_source(undef);
@@ -146,6 +148,7 @@ sub Write_to_File {
                     "$class->Writing_to_File in $me");
             }
         }
+
     } elsif ($filename && ($filename eq '1')) {
         $class->diag_print (2, "$indent- Using default output files ".
             "in Glade <project><source_directory> in $me");
@@ -153,15 +156,19 @@ sub Write_to_File {
     } elsif ($filename && ($filename ne '-1') ) {
         # We want to write source
         if ($filename eq 'STDOUT') {
-            $main::Glade_Perl_Generate_options->write_source('&STDOUT');
+            $main::Glade_Perl_Generate_options->write_source('>&STDOUT');
         }
-          $class->diag_print (2, "$indent- Writing UI   to '$filename' in $me");
+        $class->diag_print (2, "$indent- Writing UI   to '$filename' in $me");
         open UI,     ">$filename" or 
             die "error $me - can't open file '$filename' for output";
         $class->diag_print (2, "$indent- Writing SUBS to '$filename' in $me");
         open SUBS,     ">$filename" or 
             die "error $me -can't open file '$filename' for output";
+        $class->diag_print (2, "$indent- Writing SUBCLASS to '$filename' in $me");
+        open SUBCLASS,     ">$filename" or 
+            die "error $me -can't open file '$filename' for output";
         UI->autoflush(1);
+        SUBCLASS->autoflush(1);
         SUBS->autoflush(1);
     } else {
         # Nothing to do
@@ -199,9 +206,103 @@ sub add_to_UI {
 sub perl_UI_SUBS_header {}
 sub perl_SUBS {}
 sub perl_SubClass {}
-sub Makefile {}
-sub MANIFEST {}
-sub Documentation {}
+
+sub write_UI {
+    my ($class, $proto, $glade_proto) = @ARG;
+    my $me = "$class->write_UI";
+    my ($permitted_stubs, $UI_String);
+    my ($handler, $module, $form );
+    unless (fileno UI) {            # ie user has supplied a filename
+        # Open UI for output unless the filehandle is already open 
+        open UI,     ">".($proto->{'UI_filename'})    or 
+            die "error $me - can't open file ".
+                "'$proto->{'UI_filename'}' for output";
+        $class->diag_print (4, "$indent- Writing UI source     to ".
+            "$proto->{'UI_filename'} - in $me");
+        if ($main::Glade_Perl_Generate_options->autoflush) {
+            UI->autoflush(1);
+        }
+    }
+    $autosubs &&
+        $class->diag_print (2, "$indent- Automatically generated SUBS are ".
+            "'$autosubs' by $me");
+
+    print UI "#!/usr/bin/perl -w\n";
+    foreach $form (keys %$forms) {
+        $class->diag_print(4, "$indent- Writing source for class $form");
+        $permitted_stubs = '';
+        foreach $handler (sort keys (%{$forms->{$form}{'_HANDLERS'}})) {
+            $permitted_stubs .= "\n${indent}'$handler' => undef,";
+        }
+        # FIXME Now generate different source code for each user choice
+        print UI $class->perl_UI_AUTOLOAD_header(
+            $project, $proto, $form, $permitted_stubs)."\n";
+        $UI_String = join("\n", @{$forms->{$form}{'UI_Strings'}});
+        print UI $UI_String;
+        print UI $class->perl_UI_AUTOLOAD_new_bottom($project, $form);
+    }
+    print UI $class->perl_UI_footer($project, $proto->{'name'}, $first_form);
+
+# FIXME write these files if necessary
+#    print STDOUT "-------------------------------------------\n";
+#    print STDOUT $class->dist_file_Changelog;
+#    print STDOUT "-------------------------------------------\n";
+#    print STDOUT $class->dist_file_Makefile;
+#    print STDOUT "-------------------------------------------\n";
+#    print STDOUT $class->dist_file_README;
+#    print STDOUT "-------------------------------------------\n";
+}
+
+sub write_SUBCLASS {
+    my ($class, $proto, $glade_proto) = @ARG;
+    my $me = "$class->write_SUBCLASS";
+    my ($permitted_stubs);
+    my ($handler, $module, $form );
+    unless (fileno SUBCLASS) {            # ie user has supplied a filename
+        # Open SUBCLASS for output unless the filehandle is already open 
+        open SUBCLASS,     ">".($proto->{'SUBCLASS_filename'})    or 
+            die "error $me - can't open file ".
+                "'$proto->{'SUBCLASS_filename'}' for output";
+        $class->diag_print (4, "$indent- Writing SUBCLASS source     to ".
+            "$proto->{'SUBCLASS_filename'} - in $me");
+        if ($main::Glade_Perl_Generate_options->autoflush) {
+            SUBCLASS->autoflush(1);
+        }
+    }
+    $autosubs &&
+        $class->diag_print (2, "$indent- Automatically generated SUBS are ".
+            "'$autosubs' by $me");
+
+    print SUBCLASS "#!/usr/bin/perl -w\n";
+    $form = $first_form;
+#    foreach $form (keys %$forms) {
+        $class->diag_print(4, "$indent- Writing SUBCLASS for class $form");
+        $permitted_stubs = '';
+        # FIXME Now generate different source code for each user choice
+        print SUBCLASS $class->perl_SUBCLASS_AUTOLOAD_header(
+            $project, $proto, $form, $permitted_stubs)."\n";
+#        print SUBCLASS $class->perl_SUBCLASS_AUTOLOAD_new_bottom($project, $form);
+        foreach $handler (sort keys (%{$forms->{$form}{'_HANDLERS'}})) {
+            unless ($autosubs =~ / $handler /) {
+                print SUBCLASS "sub $handler {
+${indent}my (\$class, \$data, \$object, \$instance) = \@ARG;
+${indent}my \$me = __PACKAGE__.\"->$handler\";
+${indent}# Get ref to hash of all widgets on our form
+${indent}my \$form = \$__PACKAGE__::all_forms->{\$instance};
+${indent}# REPLACE the line below with the actions to be taken when ".
+    "__PACKAGE__.\"->$handler.\" is called
+${indent}__PACKAGE__->show_skeleton_message(\$me, \\\@ARG, ".
+    "__PACKAGE__, '$project->{'logo'}');
+}
+
+";
+            }
+#        }
+    }
+    print SUBCLASS $class->perl_UI_footer(
+        $project, "Sub".$proto->{'name'}, "Sub".$first_form);
+
+}
 
 sub perl_preamble {
     my ($class, $package, $project, $proto, $name) = @ARG;
@@ -220,18 +321,119 @@ require 5.000; use English; use strict \'vars\', \'refs\', \'subs\';
 $project->{'copying'} $project->{'author'}
 #
 #==============================================================================
-# This perl source file was automatically generated by $PACKAGE from
+# This perl source file was automatically generated by $class from
 #   Glade file $project->{'glade_filename'}
 #   on Date    $project->{'date'}
 #
 # Do not edit this file, any changes that you make will be lost when
-#   the file is overwritten by the next run of $PACKAGE
+#   the file is overwritten by the next run of $class
 #
-# $PACKAGE - version $VERSION
+# $class       - version $VERSION
 #   Copyright (c) Date   $DATE
 #                 Author $AUTHOR
 #==============================================================================
 
+";
+}
+
+sub perl_SUBCLASS_AUTOLOAD_header {
+    my ($class, $project, $proto, $name, $permitted_stubs) = @ARG;
+    my $me = "$class->perl_UI_Header";
+#use Data::Dumper; print Dumper(\@ARG); exit
+    my ($module, $super);
+    my $about_string = $class->perl_about($project, $name);
+    my $init_string = '';
+    my $isa_string = 'Glade::PerlRun';
+    my $use_string = '';
+    $permitted_stubs = $permitted_stubs || '';
+    foreach $module (@use_modules) {
+        $use_string .= "\n${indent}use $module;";
+        $isa_string .= " $module";
+    }
+    if ($main::Glade_Perl_Generate_options->{'allow_gnome'}) {
+        $init_string .= "${indent}Gnome->init('$project->{'name'}', '$project->{'version'}');";
+        $use_string .="\n${indent}# We need the Gnome bindings as well\n".
+                        "${indent}use Gnome;"
+    } else {
+        $init_string .= "${indent}Gtk->init;";
+    }
+    $super = "$project->{'source_directory'}";
+    $super =~ s/.*\/(.*)$/$1/;
+    $module = $project->{'name'};
+    # remove double spaces
+    $isa_string =~ s/  / /g;
+return $class->perl_preamble($module, $project, $proto, "Sub$name").
+"BEGIN {
+${indent}use vars    qw( 
+${indent}                 \@ISA
+${indent}                 \$AUTOLOAD
+${indent}                 \%fields
+${indent}             );
+${indent}# Tell interpreter who we are inheriting from
+${indent}use $super\::$module;
+${indent}\@ISA      = qw( $name );
+${indent}# Inherit the AUTOLOAD dynamic methods from BusFrame
+${indent}*AUTOLOAD = \\\&$name\::AUTOLOAD;
+}
+
+\%fields = (
+# Insert any extra data access methods that you want to add to 
+#   our inherited super-constructor (or overload)
+${indent}USERDATA    => undef,
+${indent}VERSION     => '0.01',
+);
+
+#==============================================================================
+#=== These are the overloaded class constructors and so on                  ===
+#==============================================================================
+sub new {
+${indent}my \$that  = shift;
+${indent}# Allow indirect constructor so that we can call eg. 
+${indent}#   \$window1 = BusFrame->new; \$window2 = \$window1->new;
+${indent}my \$class = ref(\$that) || \$that;
+
+${indent}# Call our super-class constructor to get an object and reconsecrate it
+${indent}my \$self = bless \$that->SUPER::new(), \$class;
+
+${indent}# Add our own data access methods to the inherited constructor
+${indent}my(\$element);
+${indent}foreach \$element (keys \%fields) {
+${indent}${indent}\$self->{_permitted_fields}->{\$element} = \$fields{\$element};
+${indent}}
+${indent}\@{\$self}{keys \%fields} = values \%fields;
+${indent}return \$self;
+}
+
+sub run {
+${indent}my (\$class) = \@ARG;
+$init_string
+${indent}my \$window = \$class->new;
+${indent}# Insert your subclass user data key/value pairs 
+${indent}\$window->USERDATA({
+#${indent}${indent}'Key1'   => 'Value1',
+#${indent}${indent}'Key2'   => 'Value2',
+#${indent}${indent}'Key3'   => 'Value3',
+${indent}});
+${indent}\$window->TOPLEVEL->show;
+#${indent}my \$window2 = \$window->new;
+#${indent}\$window2->TOPLEVEL->show;
+${indent}Gtk->main;
+${indent}return \$window;
+}
+#===============================================================================
+#==== Below are overloaded signal handlers                                  ====
+#===============================================================================
+$about_string
+
+sub destroy_Form {
+${indent}my (\$class, \$data, \$object, \$instance) = \@ARG;
+#${indent}__PACKAGE__->destroy_all_forms(\$__PACKAGE__::all_forms); 
+${indent}Gtk->main_quit; 
+}
+
+sub toplevel_hide                   { shift->get_toplevel->hide         }
+sub toplevel_close                  { shift->get_toplevel->close        }
+sub toplevel_destroy                { shift->get_toplevel->destroy      }
 ";
 }
 
@@ -278,7 +480,7 @@ ${indent}PACKAGE  => '$module',
 ${indent}VERSION  => '$project->{'version'}',
 ${indent}AUTHOR   => '$project->{'author'}',
 ${indent}DATE     => '$project->{'date'}',
-${indent}INSTANCE => 'Guide-App',
+${indent}INSTANCE => '$first_form',
 );
 
 \%stubs = (
@@ -355,11 +557,10 @@ ${indent}my (\$class) = \@ARG;
 ";
 }
 
-sub perl_UI_AUTOLOAD_new_bottom {
+sub perl_about {
     my ($class, $project, $name) = @ARG;
-    my $about_string;
     if ($main::Glade_Perl_Generate_options->{'allow_gnome'}) {
-        $about_string = 
+        return
 "sub about_Form {
 ${indent}my (\$class) = \@ARG;
 ${indent}my \$gtkversion = 
@@ -390,7 +591,7 @@ ${indent}\$ab->set_modal('1' );
 ${indent}\$ab->show;
 }";
     } else {
-       $about_string = 
+       return
 "sub about_Form {
 ${indent}my (\$class) = \@ARG;
 ${indent}my \$gtkversion = 
@@ -409,8 +610,12 @@ ${indent}__PACKAGE__->message_box(\$message, \"About \\u\".__PACKAGE__, ['Dismis
 ${indent}${indent}'$project->{'logo'}', 'left' );
 }";
     }
+}
 
-return "
+sub perl_UI_AUTOLOAD_new_bottom {
+    my ($class, $project, $name) = @ARG;
+    my $about_string = $class->perl_about($project, $name);
+    return "
 
 ${indent}#
 ${indent}# Return all forms in the constructed UI
@@ -630,7 +835,7 @@ ${indent}Gtk->main_quit;
 }
 
 sub perl_UI_footer {
-    my ($class, $project, $name) = @ARG;
+    my ($class, $project, $name, $first_form) = @ARG;
 return 
 "1;
 
@@ -638,11 +843,14 @@ return
 
 #===============================================================================
 #==== Documentation ============================================================
-#===============================================================================\n=pod
+#===============================================================================
+\=pod
+
 \=head1 NAME
 
 ${name} - version $project->{'version'} $project->{'date'}
-Brief description of this module
+
+$project->{'description'}
 
 \=head1 SYNOPSIS
 
@@ -658,7 +866,7 @@ Brief description of this module
  
  Gtk->init;
  my \$window = ${first_form}->new;
- \$window->UI->show;
+ \$window->TOPLEVEL->show;
  Gtk->main;
  
  OR use the shorthand for the above calls

@@ -26,7 +26,7 @@ BEGIN {
                             $gnome_enums
                           );
     $PACKAGE =          __PACKAGE__;
-    $VERSION            = q(0.40);
+    $VERSION            = q(0.41);
     $gnome_enums =      {};
     # Tell interpreter who we are inheriting from
     @ISA =              qw( Glade::PerlSource );
@@ -253,13 +253,10 @@ sub new_GnomeDockItem {
     return $widgets->{$name};
 }
 
-#FIXME Glade 0.5.3 - New widget      GnomeDruid (+ GnomeDruidPageStart/Standard/Finish)
 sub new_GnomeDruid {
     my ($class, $parent, $proto, $depth) = @ARG;
     my $me = "$class->new_GnomeDruid";
     my $name = $proto->{'name'};
-    $class->diag_print(2, $proto);
-#    my $max_saved = $class->use_par($proto, 'max_saved', $DEFAULT, 10 );
 
     $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gnome::Druid;" );
 
@@ -267,6 +264,114 @@ sub new_GnomeDruid {
     return $widgets->{$name};
 }
 
+sub new_GnomeDruidPageStart {
+    my ($class, $parent, $proto, $depth) = @ARG;
+    my $me = "$class->new_GnomeDruidPageStart";
+    my ($type, $value, $command, $color_string, $red, $blue, $green);
+    my $name = $proto->{'name'};
+    my $title = $class->use_par($proto, 'title', $DEFAULT, '' );
+    my $text  = $class->use_par($proto, 'text',  $DEFAULT, '' );
+    my $logo_image = $class->use_par($proto, 'logo_image',  $DEFAULT, '' );
+    my $watermark_image = $class->use_par($proto, 'watermark_image',  $DEFAULT, '' );
+
+    $class->add_to_UI( $depth, "\$widgets->{'$name'} = new Gnome::DruidPageStart;" );
+    foreach $type ('background', 'textbox', 'logo_background', 'title', 'text') {
+        $value = $class->use_par($proto, "$type\_color",  $DEFAULT, '' );
+        if ($value) {
+           ($red, $green, $blue) = split(',', $value);
+            $red   *= 257; $green *= 257; $blue  *= 257;
+            $color_string = "${current_form}\{'$parent'}->get_toplevel->".
+                "get_colormap->color_alloc({red => $red, green => $green, blue => $blue})";
+            $command = $type;
+            $command =~ s/background/bg/;
+            $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_$command\_color(".
+                "$color_string);");
+        }
+    }
+    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_title('$title' );" );
+    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_text('$text' );" );
+    $logo_image && 
+        $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_logo(".
+            "\$class->create_image('$logo_image', ['".$project->pixmaps_directory."']));" );
+    $watermark_image && 
+        $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_watermark(".
+            "\$class->create_image('$watermark_image', ['".$project->pixmaps_directory."']));" );
+
+    $class->pack_widget($parent, $name, $proto, $depth );
+    return $widgets->{$name};
+}
+
+sub new_GnomeDruidPageStandard {
+    my ($class, $parent, $proto, $depth) = @ARG;
+    my $me = "$class->new_GnomeDruidPageStandard";
+    my ($type, $value, $command, $color_string, $red, $blue, $green);
+    my $name = $proto->{'name'};
+    my $title = $class->use_par($proto, 'title', $DEFAULT, '' );
+    my $logo_image = $class->use_par($proto, 'logo_image',  $DEFAULT, '' );
+    my $watermark_image = $class->use_par($proto, 'watermark_image',  $DEFAULT, '' );
+
+    $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gnome::DruidPageStandard;" );
+    foreach $type ('background', 'textbox', 'logo_background', 'title', 'text') {
+        $value = $class->use_par($proto, "$type\_color",  $DEFAULT, '' );
+        if ($value) {
+           ($red, $green, $blue) = split(',', $value);
+            $red   *= 257; $green *= 257; $blue  *= 257;
+            $command = $type;
+            $command =~ s/background/bg/;
+            $color_string = "${current_form}\{'$parent'}->get_toplevel->".
+                "get_colormap->color_alloc({red => $red, green => $green, blue => $blue})";
+            $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_$command\_color(".
+                "$color_string);");
+        }
+    }
+    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_title('$title' );" );
+    $logo_image && 
+        $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_logo(".
+            "\$class->create_image('$logo_image', ['".$project->pixmaps_directory."'] ));" );
+    $watermark_image && 
+        $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_watermark(".
+            "\$class->create_image('$watermark_image', ['".$project->pixmaps_directory."'] ));" );
+
+    $class->pack_widget($parent, $name, $proto, $depth );
+    return $widgets->{$name};
+}
+
+sub new_GnomeDruidPageFinish {
+    my ($class, $parent, $proto, $depth) = @ARG;
+    my $me = "$class->new_GnomeDruidPageFinish";
+    my ($type, $value, $command, $color_string, $red, $blue, $green);
+    my $name = $proto->{'name'};
+    my $title = $class->use_par($proto, 'title', $DEFAULT, '' );
+    my $text  = $class->use_par($proto, 'text',  $DEFAULT, '' );
+    my $logo_image = $class->use_par($proto, 'logo_image',  $DEFAULT, '' );
+    my $watermark_image = $class->use_par($proto, 'watermark_image',  $DEFAULT, '' );
+
+    $class->add_to_UI( $depth,  "\$widgets->{'$name'} = new Gnome::DruidPageFinish;" );
+    foreach $type ('background', 'textbox', 'logo_background', 'title', 'text') {
+        $value = $class->use_par($proto, "$type\_color",  $DEFAULT, '' );
+        if ($value) {
+           ($red, $green, $blue) = split(',', $value);
+            $red   *= 257; $green *= 257; $blue  *= 257;
+            $color_string = "${current_form}\{'$parent'}->get_toplevel->".
+                "get_colormap->color_alloc({red => $red, green => $green, blue => $blue})";
+            $command = $type;
+            $command =~ s/background/bg/;
+            $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_$command\_color(".
+                "$color_string);");
+        }
+    }
+    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_title('$title' );" );
+    $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_text('$text' );" );
+    $logo_image && 
+        $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_logo(".
+            "\$class->create_image('$logo_image', ['".$project->pixmaps_directory."'] ));" );
+    $watermark_image && 
+        $class->add_to_UI( $depth, "\$widgets->{'$name'}->set_watermark(".
+            "\$class->create_image('$watermark_image', ['".$project->pixmaps_directory."'] ));" );
+
+    $class->pack_widget($parent, $name, $proto, $depth );
+    return $widgets->{$name};
+}
 
 sub new_GnomeEntry {
     my ($class, $parent, $proto, $depth) = @ARG;

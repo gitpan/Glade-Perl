@@ -2,17 +2,14 @@ ROADMAP Where is Glade::PerlGenerate going?
 
 From version 22 October 1999 I am using Perl type release numbers - ie 0.40
         
-0.40   Stable version will be split off from 0.3.14 if it works well
-
-0.51   More Gnome stuff that appears in Perl/Gtk CVS versions
-0.51   New options structure (and file) ??
+0.50   New options structure (and file) ??
 
 0.52   Glade::PerlDist files and methods to build Makefile.PL etc and doc stubs
 0.53   Glade::PerlHelper GUI options editor and generation control
 0.54   More complete installation mechanism
             install glade2perl and any other scripts
             check for required packages
-0.56   Implement any remaining Gnome and other widgets (eg GtkXmHTM)
+0.56   Implement any new Glade widgets
 0.57   Make documentation complete (inc perldoc)
 
 0.60   Stable release

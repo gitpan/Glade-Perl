@@ -37,7 +37,7 @@ BEGIN {
     # Tell interpreter who we are inheriting from
     @ISA          = qw( Exporter );
     $PACKAGE      = __PACKAGE__;
-    $VERSION      = q(0.40);
+    $VERSION      = q(0.41);
     $AUTHOR       = q(Dermot Musgrove <dermot.musgrove\@virgin.net>);
     $DATE         = q(Sun Oct 10 14:13:00 BST 1999);
     $widgets      = {};
@@ -50,6 +50,7 @@ BEGIN {
                     );
     @METHODS      = qw( 
                         full_Path 
+                        create_image 
                         create_pixmap 
                         missing_handler 
                         message_box 
@@ -170,6 +171,33 @@ sub full_Path {
     return $fullname;
 }
 
+sub create_image {
+    my ($class, $filename, $pixmap_dirs) = @ARG;
+    my $me = "$class->create_image";
+    my ($work, $testfile, $found_filename, $dir);
+    # First look in specified $pixmap_dirs
+    foreach $dir (@{$pixmap_dirs}) {
+        # Make up full path name and test
+        $testfile = $class->full_Path($filename, $dir);
+#        print STDERR "Looking for ImlibImage file '$testfile' in $me\n";
+    	if (-f $testfile) {
+            $found_filename = $testfile;
+            last;
+    	}
+    }
+    unless ($found_filename) {
+    	if (-f $filename) {
+            $found_filename = $filename;
+#            print STDERR "ImlibImage file '$testfile' exists in $me\n";
+    	} else {
+            print STDERR "error ImlibImage file '$filename' does not exist in $me\n";
+            return undef;
+    	}
+    }
+
+    return Gtk::Gdk::ImlibImage->load_image ($found_filename);
+}
+
 sub create_pixmap {
     my ($class, $widget, $filename, $pixmap_dirs) = @ARG;
     my $me = "$class->create_pixmap";
@@ -181,7 +209,7 @@ sub create_pixmap {
     # First look in specified $pixmap_dirs
     foreach $dir (@{$pixmap_dirs}) {
         # Make up full path name and test
-        $testfile = $class->full_Path($dir, $filename);
+        $testfile = $class->full_Path($filename, $dir);
     	if (-f $testfile) {
             $found_filename = $testfile;
             last;
@@ -189,25 +217,31 @@ sub create_pixmap {
     }
     unless ($found_filename) {
     	if (-f $filename) {
+#            print STDERR "Pixmap file '$testfile' exists in $me\n";
             $found_filename = $filename;
     	} else {
             print STDERR "error Pixmap file '$filename' does not exist in $me\n";
             return undef;
     	}
     }
-# FIXME find a way to create a pixmap without a window
-# Perl/Gtk cant do gdk_pixmap_colormap_create_from_xpm yet <sigh>
-#    if ($class->my_perl_gtk_can_do('')) { } else { }
-    $work->{'window'} 	    = $widget->get_toplevel->window	 ;
-    unless ($work->{'window'}) {
-    	print STDOUT "error Couldn't get_toplevel_window to construct pixmap from '$filename' in $me\n";
-    	$work->{'window'} = $widget->window	 ;
-#        return undef;
+    if (Gtk::Gdk::Pixmap->can('colormap_create_from_xpm')) {
+        # We have Perl/Gtk after CVS 19990911 so we don't need a realized window
+        my $colormap = $widget->get_colormap;
+        return new Gtk::Pixmap(
+            Gtk::Gdk::Pixmap->colormap_create_from_xpm (
+                undef, $colormap, undef, $found_filename));
+    } else {
+        # We have an old Perl/Gtk so we need a realized window
+        $work->{'window'} 	    = $widget->get_toplevel->window	 ;
+        unless ($work->{'window'}) {
+    	    print STDOUT "error Couldn't get_toplevel_window to construct pixmap from '$filename' in $me\n";
+        	$work->{'window'} = $widget->window	 ;
+        }
+        $work->{'style'} = Gtk::Widget->get_default_style->bg('normal')	 ;
+        return new Gtk::Pixmap(
+            Gtk::Gdk::Pixmap->create_from_xpm(
+                $work->{'window'}, $work->{'style'}, $found_filename ) );
     }
-    $work->{'style'} = Gtk::Widget->get_default_style->bg('normal')	 ;
-    return new Gtk::Pixmap(
-        Gtk::Gdk::Pixmap->create_from_xpm(
-            $work->{'window'}, $work->{'style'}, $found_filename ) );
 }
 
 sub message_box {
@@ -312,7 +346,7 @@ sub message_box_close {
     $widgets->{"MessageBox-$mbno"}->get_toplevel->destroy;
     undef $widgets->{"MessageBox-$mbno"};
     if ('*Quit Program*Quit PerlGenerate*Quit UI Build*Close Form*' =~ m/\*$data\*/) {
-        __PACKAGE__->destroy_all_forms;
+#        __PACKAGE__->destroy_all_forms;
         Gtk->main_quit;
     }
     return $data;

@@ -3,8 +3,9 @@ Makefile.PL                 # MakeMaker input file (run 'perl Makefile.PL')
 Documentation/COPYING       # How we encourage copying
 Documentation/Changelog     # History of the changes made
 Documentation/FAQ           # Frequently asked questions
+Documentation/INSTALL       # How to install and run Glade-Perl
 Documentation/NEWS          # What is new in each version
-Documentation/Perl-Gtk-Docs.txt # Some notes on Perl/Gtk documentation
+Documentation/Gtk-Perl-Docs.txt # Some notes on Gtk-Perl documentation
 Documentation/README        # Some documentation
 Documentation/ROADMAP       # Where will the module go?
 Documentation/TODO          # What still must be done <sigh>

@@ -20,6 +20,7 @@ SEE ALSO
 Documentation/COPYING       # How we encourage copying
 Documentation/Changelog     # History of the changes made
 Documentation/FAQ           # Frequently asked questions
+Documentation/INSTALL       # How to install the module
 Documentation/Perl-Gtk-Docs.txt # Some pointers to Perl/Gtk documentation
 Documentation/NEWS          # What is new in each version
 Documentation/README        # This file
@@ -44,85 +45,6 @@ There are several options
    course you will have nothing to run later.
 3) Do both of the above.
 4) Generate (2 above) from Glade's 'Build' button.
-
-TO INSTALL
-----------
-There is a standard Makefile.PL but it will not check any dependencies
-(Glade, Gtk, Perl/Gtk XML::Parser etc) and neither will it install the
-glade2perl script.
-
-To install
-    perl Makefile.PL
-    make
-    make test
-    make install (if test was OK)
-    
-TO RUN FROM GLADE
------------------
-If you use Glade >= 0.5.0 you can set the project language to Perl and copy
-the supplied script called 'glade2perl' to a directory in your path . Then 
-when you click the 'Build' button or menu item the script will generate Perl 
-sources for you.
-
-We use options files to store information about such things as existing signal 
-handler modules and so on. This means that signal handler stubs are only 
-specified if they are not available at Build time even though Glade knows 
-nothing about them. This approach also allows you to control other options
-for the Glade build phase.
-
-TO RUN MANUALLY
----------------
-You need Perl, Glib/Gtk+, Perl/Gtk and XML::Parser packages and of course
-Glade if you want to edit the interface files.
-------------------------------------------------------------------------
-
-A) To Build the supplied example, call (from the same directory as 
-this README file) This should do the same as make test did
-
-    perl -w test.pl  
-	
-and when the form shows, try clicking some menu items. They will 
-all show a simple message_box and to exit you can click the 
-'Quit Program' button or click 'File/Quit'. Perl sometimes core-dumps when I 
-close the window from the windowmanager but that must be my problem/mistake. 
-
-'File/Open' or Ctrl-O will show a file selection dialog which does nothing
-but prove that the class can be used.
-
-All the Help menu buttons have Existing_SUBS and will show an information 
-message_box but the other buttons will show the AUTOLOAD()ed message_box 
-since the signal-handlers will not exist. 
-The 'Help/About' button will show details of Glade::PerlGenerate.
-
--------------------------------------------------------------------------
-
-B) To run the code that you have generated, call (again from the 
-same directory as this README file)
-
-    perl -e 'use Generated::BusForm; BusForm->run'
-
-Now, _all_ signals will cause an information message_box since you
-have generated stubs for any signal handlers that were missing at Build time.
-The 'Help/About' button will now show details of the generated App.
-
-Obviously, change the use() command above to whatever the details were in
-your project file ie. 
-
-'use <project><source_directory>::<project><name>; form_name->run'
-
-If you want just to view the interface, without writing the source files
-edit file test.pl and comment out the 'write_source' option. This 
-will block the source code generation.
--------------------------------------------------------------------------
-
-C) To build a UI from an XML string. Look at the file test.pl for an
-example of doing this. Uncomment the call to 
-Glade::PerlGenerate->Form_from_XML to show a simple test form.
-
--------------------------------------------------------------------------
-You may have problems with your own Glade project files if they use widgets
-that Glade::PerlGenerate doesn't handle correctly. At least it will warn you 
-about any widgets or properties that it doesn't understand properly. 
 
 GLADE PROJECT
 -------------
@@ -156,7 +78,7 @@ source modules.
   <author>  User's long name with email address of username@hostname
   <date>    Current localtime
   <copying> '# Unspecified copying policy. Please contact the author'
-  <version> 0.0.1
+  <version> 0.01
   
 EDITING
 -------
@@ -166,15 +88,15 @@ same tabwidth if the generated source is to look correct.
 
 Read the file test.pl for some examples of how to use Glade::PerlGenerate.
 
-REQUIREMENTS (what I use)
+REQUIREMENTS (what I use but older versions may well work)
 -------------------------
 Package     my version	available from
 -------     ----------  --------------
 Glade       0.5.3       http://glade.pn.org/
 Glib/Gtk+   1.2.3       ftp://ftp.gimp.org/pub/gtk/
-gnome-libs  1.0.16      Gnome mirrors or Gnome.org CVS 
+gnome-libs  1.0.54      Gnome mirrors or Gnome.org CVS 
 Perl-Gtk    0.6123      CPAN 
-    (but you'll need CVS >= 19991001 from Gnome.org to get the best results)
+    (but you'll need CVS >= 19991025 from Gnome.org to get the best results)
 Perl        5.004_04    CPAN
 XML::Parser 2.27        CPAN
 

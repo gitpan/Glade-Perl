@@ -26,7 +26,7 @@ BEGIN {
                             $PACKAGE 
                           );
     $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.40);
+    $VERSION        = q(0.41);
     # Tell interpreter who we are inheriting from
     @ISA            = qw(
                             Glade::PerlProject
@@ -142,8 +142,8 @@ sub Form_from_Pad_Proto {
     my $depth = 0;
     $forms = {};
     $widgets = {};
-    my ($permitted_stubs, $UI_String);
-    my ($handler, $module, $form );
+    my ($module);
+#    my ($handler, $module, $form );
     foreach $module (@{$params->{'use_modules'}}) {
         if ($module && $module ne '') {
             eval "use $module;" or
@@ -160,73 +160,33 @@ sub Form_from_Pad_Proto {
     } else {
         Gtk->init;
     }
+
     # Recursively generate the UI
     my $window = $class->Widget_from_Proto( $glade_proto->{'name'}, 
         $glade_proto, $depth, 'Top Level Application' );
+
+    # And show it if necessary
     unless ($class->Writing_Source_only) { 
         $forms->{$first_form}{$first_form}->show;
     }
+
+    # Now write the disk files
     if ($class->Writing_to_File) {
-        unless (fileno UI) {            # ie user has supplied a filename
-            # Open UI for output unless the filehandle is already open 
-            open UI,     ">".($proto->{'UI_filename'})    or 
-                die "error $me - can't open file ".
-                    "'$proto->{'UI_filename'}' for output";
-            $class->diag_print (4, "$indent- Writing UI source     to ".
-                "$proto->{'UI_filename'} - in $me");
-            if ($main::Glade_Perl_Generate_options->autoflush) {
-                UI->autoflush(1);
-            }
-        }
-        $autosubs &&
-            $class->diag_print (2, "$indent- Automatically generated SUBS are ".
-                "'$autosubs' by $me");
-        # Write the source code modules, dist files and doc files
-        print UI "#!/usr/bin/perl -w\n";
-        foreach $form (keys %$forms) {
-            $class->diag_print(4, "$indent- Writing source for class $form");
-            $permitted_stubs = '';
-            foreach $handler (sort keys (%{$forms->{$form}{'_HANDLERS'}})) {
-                $permitted_stubs .= "\n${indent}'$handler' => undef,";
-            }
-            # FIXME Now generate different source code for each user choice
-            print UI $class->perl_UI_AUTOLOAD_header(
-                $project, $proto, $form, $permitted_stubs)."\n";
-            $UI_String = join("\n", @{$forms->{$form}{'UI_Strings'}});
-            print UI $UI_String;
-            print UI $class->perl_UI_AUTOLOAD_new_bottom($project, $form);
-        }
-        print UI $class->perl_UI_footer($project, $proto->{'name'});
-
-        $module = "$glade_proto->{'project'}{'source_directory'}";
-        $module =~ s/.*\/(.*)$/$1/;
-
-# FIXME write these files if necessary
-#        print STDOUT "-------------------------------------------\n";
-#        print STDOUT $class->dist_file_Changelog;
-#        print STDOUT "-------------------------------------------\n";
-#        print STDOUT $class->dist_file_Makefile;
-#        print STDOUT "-------------------------------------------\n";
-#        print STDOUT $class->dist_file_README;
-#        print STDOUT "-------------------------------------------\n";
+        $class->write_UI($proto, $glade_proto);
+# FIXME write these subs in PerlSource
+        $class->write_SUBCLASS($proto, $glade_proto);
+#        $class->write_Documentation($proto, $glade_proto);
+#        $class->write_dist($proto, $glade_proto);
     }
-
-    # We are finished with these attributes now so 'use them up'
-    undef $glade_proto->{'project'}{'directory'};
-    undef $glade_proto->{'project'}{'pixmaps_directory'};
-    undef $glade_proto->{'project'}{'source_directory'};
-    undef $glade_proto->{'glade_filename'};
-
+    $module = "$glade_proto->{'project'}{'source_directory'}";
+    $module =~ s/.*\/(.*)$/$1/;
     # Look through $proto for any unused attributes (still defined) and report them
     if ($class->diagnostics(2)) {
         $class->diag_print (2, "-----------------------------------------------------------------------------");
         $class->diag_print (2, "$indent  CONSISTENCY CHECKS");
         $class->diag_print (2, "$indent- $missing_widgets unused widget properties");
         $class->diag_print (2, "$indent- $ignored_widgets ".
-#        $class->diag_print (2, "$indent- $Glade::PerlUI::missing_widgets unused widget properties");
-#        $class->diag_print (2, "$indent- ${Glade::PerlUI::ignored_widgets} ".
             "widgets were ignored (one or more of ".
-#            "'$Glade::PerlUI::ignore_widgets')");
             "'$ignore_widgets')");
         $class->diag_print (2, "$indent- ".$class->unpacked_widgets." unpacked widgets");
 #        $class->diag_print (2, "$indent- ".$class->unhandled_signals." unhandled signals");
@@ -234,7 +194,7 @@ sub Form_from_Pad_Proto {
         $class->diag_print (2, "$indent  UI MESSAGES - showing missing_handler calls that you triggered, ".
                 "don't worry, $PACKAGE will generate dynamic stubs for them all");
     }
-    unless ($class->Writing_Source_only) { Gtk->main; }
+
     my $endtime = `date`;
     chomp $endtime;
     $class->diag_print (2, 
@@ -248,6 +208,13 @@ sub Form_from_Pad_Proto {
             "${first_form}->run'");
     $class->diag_print (2, 
             "-----------------------------------------------------------------------------");
+    unless ($class->Writing_Source_only) { Gtk->main; }
+    # We are finished with these attributes now so 'use them up'
+    undef $glade_proto->{'project'}{'directory'};
+    undef $glade_proto->{'project'}{'pixmaps_directory'};
+    undef $glade_proto->{'project'}{'source_directory'};
+    undef $glade_proto->{'glade_filename'};
+
     return $proto;
 }
 
@@ -341,43 +308,64 @@ Glade::PerlGenerate - Generate Perl source from a Glade XML project file.
 
  # Choose the Generate run options. Some other examples are in test.pl script
  Glade::PerlGenerate->options(
- #   User option        Value     Meaning                       Default
- #   -----------        -----     -------                       -------
-    'verbose'       => 5,         # Level of verbosity           1
+  #  User option       Value       Meaning                         Default
+ #  -----------       -----       -------                         -------
+   'author'        => 'Dermot Musgrove <dermot.musgrove\@virgin.net>',
+ # 'author'        => undef,      # Author string for sources eg  values from Perl's
+                                  # 'My Name <my.email@some.org>' (gethostbyname("localhost"))
+ # 'version'       => undef,      # Version number to use         0.0.1
+ # 'date'          => undef,      # The date to show in sources   Build time of
+ # 'copying'       => undef,      # Copying text to include     
+   'description'   => "This is an example of the Glade-Perl
+ source code generator",
+   'verbose'       => 2,          # Level of verbosity            1
                                   # 0 (quiet) to 10 (all)
-    'indent'        => '    ',    # Indent for source code       4 spaces
-    'tabwidth'      => 4,         # Number of spaces to replace  8
+   'indent'        => '    ',     # Indent for source code        4 spaces)
+   'tabwidth'      => 4,          # Number of spaces to replace   8
                                   # with a tab in source code
-    'diag_wrap'     => 80,        # Break diagnostic messages    0
+   'diag_wrap'     => 0,          # Wrap diagnostic messages      0 = no wrap
                                   # at this character (approx). 
                                   # 0 = no breaks (not easy to
                                   # read on 80 column displays)
-    'write_source'  => 'True',    # Write to the default files   No source
- #  'write_source'  => 'STDOUT',  # Write sources to STDOUT
+
+   'write_source'  => 'True',     # Write to the default files    No source
+ # 'write_source'  => 'STDOUT',   # Write sources to STDOUT
                                   # but there will be nothing 
                                   # to run later
- #  'write_source'  => 'File.pm', # Write sources to File.pm
+ # 'write_source'  => 'File.pm',  # Write sources to File.pm
                                   # They will not run from here
                                   # you must cut-paste them
- #  'write_source'  => undef,     # Don't write source code
+ # 'write_source'  => undef,      # Don't write source code
 
- #  'dont_show_UI'  => 'True',    # Don't show the UI            Show UI
-                                  # or wait for user action
- #  'autoflush'     => 'True',
-    'use_modules'   => 'Example::BusForm_mySUBS',
-
+   'dont_show_UI'  => 'True',     # Show UI during the Build     Show UI
+                                  # and wait for user action
+   'autoflush'     => 'True',
+   'use_modules'   => 'Example::BusForm_mySUBS',
+ # 'site_options'  => 'File.xml', # Site options file name       /etc/gpgrc.xml
+ # 'user_options'  => 'File.xml', # User options file name       ~/.gpgrc.xml
+   'project_options' => $project_options_file, 
+                                  # Project-specific options     Don't read file
+   'allow_gnome'   => undef,      # Ignore/report Gnome widgets  Ignore Gnome
+ # 'my_perl_gtk'   => '0.6123',   # I have CPAN version 0.6123   Use Perl/Gtk's version no
+ # 'my_perl_gtk'   => '19991001', # I have the gnome.org CVS     Use Perl/Gtk's version no
+                                  # version of 'gnome-perl' that 
+                                  # I downloaded on Oct 1st 1999
+ # 'my_gnome_libs' => '19991001', # I have the gnome.org CVS     Use gnome-libs version no
+                                  # version of 'gnome-libs' that 
+                                  # I downloaded on Oct 1st 1999
+   'log_file'      => 'Test.log', # Diagnostics log file         use STD[OUT|ERR]
  );
         
  Then to generate the UI defined in a file
  Glade::PerlGenerate->Form_from_Glade_File(
-    'glade_filename'  => "Example/BusForm.glade"
+   'glade_filename'=> "Example/BusForm.glade"
  );
 
 
  OR if you want to generate  the UI directly from an XML string
  Glade::PerlGenerate->Form_from_XML(
-    'xml'             => $xml_string,
-    'use_modules'     => ['Example::Project_mySUBS']
+   'xml'           => $xml_string,
+   'use_modules'   => ['Example::Project_mySUBS']
  );
 
 =head1 DESCRIPTION
@@ -401,15 +389,17 @@ use these handlers and not define stubs.
 
 The module will report several errors or warnings that warn of problems 
 with the Glade file or other unexpected occurences. These are to help me 
-cater for widgets or widget properties that I have not yet implemented and 
-not because Glade creates inconsistent project files but they do point 
-out errors in hand-edited XML.
+cater for new widgets or widget properties and not because Glade creates 
+inconsistent project files but they do point out errors in hand-edited XML.
 
 =head1 FILES GENERATED
 
-The Perl source is now written to one .pm file. Each toplevel window/dialog has
-a class generated with code to construct the UI. All the classes are
-written to <project><name>.pm.
+The Perl source to construct the UI is written to a .pm file called 
+<project><name>.pm. . Each toplevel window/dialog has a class generated with 
+code to construct it. 
+An example subclass is generated in another .pm file called 
+Sub<project><name>.pm which contains skeleton subs for every missing signal 
+handler. It can be copied and edited to make a complete app.
 
 =head1 SEE ALSO
 

@@ -39,7 +39,7 @@ BEGIN {
         $missing_widgets
         );
     $PACKAGE =          __PACKAGE__;
-    $VERSION        = q(0.40);
+    $VERSION        = q(0.41);
 
     $ignored_widgets = 0;
     $missing_widgets = 0;
@@ -105,15 +105,16 @@ my $gnome_widgets       = join( " ",
 $gnome_libs_depends     = { 
     'ALL EXCEPT THOSE BELOW' => '1.0.8',
     'gtk_clock_new'         => '1.0.16',
-    'GnomeDruid'            => '1.0.14',
-    'GnomeDruidPageFinish'  => '1.0.14',
-    'GnomeDruidPageStandard'=> '1.0.14',
-    'GnomeDruidPageStart'   => '1.0.14',
+    'GnomeDruid'            => '1.0.50',
+    'GnomeDruidPageFinish'  => '1.0.50',
+    'GnomeDruidPageStandard'=> '1.0.50',
+    'GnomeDruidPageStart'   => '1.0.50',
     };
 $perl_gtk_depends       = { 
     'ALL EXCEPT THOSE BELOW' => '0.6123',
     # Those below don't work yet even in the latest CVS version
-    'GnomeDruid'        => '919999999',
+    # Those below work in the CVS version after 19991025
+    'GnomeDruid'        => '19991025',
     # Those below work in the CVS version after 19991001
     'gnome_iconlist_new_undef'  => '19991001',
     'gnome_stock_pixmap_widget' => '19991001',
@@ -826,6 +827,17 @@ sub internal_pack_widget {
             }
             
 #---------------------------------------
+        } elsif (" Gnome::Druid "=~ m/ $refpar /) {
+            # We are a Gnome::DruidPage of some sort
+            $class->add_to_UI( $depth, 
+                "${current_form}\{'$parentname'}->append_page(".
+                    "\$widgets->{'$childname'} );" );
+            if (' Gnome::DruidPageStart ' =~ / $refwid /) {
+                $class->add_to_UI( $depth, "${current_form}\{'$parentname'}->".
+                    "set_page(\$widgets->{'$childname'});" );
+            }
+            
+#---------------------------------------
         } elsif (" $dialogs "=~ m/ $refpar /) {
             # We use a dialog->method to get a ref to our widget
 #            my $ignore = $class->use_par($proto, 'label', $DEFAULT,  '' );
@@ -1245,7 +1257,7 @@ sub new_from_child_name {
     } elsif ($type eq 'GnomePixmapEntry:file-entry') {
         $type = 'gnome_file_entry';
 
-    } elsif (' Toolbar:button GnomeDock:contents ' =~ m/ $type /) {
+    } elsif (' Toolbar:button GnomeDock:contents GnomeDruidPageStandard:vbox ' =~ m/ $type /) {
         # Keep the full child_name for later use
 
     } else {
@@ -1314,7 +1326,7 @@ sub new_from_child_name {
         }
 
 #---------------------------------------
-    } elsif ($type eq 'GnomeDock:contents') {
+    } elsif (' GnomeDock:contents ' =~ / $type /) {
         return undef;
         # FIXME This doesn't make sense to me, get_client_area wants a DockItem
 #            $class->add_to_UI( $depth, 
@@ -1324,6 +1336,15 @@ sub new_from_child_name {
 #                "\$widgets->{'$name'} = ".
 #                    "${current_form}\{'$parent'}->get_client_area;" );
 
+#---------------------------------------
+    } elsif (' GnomeDruidPageStandard:vbox ' =~ / $type /) {
+#        return undef;
+# FIXME Gtk-Perl can't do this 19991025 - I have patched it
+        $class->add_to_UI( $depth, 
+            "\$widgets->{'$name'} = ".
+                "${current_form}\{'$parent'}->vbox;" );
+
+#---------------------------------------
     } elsif (eval "${current_form}\{'$parent'}->can('$type')") {
         my $label   = $class->use_par($proto, 'label', $DEFAULT, '');
         $class->add_to_UI( $depth, 

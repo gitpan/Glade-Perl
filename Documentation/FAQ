@@ -1,12 +1,54 @@
 This is the Frequently Asked Question list for Glade-Perl source generator
 
 --------------------------------------------------------------------------
+Q   How do I write signal handlers in a separate module?
+
+A   As always with Perl, there is more than one way to do it.
+    1) The first way is to put your signal handlers in a .pm module and use() 
+    the module from the generated source code. An example of this is the file
+    '$DIST_DIR/Example/BusForm_mySUBS.pm. You then specify this module to 
+    Glade-Perl with the user option 'use_module' which you can check in the
+    distributed script $DIST_DIR/test.pl. This is not the best approach as you
+    have to make sure that you Export the signal_handler names if they are to
+    run when you cause the signal.
+
+    2) The better and simpler way is to subclass the generated UI module and put 
+    the signal handlers there. An example of this is $DIST_DIR/Example/SubBus.pm.
+    Version 0.41 of Glade-Perl generates a subclass with a skeleton signal 
+    handler for each signal handler that is needed. This is an OO approach.
+    You can then copy this subclass somewhere and edit the signal handlers to do
+    whatever you want. The advantage of this approach is that you can generate 
+    the UI again and again without changing the subclass except for adding or
+    removing new signal handlers.
+
+--------------------------------------------------------------------------
+Q   How do I access widgets to set or get their data/text?
+
+A   Each instance of a form (you can have more than one copy of a UI showing at
+    the same time) stores a complete hash of its widgets in a global anonymous
+    hash (actually defined as $Glade::PerlRun::all_forms) that you can access
+    from your signal handler. One way to get at an entry widget in a signal
+    handler is to look up the widget in this hash.
+
+    The AUTOLOAD()ed signal handler message box shows all the args that would be
+    passed to the relevant signal handler but something like this should work:
+
+      sub my_signal_handler {
+        my ($class, $data, $object, $instance) = @ARG;
+        my $form = $__PACKAGE__::all_forms->{$instance};
+        my $entry_val = $form->{'entry_widget_name'}->get_text;
+        ...
+     }
+
+    This is for the case where the entry widget is on the same form as the 
+    widget that causes the signal. In other cases you will have to store the 
+    $instance value in a global or pass it as an arg somehow.
+--------------------------------------------------------------------------
 Q   My GtkClock does not show the current time
 
 A   Older versions of gnome-libs (at least <= 1.0.8) do not handle the clock 
     type 'realtime' properly. Perl/Gtk 0.6123 cannot explicitly set the type 
-    so we are stuck. Upgrade to a newer version of gnome-libs or wait until
-    Perl/Gtk can do Gtk::Clock->style() - maybe it already does?.
+    so we are stuck. Upgrade to a newer version of gnome-libs.
 
         
 --------------------------------------------------------------------------

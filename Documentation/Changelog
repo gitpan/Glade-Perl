@@ -1,9 +1,26 @@
 Revision history for Perl module Glade::PerlGenerate development branch.
-Fri Oct 22 19:42:41 BST 1999 - Dermot Musgrove <dermot.musgrove@virgin.net>
-    - Version 0.40
-    - New version number format to meet demands of CPAN
-    - Stable(ish) version split off from 0.3.15 for upload to CPAN
 
+Tue Nov  2 02:20:00 GMT 1999 - Dermot Musgrove <dermot.musgrove@virgin.net>
+ - Version 0.41
+ - PerlRun->create_pixmap() updated to use new Perl/Gtk bindings if available
+ - PerlSource->write_UI() stripped from PerlGenerate->Form_from_Glade_Proto()
+ - PerlSource->write_Subclass() will generate a working subclass with 
+   skeleton subs for all missing signal handlers
+ - PerlSource->write_dist() started new sub to generate dist files
+ - PerlProject->use_Glade_Project() now defaults to allow_gnome if programmer
+   has set <project><gnome_support> to True
+ - PerlSource->perl_SUBCLASS_AUTOLOAD_header() new sub and some extra 
+   utilities generated (toplevel_hide, toplevel_close and toplevel_destroy)
+ - Gnome::Druid* stuff implemented (needs Gtk-Perl CVS after 19991025 and
+   gnome-libs >= 1.0.50 to get the full effect)
+ - PerlRun->create_image() new sub to return a Gtk::Gdk::ImlibImage for
+   Gnome::Druid* logos and watermarks
+        
+Fri Oct 22 19:42:41 BST 1999 - Dermot Musgrove <dermot.musgrove@virgin.net>
+ - Version 0.40
+ - New version number format to meet demands of CPAN
+ - Stable(ish) version split off from 0.3.15 for upload to CPAN
+    
 Sun Oct 10 03:42:41 BST 1999 - Dermot Musgrove <dermot.musgrove@virgin.net>
     - Version 0.3.15
     - PerlUIGtk->new_GtkCTree() fixed cut-and-paste error to initialise the

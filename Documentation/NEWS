@@ -1,13 +1,12 @@
 NEWS of Glade::PerlGenerate (GPG) Perl/Gtk-Glade UI builder and source generator
 --------------------------------------------------------------------
-BEWARE
-------
-Glade::PerlGenerate still can't handle Gnome::Druid but it will report and 
-ignore any widgets that are not implemented ('verbose' => 2).
-Missing 10 Oct 1999 are     'GnomeDruid',
 
 NEW 'FEATURES'
 --------------
+version 0.41 implements Gnome::Druid stuff and also generates a working
+    subclass with skeleton signal handler subs for you to copy and edit.
+    We can now generate _all_ Glade widgets (and mostly correctly :-)
+    
 version 0.40 is the first CPAN release - hence the new version number format
 
 version 0.3.14 is mainly a bugfix release with more useful values returned

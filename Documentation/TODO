@@ -16,29 +16,23 @@ Glade-Perl - perl source code generator
 
 TODO
 ----
-*   Add some extra utilities eg toplevel_hide/destroy/close
+*   Cut out all checks and diagnostics if verbose == 0
+
+*   Recombine into fewer .pm files, possibly fewer packages
 
 *   Make mySUBS file (as pre 0.2.0) if requested
 
-*   Make subclass.pm for later use (inc handler stubs)
-
 *   Make dist files eg Makefile.PL, MANIFEST, Changelog etc etc
 
-*   Check for gnome-config before disallowing gnome widgets
-
-*   Sort out pixmap creation, Perl/Gtk has limitations here but is improving
-
-*   Improve PerlRun->create_pixmap() to use new bindings, possibly do in same
-    way that Glade C code in support.c does.
-    
 *   Internationalise every stage but particularly the source code generation
     of Gnome::App and Stock stuff
     
-*   Sort out menu/toolbar labels, underlines, accelerators properly Probably it
+*   Sort out Gnome::App accelerators and signals properly Probably it
     would be best to implement the gnome-app-helper methods and use those when
     they are available.
     
-*   Fix the signal handling for AccelLabels and pixmaps. 
+*   Fix the signal handling for AccelLabels and pixmaps. Which widget should
+    the signal be connected to?
 
 *   Look at writing one perl file for each module/class so that, for instance
     ReferenceForm would be in file Generated/ReferenceForm.pm and fileselection1
@@ -51,17 +45,12 @@ TODO
     tooltips, help text, README, web page etc in step and up to date.
     Perhaps embed XML in the source - or even source in XML and generate
     everything from that? Please email me if you know how it should be done.
-    Investigate Guide for all docs and trouble-shooting.
+    Investigate (lib)Guide for all docs and trouble-shooting.
     
 *   Check all evals for proper exception handling.
 
 *   Generate extract and display subs to give examples of how to set and get
     widget data. Perhaps not necessary.
-
-*   Although there is now a Makefile.PL, I have no idea how portable it is. 
-    There are bound to be problems with Gtk and Perl/Gtk versions, possibly I 
-    can handle this via Perl/Gtk's ./configure and capabilities. Please email
-    me with any successes or failures.
 
 *   I use several 'eval's, one allows for dynamic construction
     of (unknown) widget types and another is only so that the 
@@ -88,6 +77,8 @@ TODO
 
     Or perhaps use libxml
 
+    Profile the whole process and remove any time-consuming diagnostics
+    
 *   Much inefficiency in the number of diagnostics that can be produced.
     When it is stable I should comment out the most frequent and expensive 
     calls to Glade::PerlProject->diag_print() and ->use_par().
@@ -114,6 +105,23 @@ TODO
 
 DONE
 ----
+*   Implement Gnome widget 'GnomeDruid*',(needs Perl/Gtk CVS after 19990925)
+
+*   I have no idea how portable the Makefile.PL is. There are bound to be 
+    problems with Gtk and Perl/Gtk versions, possibly I can handle this via 
+    Perl/Gtk's ./configure and capabilities. 
+
+    I have heard from users on other platforms so I guess that this works OK
+    Please email me with any successes or failures.
+
+*   Add user option 'log_file' (defaulting, as previously, to STDOUT/STDERR)
+
+*   Add some extra generated utilities eg toplevel_hide/destroy/close
+
+*   Make subclass.pm for later use (inc handler stubs)
+
+*   Check for gnome-config before disallowing gnome widgets
+
 *   Do NOT generate Gtk about_Form if 'allow_gnome' is true, use Gnome::About.
 
 *   Add user_option 'description' with description for any about box etc.
@@ -149,6 +157,11 @@ DONE
     or by generating a module at Makefile.PL build. This needs to be done
     dynamically in case gnome-libs change the defines. This would allow lookup
     of 'GNOME_STOCK_PIXMAP_SRCHRPL'   => "Search/Replace", for instance.
+    
+*   Sort out pixmap creation, Perl/Gtk has limitations here but is improving
+
+*   Improve PerlRun->create_pixmap() to use new bindings, possibly do in same
+    way that Glade C code in support.c does.
     
 LONG TERM
 ---------

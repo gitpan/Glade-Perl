@@ -31,7 +31,7 @@ BEGIN {
                             $VERSION
                        );
     $PACKAGE        = __PACKAGE__;
-    $VERSION        = q(0.40);
+    $VERSION        = q(0.41);
     # Tell interpreter who we are inheriting from
     @ISA            = qw( 
                             Glade::PerlXML 
@@ -46,7 +46,7 @@ my %fields = (
     #    $current_value = $class->UI;   gets the current value of UI
 # Project
     'author'            => undef,   # Name to appear in generated source
-    'version'           => '0.0.1', # Version to appear in generated source
+    'version'           => '0.01',  # Version to appear in generated source
     'date'              => undef,   # Date to appear in generated source
     'copying'           =>          # Copying policy to appear in generated source
         '# Unspecified copying policy, please contact the author\n# ',
@@ -75,6 +75,8 @@ my %fields = (
     'diag_file'         => undef,   # Diagnostics log file name
     'autoflush'         => undef,   # Don't change the policy
     'benchmark'         => undef,   # Don't add time to the diagnostic messages
+    'log_file'          => undef,   # Write diagnostics to STDOUT 
+                                    # or Filename to write diagnostics to
 # Distribution
     'dist_type'         => undef,   # Type of distribution
     'dist_compress'     => undef,   # How to compress the distribution
@@ -330,14 +332,23 @@ sub options {
     chomp $key;
     $options->start_time($key);
     $main::Glade_Perl_Generate_options = $options;
-    if ($first_time && $class->diagnostics(2)) {
-        $class->diag_print (2, 
-            "--------------------------------------------------------");
-        $class->diag_print (2, 
-            $options->indent."  DIAGNOSTICS (verbosity ".$options->verbose.
-            ") started by $PACKAGE (version $VERSION) at ".$options->start_time);
-        $class->Write_to_File;
-        $class->diag_print(6, $options, 'Options used for Generate run');    
+    if ($first_time) {
+        my $log_file = $options->log_file;
+        if ($log_file) {
+            open STDOUT, ">$log_file" or
+                die "error $me - can't open file '$log_file' for diagnostics";
+            open STDERR, ">&1" or
+                die "error $me - can't redirect STDERR to file '$log_file'";
+        }
+        if ($class->diagnostics(2)) {
+            $class->diag_print (2, 
+                "--------------------------------------------------------");
+            $class->diag_print (2, 
+                $options->indent."  DIAGNOSTICS (verbosity ".$options->verbose.
+                ") started by $PACKAGE (version $VERSION) at ".$options->start_time);
+            $class->Write_to_File;
+            $class->diag_print(6, $options, 'Options used for Generate run');    
+        }
     }
     if ($first_time && $params{'project_options'}) {
         # Save the current project options
@@ -386,7 +397,7 @@ sub use_Glade_Project {
     bless $form, $PACKAGE;
     $class->get_versions($options);
     # Glade assumes that all directories are named relative to the Glade 
-    # _project_ file (not <directory>) !
+    # project (.glade) file (not <directory>) !
     my $glade_file_dirname = dirname($proto->{'glade_filename'});
     $form->{'name'}  = $proto->{'project'}{'name'};
     $form->{'glade_filename'} = $proto->{'glade_filename'};
@@ -417,7 +428,7 @@ sub use_Glade_Project {
         $class->full_Path(
             $proto->{'project'}{'name'}.".pm",         
             $form->{'source_directory'} );
-    $form->{'Subclass_filename'} = 
+    $form->{'SUBCLASS_filename'} = 
         $class->full_Path(
             "Sub".$proto->{'project'}{'name'}.".pm",         
             $form->{'source_directory'} );
@@ -427,6 +438,7 @@ sub use_Glade_Project {
             'Logo.xpm', 
             $form->{'pixmaps_directory'}, 
             '' );
+#        $proto->{'project'}{'pixmaps_directory'}."/Logo.xpm";
         unless ( -f "$form->{'logo'}") { $form->{'logo'} = '';}
 
     if ($options->author) {
@@ -438,6 +450,12 @@ sub use_Glade_Project {
         my $fullname = $pwuid->[6];
         my $hostname = [split(" ", $host)];
         $form->{'author'} = "$fullname <$user\\\@$hostname->[0]>";
+    }
+    my $gnome_support = $proto->{'project'}{'gnome_support'};
+    # If allow_gnome is not specified, use glade project <gnome_support> property
+    unless (defined $options->{'allow_gnome'}) {
+        $options->{'allow_gnome'} = 
+            ('*true*y*yes*on*1*' =~ m/\*$gnome_support\*/i) ? '1' : '0';
     }
     $form->{'version'}      = $options->version;
     $form->{'date'}         = $options->date        || $options->start_time;

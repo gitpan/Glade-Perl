@@ -31,7 +31,7 @@ sub main {
 
     # Subclass the generated code
     print "Test 3..3 Subclassing the generated source code for the example Glade file\n";
-    eval "use Example::SubBus;SubBus->run || print 'Not' ";
+    eval "use Generated::SubBusForm;SubBusFrame->run || print 'Not' ";
     print "Test 3..3 OK\n\n";
 }
 

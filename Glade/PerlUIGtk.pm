@@ -31,7 +31,7 @@ BEGIN {
                             $Notebook_tab
                           );
     $PACKAGE =          __PACKAGE__;
-    $VERSION        = q(0.40);
+    $VERSION        = q(0.41);
     @VARS           = qw( 
                             $VERSION
                             $AUTHOR
